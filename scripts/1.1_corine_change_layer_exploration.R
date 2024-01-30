@@ -27,3 +27,9 @@ library(mapview)
 ## 1.2. Read in layers -----
 norway_corine_change_stack <- rast(here("data", 
                                         "norway_corine_change_stack.tif"))
+
+# 2. EXPLORE LAYERS ----
+
+## 2.1. Plot maps of the years ----
+mapview(norway_corine_change_stack[[1]])
+a <- as.data.frame(table(freq(norway_corine_change_stack[[1]])))
