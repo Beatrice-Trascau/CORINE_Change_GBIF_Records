@@ -132,3 +132,6 @@ terra::writeRaster(norway_corine_change_stack,
                    here("data", "norway_corine_change_stack.tif"))
 
 ### END OF SCRIPT ####
+
+## Trial 32
+library(ggpubr)
