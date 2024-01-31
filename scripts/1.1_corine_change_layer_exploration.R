@@ -14,6 +14,7 @@ library(mapview)
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
+library(networkD3)
 library(gt)
 library(cowplot)
 
@@ -84,9 +85,69 @@ corine_class_meaning <- corine_class_meaning |>
   mutate(difference = source_number - target_number)
 
 ## 3.2. Get values for source and target land cover in change layer from the score meaning dataframe ----
+
 # Subset score meaning df to only contain the "differences" which are found across Norway
 norway_corine_class_meaning <- corine_class_meaning |>
   filter(difference %in% corine_2000_2006_df$value)
 
+# Change column names
+colnames(norway_corine_class_meaning) <- c("source_number", "source_name",
+                                           "target_number", "target_name",
+                                           "value")
 
 
+# Merge norway_corine_class_meaning df and corine_2000_2006_df into one
+corine_2000_2006_change_meaning <- merge(corine_2000_2006_df,
+                                         norway_corine_class_meaning,
+                                         by = "value")
+
+## 3.3. Prepare df for sankey plot ----
+
+# Merge columns "source_year" with "source_name" and "target_year" with "target_name" so that we can differentiate the transitions
+corine_2000_2006_sankey <- corine_2000_2006_change_meaning |>
+  unite(source, c(source_year, source_name), sep = ".",
+        remove = FALSE) |>
+  unite(target, c(target_year, target_name), sep = ".",
+        remove = FALSE)
+
+# Remove the rows that show "no change" (i.e. value = 0)
+corine_2000_2006_sankey <- corine_2000_2006_sankey |>
+  filter(value != 0)
+
+# Remove columns:value, layer, source_year, target_year, source_number, source_name, target_number, target_name
+corine_2000_2006_sankey <- corine_2000_2006_sankey |>
+  select(count, source, target)
+
+# Re-arrange columns in the order: source, target, count
+corine_2000_2006_sankey <- corine_2000_2006_sankey |>
+  relocate(source, target, count)
+
+# Change values in target so that they are different from the source one (add a space at the end)
+corine_2000_2006_sankey <- corine_2000_2006_sankey |>
+  mutate(target = paste(target, " ", sep = ""))
+
+## 3.4. Sankey plot for transitions between 2000 and 2006 ----
+
+# Create node dataframe
+nodes2000_2006 <- data.frame(name = c(as.character(corine_2000_2006_sankey$source),
+                                      as.character(corine_2000_2006_sankey$target)) |>
+                               unique())
+
+# Create ID to provide connection for networkD3
+corine_2000_2006_sankey$IDsource=match(corine_2000_2006_sankey$source, nodes2000_2006$name)-1 
+
+corine_2000_2006_sankey$IDtarget=match(corine_2000_2006_sankey$target, nodes2000_2006$name)-1
+
+# Convert source and target columns to factors
+corine_2000_2006_sankey$source <- as.factor(corine_2000_2006_sankey$source)
+corine_2000_2006_sankey$target <- as.factor(corine_2000_2006_sankey$target)
+
+# Apply logarithmic transformation to count values - doing so that the forest -> transitional woodland do not mask other patterns
+corine_2000_2006_sankey$log_count <- log1p(corine_2000_2006_sankey$count)  
+
+ggplot(corine_2000_2006_sankey, aes(axis1 = source, axis2 = target, y = log_count)) +
+  geom_alluvium(aes(fill = source)) +
+  geom_stratum() +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  theme_minimal() +
+  ggtitle("Sankey Diagram with Logarithmic Scaling")
