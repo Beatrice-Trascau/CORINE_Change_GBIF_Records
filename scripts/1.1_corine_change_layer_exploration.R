@@ -25,8 +25,8 @@ library(mapview)
 # download.file(norway_corine_change_stack, "norway_corine_change_stack.tif")
 
 ## 1.2. Read in layers -----
-norway_corine_change_stack <- rast(here("data", 
-                                        "norway_corine_change_stack.tif"))
+norway_corine_change_modified_stack <- rast(here("data", 
+                                        "norway_corine_change_modified_stack.tif"))
 
 # 2. EXPLORE LAYERS ----
 
