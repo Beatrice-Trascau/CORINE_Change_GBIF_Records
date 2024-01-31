@@ -31,5 +31,12 @@ norway_corine_change_modified_stack <- rast(here("data",
 # 2. EXPLORE LAYERS ----
 
 ## 2.1. Plot maps of the years ----
-mapview(norway_corine_change_stack[[1]])
-a <- as.data.frame(table(freq(norway_corine_change_stack[[1]])))
+
+# Plot the layer
+mapview(norway_corine_change_modified_stack[[1]])
+
+# Extract number of pixels where change is detected
+freq(norway_corine_change_modified_stack[[1]]) #197 443 pixels with change
+#The Land Cover Status Layers (2000 - 2006) had 176 833 pixels with change
+
+
