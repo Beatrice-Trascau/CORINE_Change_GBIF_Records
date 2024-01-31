@@ -145,10 +145,29 @@ corine_2000_2006_sankey$target <- as.factor(corine_2000_2006_sankey$target)
 # Apply logarithmic transformation to count values - doing so that the forest -> transitional woodland do not mask other patterns
 corine_2000_2006_sankey$log_count <- log1p(corine_2000_2006_sankey$count)  
 
+# Create new columns with labels for the sankey plots
+source_labels <- c("Complex Agriculture", "Agriculture & Vegetation", "Forests",
+                   "Forests", "Urban Fabric", "Complex Agriculture", "Agriculture & Vegetation",
+                   "Forests", "Forests", "Forests", "Moors, Heathland & Grassland", 
+                   "Transitional Woodland Shrub", "Moors, Heathland & Grassland",
+                   "Transitional Woodland Shrub", "Sparse Vegetation")
+
+target_labels <- c("Transitional Woodland Shrub", "Transitional Woodland Shrub",
+                   "Transitional Woodland Shrub", "Moors, Heathland & Grassland",
+                   "Complex Agriculture", "Urban Fabric", "Urban Fabric", 
+                   "Agriculture & Vegetation", "Complex Agriculture", "Urban Fabric",
+                   "Agriculture & Vegetation", "Forests", "Urban Fabric",
+                   "Urban Fabric", "Urban Fabric")
+
+corine_2000_2006_sankey_for_plot <- cbind(corine_2000_2006_sankey, source_labels, target_labels)
+
+my_colors <- c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2")
+
 # Plot sankey plot
-ggplot(corine_2000_2006_sankey, aes(axis1 = source, axis2 = target, y = log_count)) +
+ggplot(corine_2000_2006_sankey_for_plot, aes(axis1 = source, axis2 = target, y = log_count)) +
   geom_alluvium(aes(fill = source)) +
   geom_stratum() +
   geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  scale_fill_manual(values = my_colors) +
   theme_void()+
   theme(legend.position = "none")
