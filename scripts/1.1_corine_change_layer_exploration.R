@@ -145,9 +145,10 @@ corine_2000_2006_sankey$target <- as.factor(corine_2000_2006_sankey$target)
 # Apply logarithmic transformation to count values - doing so that the forest -> transitional woodland do not mask other patterns
 corine_2000_2006_sankey$log_count <- log1p(corine_2000_2006_sankey$count)  
 
+# Plot sankey plot
 ggplot(corine_2000_2006_sankey, aes(axis1 = source, axis2 = target, y = log_count)) +
   geom_alluvium(aes(fill = source)) +
   geom_stratum() +
   geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-  theme_minimal() +
-  ggtitle("Sankey Diagram with Logarithmic Scaling")
+  theme_void()+
+  theme(legend.position = "none")
