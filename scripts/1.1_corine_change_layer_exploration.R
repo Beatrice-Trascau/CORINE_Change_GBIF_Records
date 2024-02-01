@@ -63,18 +63,18 @@ source_number <- c(rep(1,7), rep(80,7), rep(103,7),
                    rep(711,7))
 
 # Source name column 
-source_name <- c(rep("urban.fabric",7), rep("complex.agriculture",7), 
-                 rep("agriculture.and.vegetation",7), rep("forests",7), 
-                 rep("moors.heath.grass",7), rep("transitional.woodland",7),
-                 rep("sparse.vegetation",7))
+source_name <- c(rep("Urban Fabric",7), rep("Complex Agriculture",7), 
+                 rep("Agriculture & Vegetation",7), rep("Forests",7), 
+                 rep("Moors, Heath & Grass",7), rep("Transitional Woodland Shrub",7),
+                 rep("Sparse Vegetation",7))
 
 # Target "value" column
 target_number <- c(rep(c(1,80,103,250,380,590,711), 7))
 
 # Target name column
-target_name <- c(rep(c("urban.fabric", "complex.agriculture", "agriculture.and.vegetation",
-                       "forests", "moors.heath.grass", "transitional.woodland",
-                       "sparse.vegetation"), 7))
+target_name <- c(rep(c("Urban Fabric", "Complex Agriculture", "Agriculture & Vegetation",
+                       "Forests", "Moors, Heath & Grass", "Transitional Woodland Shrub",
+                       "Sparse Vegetation"), 7))
 
 # Combine vectors in df  
 corine_class_meaning <- data.frame(source_number, source_name,
