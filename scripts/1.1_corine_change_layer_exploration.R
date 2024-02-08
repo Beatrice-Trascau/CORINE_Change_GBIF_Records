@@ -88,13 +88,9 @@ corine_class_meaning <- corine_class_meaning |>
 
 # Subset score meaning df to only contain the "differences" which are found across Norway
 norway_corine_class_meaning <- corine_class_meaning |>
-  filter(difference %in% corine_2000_2006_df$value)
-
-# Change column names
-colnames(norway_corine_class_meaning) <- c("source_number", "source_name",
-                                           "target_number", "target_name",
-                                           "value")
-
+  filter(difference %in% corine_2000_2006_df$value) |>
+  # change column names
+  rename(value = difference)
 
 # Merge norway_corine_class_meaning df and corine_2000_2006_df into one
 corine_2000_2006_change_meaning <- merge(corine_2000_2006_df,
