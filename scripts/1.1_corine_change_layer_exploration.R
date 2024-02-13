@@ -138,8 +138,6 @@ corine_2000_2006_sankey$IDtarget=match(corine_2000_2006_sankey$target, nodes2000
 corine_2000_2006_sankey$source <- as.factor(corine_2000_2006_sankey$source)
 corine_2000_2006_sankey$target <- as.factor(corine_2000_2006_sankey$target)
 
-# Apply logarithmic transformation to count values - doing so that the forest -> transitional woodland do not mask other patterns
-corine_2000_2006_sankey$log_count <- log1p(corine_2000_2006_sankey$count)  
 
 # Create new columns with labels for the sankey plots
 source_labels <- c("Complex Agriculture", "Agriculture & Vegetation", "Forests",
