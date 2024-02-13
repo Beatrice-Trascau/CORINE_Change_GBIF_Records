@@ -14,6 +14,7 @@ library(mapview)
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
+library(ggalluvial)
 library(networkD3)
 library(gt)
 library(cowplot)
@@ -158,10 +159,11 @@ corine_2000_2006_sankey_for_plot <- cbind(corine_2000_2006_sankey, source_labels
 my_colors <- c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2")
 
 # Plot sankey plot
-ggplot(corine_2000_2006_sankey_for_plot, aes(axis1 = source, axis2 = target, y = log_count)) +
+ggplot(corine_2000_2006_sankey_for_plot, aes(axis1 = source, axis2 = target, y = count)) +
   geom_alluvium(aes(fill = source)) +
   geom_stratum() +
-  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum)), 
+            size = 3, nudge_y = 3400, check_overlap = TRUE) +
   scale_fill_manual(values = my_colors) +
   theme_void()+
   theme(legend.position = "none")
