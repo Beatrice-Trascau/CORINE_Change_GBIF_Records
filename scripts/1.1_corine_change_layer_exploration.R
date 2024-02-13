@@ -125,6 +125,8 @@ corine_2000_2006_sankey <- corine_2000_2006_sankey |>
 
 ## 3.4. Sankey plot for transitions between 2000 and 2006 ----
 
+### 3.4.1. Sankey 2000 - 2006 with all classes ----
+
 # Create node dataframe
 nodes2000_2006 <- data.frame(name = c(as.character(corine_2000_2006_sankey$source),
                                       as.character(corine_2000_2006_sankey$target)) |>
@@ -159,7 +161,7 @@ corine_2000_2006_sankey_for_plot <- cbind(corine_2000_2006_sankey, source_labels
 my_colors <- c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2")
 
 # Plot sankey plot
-ggplot(corine_2000_2006_sankey_for_plot, aes(axis1 = source, axis2 = target, y = count)) +
+all_classes_2000_2006 <- ggplot(corine_2000_2006_sankey_for_plot, aes(axis1 = source, axis2 = target, y = count)) +
   geom_alluvium(aes(fill = source)) +
   geom_stratum() +
   geom_text(stat = "stratum", aes(label = after_stat(stratum)), 
@@ -167,3 +169,19 @@ ggplot(corine_2000_2006_sankey_for_plot, aes(axis1 = source, axis2 = target, y =
   scale_fill_manual(values = my_colors) +
   theme_void()+
   theme(legend.position = "none")
+
+### 3.4.2. Sankey 2000 - 2006 without forests & transitional woodland shrub  ----
+
+# The transitions conigerous forest -> transitional woodland shrub (and vice versa) were removed to allow better visualisation of the other transitions (which are not dominant)
+# Remove rows 3 and 12
+corine_2000_2006_sankey_forestless <- corine_2000_2006_sankey_for_plot |>
+  filter(!row_number() %in% c(3, 12))
+
+ggplot(corine_2000_2006_sankey_forestless, aes(axis1 = source, axis2 = target, y = count)) +
+  geom_alluvium(aes(fill = source)) +
+  geom_stratum() +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  scale_fill_manual(values = my_colors) +
+  theme_void()+
+  theme(legend.position = "none")
+
