@@ -124,11 +124,12 @@ norway_corine_change_modified <- app(norway_corine_change_modified,
 
 # Other classes
 norway_corine_change_modified <- app(norway_corine_change_modified,
-                                     fun = function(x){x[x %in% c(30, 31, 33, 34, 35, 36, 39, 40, 41, 43, 44)] <- 127; 
+                                     fun = function(x){x[x %in% c(30, 31, 33, 34, 35, 36, 39, 40, 41, 43, 44, 127, 128)] <- NA; 
                                      return(x)})
 
 # Save the changed layers 
-terra::writeRaster(norway_corine_change_stack, 
-                   here("data", "norway_corine_change_stack.tif"))
+terra::writeRaster(norway_corine_change_modified, 
+                   here("data", "norway_corine_change_modified_stack.tif"),
+                   overwrite = TRUE)
 
 ### END OF SCRIPT ####
