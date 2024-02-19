@@ -166,7 +166,7 @@ svg(here("figures", "network_2000.2006_forestless.svg"))
 
 dev.off()
 
-# 3.5. Barplots of land cover transitions between 2000 and 2006 ----
+## 3.5. Barplots of land cover transitions between 2000 and 2006 ----
 
 # Create dataframe of "transition to" values
  # this dataframe will have the "focus" cover class in the "source" column and the cover class it transitions to in the "target" column
