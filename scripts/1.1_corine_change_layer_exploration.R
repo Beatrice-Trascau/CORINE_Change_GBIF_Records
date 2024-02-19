@@ -133,3 +133,35 @@ sankeyNetwork(Links = corine_2000_2006_sankey, Nodes = nodes2000_2006,
 # Save the Network
 svg(here("figures", "network_2000.2006_all_classes.svg"))
 dev.off()
+
+### 3.4.2. Sankey Plot for transitions between 2000 and 2006 (excluding coniferous forest to transitional woodland shrub) ----
+
+# The transitions conigerous forest -> transitional woodland shrub (and vice versa) were removed to allow better visualisation of the other transitions (which are not dominant)
+# Remove rows 3 and 26
+forestless_2000_2006_sankey <- corine_2000_2006_sankey |>
+  filter(!row_number() %in% c(3, 26))
+
+# Colour scale
+ColourScal ='d3.scaleOrdinal() .range(["#FDE725FF","#B4DE2CFF","#6DCD59FF","#35B779FF","#1F9E89FF","#26828EFF","#31688EFF","#3E4A89FF","#482878FF","#440154FF"])'
+
+# Create node dataframe
+nodes_forestless <- data.frame(name = c(as.character(forestless_2000_2006_sankey$source),
+                                        as.character(forestless_2000_2006_sankey$target)) |>
+                                 unique())
+
+# Reformat for ID
+forestless_2000_2006_sankey$IDsource = match(forestless_2000_2006_sankey$source,
+                                             nodes_forestless$name) - 1
+forestless_2000_2006_sankey$IDtarget = match(forestless_2000_2006_sankey$target,
+                                             nodes_forestless$name) - 1
+
+# Make Network
+sankeyNetwork(Links = forestless_2000_2006_sankey, Nodes = nodes_forestless,
+              Source = "IDsource", Target = "IDtarget",
+              Value = "count", NodeID = "name", 
+              colourScale=ColourScal, nodeWidth=20, fontSize=11, nodePadding=25)
+
+# Save the Network
+svg(here("figures", "network_2000.2006_forestless.svg"))
+
+dev.off()
