@@ -42,11 +42,11 @@ norway_corine_change_modified_stack <- rast(here("data",
 # Plot the layer
 mapview(norway_corine_change_modified_stack[[1]])
 
-## 2.2 Extract number of pixels where change is detected ----
+## 2.2. Extract number of pixels where change is detected ----
 freq(norway_corine_change_modified_stack[[1]]) #197 443 pixels with change
 # the Land Cover Status Layers (2000 - 2006) had 176 833 pixels with change
 
-# 3. LAND COVER TRANSITIONS 2000 - 2006
+# 3. LAND COVER TRANSITIONS 2000 - 2006 ----
 
 # Calculate change between 2000 and 2006
 corine_2000_2006_df <- as.data.frame(freq(norway_corine_change_modified_stack[[1]] -
@@ -100,27 +100,19 @@ corine_2000_2006_change_meaning <- merge(corine_2000_2006_df,
 
 ## 3.3. Prepare df for sankey plot ----
 
-# Merge columns "source_year" with "source_name" and "target_year" with "target_name" so that we can differentiate the transitions
 corine_2000_2006_sankey <- corine_2000_2006_change_meaning |>
+  # merge columns "source_year" with "source_name" and "target_year" with "target_name" to differentiate the transitions
   unite(source, c(source_year, source_name), sep = ".",
         remove = FALSE) |>
   unite(target, c(target_year, target_name), sep = ".",
-        remove = FALSE)
-
-# Remove the rows that show "no change" (i.e. value = 0)
-corine_2000_2006_sankey <- corine_2000_2006_sankey |>
-  filter(value != 0)
-
-# Remove columns:value, layer, source_year, target_year, source_number, source_name, target_number, target_name
-corine_2000_2006_sankey <- corine_2000_2006_sankey |>
-  select(count, source, target)
-
-# Re-arrange columns in the order: source, target, count
-corine_2000_2006_sankey <- corine_2000_2006_sankey |>
-  relocate(source, target, count)
-
-# Change values in target so that they are different from the source one (add a space at the end)
-corine_2000_2006_sankey <- corine_2000_2006_sankey |>
+        remove = FALSE) |>
+  # remove the rows that show "no change" (i.e. value = 0)
+  filter(value != 0) |>
+  # remove columns value, layer, source_year, target_year, source_number, source_name, target_number, target_name
+  select(count, source, target) |>
+  # re-arrange columns in the order: source, target, count
+  relocate(source, target, count) |>
+  # change values in target so that they are different from the source ones (add a space at the end)
   mutate(target = paste(target, " ", sep = ""))
 
 ## 3.4. Sankey plot for transitions between 2000 and 2006 ----
@@ -134,54 +126,17 @@ nodes2000_2006 <- data.frame(name = c(as.character(corine_2000_2006_sankey$sourc
 
 # Create ID to provide connection for networkD3
 corine_2000_2006_sankey$IDsource=match(corine_2000_2006_sankey$source, nodes2000_2006$name)-1 
-
 corine_2000_2006_sankey$IDtarget=match(corine_2000_2006_sankey$target, nodes2000_2006$name)-1
 
-# Convert source and target columns to factors
-corine_2000_2006_sankey$source <- as.factor(corine_2000_2006_sankey$source)
-corine_2000_2006_sankey$target <- as.factor(corine_2000_2006_sankey$target)
+# Prepare colour scale
+ColourScal ='d3.scaleOrdinal() .range(["#FDE725FF","#B4DE2CFF","#6DCD59FF","#35B779FF","#1F9E89FF","#26828EFF","#31688EFF","#3E4A89FF","#482878FF","#440154FF"])'
 
+# Make the Network
+sankeyNetwork(Links = corine_2000_2006_sankey, Nodes = nodes2000_2006,
+              Source = "IDsource", Target = "IDtarget",
+              Value = "count", NodeID = "name", 
+              colourScale=ColourScal, nodeWidth=40, fontSize=11, nodePadding=20)
 
-# Create new columns with labels for the sankey plots
-source_labels <- c("Complex Agriculture", "Agriculture & Vegetation", "Forests",
-                   "Forests", "Urban Fabric", "Complex Agriculture", "Agriculture & Vegetation",
-                   "Forests", "Forests", "Forests", "Moors, Heathland & Grassland", 
-                   "Transitional Woodland Shrub", "Moors, Heathland & Grassland",
-                   "Transitional Woodland Shrub", "Sparse Vegetation")
-
-target_labels <- c("Transitional Woodland Shrub", "Transitional Woodland Shrub",
-                   "Transitional Woodland Shrub", "Moors, Heathland & Grassland",
-                   "Complex Agriculture", "Urban Fabric", "Urban Fabric", 
-                   "Agriculture & Vegetation", "Complex Agriculture", "Urban Fabric",
-                   "Agriculture & Vegetation", "Forests", "Urban Fabric",
-                   "Urban Fabric", "Urban Fabric")
-
-corine_2000_2006_sankey_for_plot <- cbind(corine_2000_2006_sankey, source_labels, target_labels)
-
-my_colors <- c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2")
-
-# Plot sankey plot
-all_classes_2000_2006 <- ggplot(corine_2000_2006_sankey_for_plot, aes(axis1 = source, axis2 = target, y = count)) +
-  geom_alluvium(aes(fill = source)) +
-  geom_stratum() +
-  geom_text(stat = "stratum", aes(label = after_stat(stratum)), 
-            size = 3, nudge_y = 3400, check_overlap = TRUE) +
-  scale_fill_manual(values = my_colors) +
-  theme_void()+
-  theme(legend.position = "none")
-
-### 3.4.2. Sankey 2000 - 2006 without forests & transitional woodland shrub  ----
-
-# The transitions conigerous forest -> transitional woodland shrub (and vice versa) were removed to allow better visualisation of the other transitions (which are not dominant)
-# Remove rows 3 and 12
-corine_2000_2006_sankey_forestless <- corine_2000_2006_sankey_for_plot |>
-  filter(!row_number() %in% c(3, 12))
-
-ggplot(corine_2000_2006_sankey_forestless, aes(axis1 = source, axis2 = target, y = count)) +
-  geom_alluvium(aes(fill = source)) +
-  geom_stratum() +
-  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-  scale_fill_manual(values = my_colors) +
-  theme_void()+
-  theme(legend.position = "none")
-
+# Save the Network
+svg(here("figures", "network_2000.2006_all_classes.svg"))
+dev.off()
