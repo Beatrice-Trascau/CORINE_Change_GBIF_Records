@@ -56,36 +56,31 @@ corine_2000_2006_df <- as.data.frame(freq(norway_corine_change_modified_stack[[1
          difference = value) |>
   select(-layer)
 
-## 3.1. Create score meaning data frame ----
+## 3.1. Define land cover categories ----
 
-# Source "value" column
+# Create dataframe to map numerical values to land cover categories
+ # source numbers
 source_number <- c(rep(1,7), rep(80,7), rep(103,7),
                    rep(250,7), rep(380,7), rep(590,7),
                    rep(711,7))
-
-# Source name column 
+ # source name column 
 source_name <- c(rep("Urban Fabric",7), rep("Complex Agriculture",7), 
                  rep("Agriculture & Vegetation",7), rep("Forests",7), 
                  rep("Moors, Heath & Grass",7), rep("Transitional Woodland Shrub",7),
                  rep("Sparse Vegetation",7))
-
-# Target "value" column
+ # target "value" column
 target_number <- c(rep(c(1,80,103,250,380,590,711), 7))
-
-# Target name column
+ # target name column
 target_name <- c(rep(c("Urban Fabric", "Complex Agriculture", "Agriculture & Vegetation",
                        "Forests", "Moors, Heath & Grass", "Transitional Woodland Shrub",
                        "Sparse Vegetation"), 7))
 
 # Combine vectors in df  
 corine_class_meaning <- data.frame(source_number, source_name,
-                                   target_number, target_name)
-
-# Add a column for the difference between the two years
-corine_class_meaning <- corine_class_meaning |>
+                                   target_number, target_name) |>
   mutate(difference = source_number - target_number)
 
-## 3.2. Get values for source and target land cover in change layer from the score meaning dataframe ----
+## 3.2. Prepare data for Sankey Plots ----
 
 # Subset score meaning df to only contain the "differences" which are found across Norway
 norway_corine_class_meaning <- corine_class_meaning |>
@@ -97,9 +92,7 @@ norway_corine_class_meaning <- corine_class_meaning |>
 corine_2000_2006_change_meaning <- merge(corine_2000_2006_df,
                                          norway_corine_class_meaning,
                                          by = "value")
-
-## 3.3. Prepare df for sankey plot ----
-
+# Prepare dataframe for sankey plot
 corine_2000_2006_sankey <- corine_2000_2006_change_meaning |>
   # merge columns "source_year" with "source_name" and "target_year" with "target_name" to differentiate the transitions
   unite(source, c(source_year, source_name), sep = ".",
