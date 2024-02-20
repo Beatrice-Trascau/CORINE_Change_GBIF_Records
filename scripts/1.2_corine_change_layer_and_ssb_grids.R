@@ -32,3 +32,19 @@ norway_corine_change_modified_stack <- rast(here("data",
                                                  "norway_corine_change_modified_stack.tif"))
 
 ssb_grids <- vect(here("data", "raw_data", "ruter500m_Norge.shp")) 
+
+# 2. EXPLORE LAYERS ----
+plot(ssb_grids)
+
+## 2.1. Project SSB grids to match CORINE ----
+
+# Check projection of SSB grids
+crs(ssb_grids, proj = TRUE) # "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs"
+
+# Re-project SSB grids to match the projection and extent of CORINE
+norway_ssb_grids <- terra::project(ssb_grids,
+                                   "epsg:3035")
+
+# Check that projections match
+crs(norway_ssb_grids, proj = TRUE) # "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
+crs(norway_corine_change_modified_stack[[1]], proj = TRUE) # "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
