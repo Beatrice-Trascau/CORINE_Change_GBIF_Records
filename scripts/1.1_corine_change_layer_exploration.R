@@ -1,11 +1,9 @@
 ##------------------------------------------------##
-##---------  CODE FOR DATA ANALYSIS FOR ----------##
-##---  "Paper 1: CORINE Land Cover Changes  ------##
-##-------  and GBIF Biodiversity Records  --------##
-##----- 1.1_corine_change_layer_exploration ------##
+# PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
+# 1.1_corine_change_layer_exploration
+# This script contains code which explores the CORINE land cover CHANGE layers, calculates land cover changes
+# between 2000-2006, 2006-2012, 2012-2018 and 2000-2018 and visualises the changes 
 ##------------------------------------------------##
-
-# This script contains code which explores the CORINE land cover CHANGE layers and creates summary statistics
 
 # 0. PACKAGES ----
 library(here)
