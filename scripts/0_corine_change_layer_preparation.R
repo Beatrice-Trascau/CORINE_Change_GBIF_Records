@@ -1,8 +1,9 @@
-##------------------------------------------------##
+##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
 # 0_corine_change_layer_preparation
-# This script contains code which loads and prepares the CORINE land cover CHANGE layers for analysis
-##------------------------------------------------##
+# This script contains code which loads and prepares the CORINE land cover 
+# CHANGE layers for analysis
+##----------------------------------------------------------------------------##
 
 # 0. PACKAGES ----
 library(here)
