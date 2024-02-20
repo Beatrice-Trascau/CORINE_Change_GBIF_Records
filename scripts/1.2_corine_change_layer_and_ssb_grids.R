@@ -48,3 +48,15 @@ norway_ssb_grids <- terra::project(ssb_grids,
 # Check that projections match
 crs(norway_ssb_grids, proj = TRUE) # "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
 crs(norway_corine_change_modified_stack[[1]], proj = TRUE) # "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
+
+## 2.2. Combine CORINE layers and SSB Layer ----
+
+# Rasterize SSB grid to CORINE
+SSB_raster <- terra::rasterize(norway_ssb_grids,
+                               norway_corine_change_modified_stack[[1]],
+                               field = "SSBid",
+                               method = "simple")
+
+
+# Save raster file
+writeRaster(SSB_raster, here("data", "norway_SSB_raster.tif"))
