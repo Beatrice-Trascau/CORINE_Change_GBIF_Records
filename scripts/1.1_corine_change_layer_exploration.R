@@ -136,7 +136,7 @@ dev.off()
 # The transitions conigerous forest -> transitional woodland shrub (and vice versa) were removed to allow better visualisation of the other transitions (which are not dominant)
 # Remove rows 3 and 26
 forestless_2000_2006_sankey <- corine_2000_2006_sankey |>
-  filter(!row_number() %in% c(3, 26))
+  filter(!row_number() %in% c(3, 12))
 
 # Colour scale
 ColourScal ='d3.scaleOrdinal() .range(["#FDE725FF","#B4DE2CFF","#6DCD59FF","#35B779FF","#1F9E89FF","#26828EFF","#31688EFF","#3E4A89FF","#482878FF","#440154FF"])'
