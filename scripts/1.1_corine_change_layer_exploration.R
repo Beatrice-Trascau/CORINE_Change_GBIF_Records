@@ -233,8 +233,8 @@ ggsave(here("figures", "gain_loss_2000.2006_dual_y_axis.svg"),
 ## 4.1. Calculate change between 2006 and 2012 ----
 
 # Extract values for the difference between 2000 and 2006 as df
-corine_2006_2012_df <- as.data.frame(freq(norway_corine[[2]] -
-                                            norway_corine[[3]])) |>
+corine_2006_2012_df <- as.data.frame(freq(norway_corine_change_modified_stack[[3]] -
+                                            norway_corine_change_modified_stack[[4]])) |>
   mutate(source_year = "2006",
          target_year = "2012",
          difference = value) |>
@@ -398,8 +398,8 @@ ggsave(here("figures", "gain_loss_2006.2012_dual_y_axis.svg"),
 ## 5.1. Calculate change between 2012 and 2018 ----
 
 # Extract values for the difference between 2012 and 2018 as df
-corine_2012_2018_df <- as.data.frame(freq(norway_corine[[3]] -
-                                            norway_corine[[4]])) |>
+corine_2012_2018_df <- as.data.frame(freq(norway_corine_change_modified_stack[[5]] -
+                                            norway_corine_change_modified_stack[[6]])) |>
   mutate(source_year = "2012",
          target_year = "2018",
          difference = value) |>
@@ -544,7 +544,7 @@ ggplot(gain_loss_2012_2018, aes(x = focus, y = scaled_count,
   xlab("Land Cover Classes")+
   scale_fill_manual(values = c("dodgerblue2", "#E31A1C","green4",
                                "#6A3D9A", "#FF7F00",
-                               "gold1","maroon"),
+                               "#a67b5b","maroon"),
                     name = "Land Cover Classes",
                     labels = c("Agriculture & Vegetation", "Complex Agriculture",
                                "Forests", "Moors, Heathland & Grassland",
