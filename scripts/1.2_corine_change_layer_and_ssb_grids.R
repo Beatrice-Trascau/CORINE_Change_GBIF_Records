@@ -74,7 +74,7 @@ levels(as.factor(as.data.frame(corine_wgs84[[1]])$U2006_CHA0006_00_V2020_20u1))
 ## 3.1. Convert occurrences to spatial dataframe ----
 occurrences_sp <- st_as_sf(occurrences_norway, 
                            coords=c("decimalLongitude","decimalLatitude"),
-                           crs=crs(norway_corine_change_modified_stack))
+                           crs=crs(corine_wgs84))
 
 # Convert occurrences to spatial vector
 occurrences_vect <- vect(occurrences_sp)
@@ -82,12 +82,12 @@ occurrences_vect <- vect(occurrences_sp)
 ## 3.2. Extract cell information for each occurrence ----
 
 #Create additional layer with unique ID for the CORINE layers
-ID_raster <- norway_corine_change_modified_stack[[1]]
-values(ID_raster) <- 1:ncell(norway_corine_change_modified_stack[[1]])
+ID_raster <- corine_wgs84[[1]]
+values(ID_raster) <- 1:ncell(corine_wgs84[[1]])
 
 # Combine ID raster with CORINE
-corine_ID <- c(norway_corine_change_modified_stack[[1]], ID_raster)
-corine_ID_all_layers <- c(norway_corine_change_modified_stack, ID_raster)
+corine_ID <- c(corine_wgs84[[1]], ID_raster)
+corine_ID_all_layers <- c(corine_wgs84, ID_raster)
   
 # Extract raster values for occurrences and SSB IDs
 corine_ID_occurrences <- terra::extract(corine_ID, occurrences_vect)
