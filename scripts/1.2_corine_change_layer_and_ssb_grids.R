@@ -66,16 +66,6 @@ crs(corine_wgs84[[1]], proj = TRUE) #"+proj=longlat +datum=WGS84 +no_defs"
 # Check values for reprojected CORINE layer
 levels(as.factor(as.data.frame(corine_wgs84[[1]])$U2006_CHA0006_00_V2020_20u1))
 
-## 2.2. Combine CORINE layers and SSB Layer ----
-
-# Rasterize SSB grid to CORINE
-# SSB_raster <- terra::rasterize(norway_ssb_grids,
-#                                norway_corine_change_modified_stack[[1]],
-#                                field = "SSBid",
-#                                method = "simple")
-
-# Save raster file
-# writeRaster(SSB_raster, here("data", "norway_SSB_raster.tif"))
 
 # 3. ADD GBIF RECORDS ----
 
