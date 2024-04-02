@@ -39,20 +39,32 @@ ssb_grids <- vect(here("data", "raw_data", "ruter500m_Norge.shp"))
 occurrences_norway <- fread(here("data", "cleaned_occurrences.txt"))
 
 # 2. EXPLORE LAYERS ----
+
+# Plot SSB grids
 plot(ssb_grids)
 
-## 2.1. Project SSB grids to match CORINE ----
+# Check CORINE values
+levels(as.factor(as.data.frame(corine_2000_wgs84)$U2006_CHA0006_00_V2020_20u1))
+
+## 2.1. Re-project layers to match occurrences ----
 
 # Check projection of SSB grids
 crs(ssb_grids, proj = TRUE) # "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs"
 
-# Re-project SSB grids to match the projection and extent of CORINE
+# Re-project SSB grids to match the projection of occurrences
 norway_ssb_grids <- terra::project(ssb_grids,
-                                   "epsg:3035")
+                                   "+proj=longlat +datum=WGS84 +no_defs")
+
+# Re-project CORINE to match the projection of occurrences
+corine_wgs84 <- project(norway_corine_change_modified_stack, 
+                       "+proj=longlat +datum=WGS84 +no_defs", method = "near")
 
 # Check that projections match
-crs(norway_ssb_grids, proj = TRUE) # "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
-crs(norway_corine_change_modified_stack[[1]], proj = TRUE) # "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
+crs(norway_ssb_grids, proj = TRUE) # "+proj=longlat +datum=WGS84 +no_defs"
+crs(corine_wgs84[[1]], proj = TRUE) #"+proj=longlat +datum=WGS84 +no_defs"
+
+# Check values for reprojected CORINE layer
+levels(as.factor(as.data.frame(corine_wgs84[[1]])$U2006_CHA0006_00_V2020_20u1))
 
 ## 2.2. Combine CORINE layers and SSB Layer ----
 
