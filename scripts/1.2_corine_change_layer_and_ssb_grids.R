@@ -102,10 +102,12 @@ occurrences_vect$SSBs <- corine_ID_SSBs[,2]
 saveRDS(occurrences_vect, here("data", "occurrences_vect.rds"))
 
 # Do extraction for all corine layers at a time and make into df
-corine_ID_all_layers_occurrences <- terra::extract(corine_ID, occurrences_vect)
+corine_ID_all_layers_occurrences <- terra::extract(corine_ID_all_layers, occurrences_vect)
+corine_ID_all_layers_SSBs <- terra::extract(corine_ID_all_layers, norway_ssb_grids)
+
 saveRDS(corine_ID_all_layers_occurrences, here("data", "corine_ID_all_layers_occurrences.rds"))
 
-corine_ID_all_layers_occurrences_df <- terra::extract(corine_ID, occurrences_vect,
+corine_ID_all_layers_occurrences_df <- terra::extract(corine_ID_all_layers, occurrences_vect,
                                                    df =  TRUE)
 write.csv(corine_ID_all_layers_occurrences_df, here("data",
                                                     "corine_ID_all_layers_occurrences_df.csv"))
