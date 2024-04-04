@@ -86,3 +86,63 @@ ggplot(filtered_df, aes(x = cover_change, y = species_richness, fill = cover_cha
        y = "Average Species Richness") +
   theme_minimal()
 
+# 3. DEBUGGING EXTRACTION OF LAND COVER VALUES FOR MULTIPLE LAYERS ----
+
+## 3.1. Make a copy of just the first two layers of CORINE ----
+corine_2000_2006 <- c(norway_corine_change_modified_stack[[1]],
+                      norway_corine_change_modified_stack[[2]])
+
+# check values
+corine_2000_2006_df <- as.data.frame(corine_2000_2006)
+colnames(corine_2000_2006_df)
+levels(as.factor(corine_2000_2006_df$U2006_CHA0006_00_V2020_20u1))
+levels(as.factor(corine_2000_2006_df$U2006_CHA0006_06_V2020_20u1))
+
+## 3.2. Re-project corine to WGS 84 (the crs used by GBIF records) ----
+corine_2000_2006_wgs84 <- project(corine_2000_2006, "+proj=longlat +datum=WGS84 +no_defs",
+                             method = "near")
+
+# check values
+corine_2000_2006_wgs84_df <- as.data.frame(corine_2000_2006_wgs84)
+levels(as.factor(corine_2000_2006_wgs84_df$U2006_CHA0006_00_V2020_20u1))
+levels(as.factor(corine_2000_2006_wgs84_df$U2006_CHA0006_06_V2020_20u1))
+
+## 3.3. Aggregate corine layer to 250km by 250 km ----
+factor <- 25000 / 100
+coarse_corine_2000_2006 <-  terra::aggregate(corine_2000_2006_wgs84, fact=factor, 
+                                   fun=max, na.rm=TRUE)
+
+# check values
+coarse_corine_2000_2006_df <- as.data.frame(coarse_corine_2000_2006)
+levels(as.factor(coarse_corine_2000_2006_df$U2006_CHA0006_00_V2020_20u1))
+levels(as.factor(coarse_corine_2000_2006_df$U2006_CHA0006_06_V2020_20u1))
+
+## 3.4. Select a subset of 200 records ----
+set.seed(65798)
+random_occurrences <- sample(nrow(occurrences_norway), 200) #get indices of a random subset of 200 rows
+random_subset_occurrences <- occurrences_norway[random_occurrences, ] #subset dataframe
+
+## 1.5. Convert occurrences to spatial dataframe ----
+occurrences_sp <- st_as_sf(random_subset_occurrences, 
+                           coords=c("decimalLongitude","decimalLatitude"),
+                           crs=crs(coarse_corine_2000_2006))
+
+## 1.6. Convert occurrences to spatial vector ----
+occurrences_vect <- vect(occurrences_sp)
+
+
+## 1.7.Extract cell information for each occurrence ----
+
+#Create additional layer with unique ID for the CORINE layers
+ID_raster <- coarse_corine_2000_2006
+values(ID_raster) <- 1:ncell(coarse_corine_2000_2006)
+
+# Combine ID raster with CORINE
+corine_ID_2000_2006 <- c(coarse_corine_2000_2006, ID_raster)
+
+# Extract raster values for occurrences and SSB IDs
+corine_ID_occurrences_2000_2006 <- terra::extract(corine_ID_2000_2006, occurrences_vect)
+colnames(corine_ID_occurrences_2000_2006)
+levels(as.factor(corine_ID_occurrences_2000_2006$U2006_CHA0006_00_V2020_20u1))
+
+
