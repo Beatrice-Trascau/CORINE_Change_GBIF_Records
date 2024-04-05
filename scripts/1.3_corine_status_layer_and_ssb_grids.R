@@ -71,5 +71,47 @@ occurrences_sp <- st_as_sf(occurrences_norway,
 # Convert occurrences to spatial vector ----
 occurrences_vect <- vect(occurrences_sp)
 
+## 2.3. Create additional layer with a unique cell ID for each CORINE STATUS cell ----
+
+#Create an empty raster with the same details as the first CORINE STATUS layer
+ID_raster <- corine_status_wgs84[[1]]
+
+# Assign each cell a unique number
+values(ID_raster) <- 1:ncell(corine_wgs84[[1]])
+
+# Combine the ID raster with the CORINE STATUS raster
+corine_ID <- c(corine_status_wgs84, ID_raster)
+
+## 2.4. Extract cell values for each occurrence record ----
+
+# Extract raster values for occurrences and SSB IDs
+corine_ID_occurrences <- terra::extract(corine_ID, occurrences_vect)
+corine_ID_SSBs <- terra::extract(corine_ID, norway_ssb_grids)
+
+# Add extracted values to spatial dataframe
+occurrences_vect$land_cover_2000 <- corine_ID_occurrences[,2]
+occurrences_vect$land_cover_2006 <- corine_ID_occurrences[,3]
+occurrences_vect$land_cover_2012 <- corine_ID_occurrences[,4]
+occurrences_vect$land_cover_2018 <- corine_ID_occurrences[,5]
+occurrences_vect$cell_ID <- corine_ID_occurrences[,6]
+occurrences_vect$SSB_ID <- corine_ID_SSBs[,2]
+
+# Save spatial dataframe to file
+saveRDS(occurrences_vect, here("data", "occurrences_corine_status_vect.rds"))
+
+# Extract raster values for occurrences and SSB IDs into dataframe
+corine_status_occurrences_df <- terra::extract(corine_ID, occurrences_vect,
+                                            df = TRUE)
+corine_status_SSBid_df <- terra::extract(corine_ID, norway_ssb_grids,
+                                      df = TRUE)
+
+# Save dataframes to file
+write.csv(corine_status_occurrences_df, here("data",
+                                             "corine_satus_ID_all_layers_occurrences_df.csv"))
+
+write.csv(corine_status_SSBid_df, here("data",
+                                             "corine_satus_ID_all_layers_SSBid_df.csv"))
+
+
 
 
