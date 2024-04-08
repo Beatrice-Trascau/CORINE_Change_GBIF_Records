@@ -84,34 +84,18 @@ corine_ID <- c(corine_status_wgs84, ID_raster)
 
 ## 2.4. Extract cell values for each occurrence record ----
 
-# Extract raster values for occurrences and SSB IDs
-corine_ID_occurrences <- terra::extract(corine_ID, occurrences_vect)
+# Extract raster values for SSB IDs
 corine_ID_SSBs <- terra::extract(corine_ID, norway_ssb_grids)
 
 # Add extracted values to spatial dataframe
-occurrences_vect$land_cover_2000 <- corine_ID_occurrences[,2]
-occurrences_vect$land_cover_2006 <- corine_ID_occurrences[,3]
-occurrences_vect$land_cover_2012 <- corine_ID_occurrences[,4]
-occurrences_vect$land_cover_2018 <- corine_ID_occurrences[,5]
-occurrences_vect$cell_ID <- corine_ID_occurrences[,6]
 occurrences_vect$SSB_ID <- corine_ID_SSBs[,2]
 
-# Save spatial dataframe to file
-saveRDS(occurrences_vect, here("data", "occurrences_corine_status_vect.rds"))
-
-# Extract raster values for occurrences and SSB IDs into dataframe
+# Extract raster values for occurrences into dataframe
 corine_status_occurrences_df <- terra::extract(corine_ID, occurrences_vect,
                                             df = TRUE)
-corine_status_SSBid_df <- terra::extract(corine_ID, norway_ssb_grids,
-                                      df = TRUE)
-
 # Save dataframes to file
 write.csv(corine_status_occurrences_df, here("data",
                                              "corine_satus_ID_all_layers_occurrences_df.csv"))
-
-write.csv(corine_status_SSBid_df, here("data",
-                                             "corine_satus_ID_all_layers_SSBid_df.csv"))
-
 
 # 3. COMPARE SPECIES RICHNESS BETWEEN CHANGED AND UNCHNGED PIXELS ----
 
@@ -122,13 +106,36 @@ occurrences_df <- as.data.frame(occurrences_vect)
 
 # Prep dataframe: subset for 2000-2006, exclude NA land cover, remove unneccesary columns, add cover change? column,
 occurrences_df_2000_2006 <- occurrences_df |>
-  select(V1, gbifID, year, species, land_cover_2000, land_cover_2006) |>
+  select(V1, gbifID, year, species, land_cover_2000, land_cover_2006, cell_ID) |>
   filter(!is.na (land_cover_2000) & !is.na(land_cover_2006)) |>
-  mutate(cover_change = if_else (land_cover_2000 == land_cover_2006, "Y", "N"))
+  mutate(cover_change = if_else (land_cover_2000 == land_cover_2006, "N", "Y"))
+
+# Calculate species richness for each cell_ID
+occurrences_df_2000_2006_richness <- occurrences_df_2000_2006 |>
+  group_by(cell_ID) |>
+  summarise(
+    species_richness = n_distinct(species),
+    land_cover_2000 = first(land_cover_2000),
+    land_cover_2006 = first(land_cover_2006),
+    cover_change = first(cover_change))
 
 
+# Subset data based on unique combination of land cover in 2000 and SSB ID 
+filtered_occurrences_2000_2006 <- occurrences_df_2000_2006_richness |>
+  group_by(land_cover_2000, cell_ID) |>
+  filter(n() > 1) |>
+  ungroup()
 
 
+# Plot comparison for each combination
+ggplot(filtered_occurrences_2000_2006, 
+       aes(x = cover_change, y = species_richness, fill = cover_change)) +
+  geom_bar(stat = "summary", fun = "mean", position = "dodge") +
+  facet_wrap(~ land_cover_2000 + SSB_ID) +
+  labs(title = "Species Richness by Cover Change", 
+       x = "Cover Change", 
+       y = "Average Species Richness") +
+  theme_minimal()
 
 
 
