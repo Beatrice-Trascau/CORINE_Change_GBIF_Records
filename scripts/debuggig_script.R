@@ -122,16 +122,16 @@ set.seed(65798)
 random_occurrences <- sample(nrow(occurrences_norway), 200) #get indices of a random subset of 200 rows
 random_subset_occurrences <- occurrences_norway[random_occurrences, ] #subset dataframe
 
-## 1.5. Convert occurrences to spatial dataframe ----
+## 3.5. Convert occurrences to spatial dataframe ----
 occurrences_sp <- st_as_sf(random_subset_occurrences, 
                            coords=c("decimalLongitude","decimalLatitude"),
                            crs=crs(coarse_corine_2000_2006))
 
-## 1.6. Convert occurrences to spatial vector ----
+## 3.6. Convert occurrences to spatial vector ----
 occurrences_vect <- vect(occurrences_sp)
 
 
-## 1.7.Extract cell information for each occurrence ----
+## 3.7.Extract cell information for each occurrence ----
 
 #Create additional layer with unique ID for the CORINE layers
 ID_raster <- coarse_corine_2000_2006
