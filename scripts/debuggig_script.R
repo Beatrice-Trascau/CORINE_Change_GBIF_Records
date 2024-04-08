@@ -80,7 +80,7 @@ filtered_df <- df |>
 ## 2.3. Plot comparison for each combination ----
 ggplot(filtered_df, aes(x = cover_change, y = species_richness, fill = cover_change)) +
   geom_bar(stat = "summary", fun = "mean", position = "dodge") +
-  facet_wrap(~ land_cover_2000 + SSB_ID) + # Optional: to separate plots by land_cover_2000 and SSB_ID
+  facet_wrap(~ land_cover_2000 + SSB_ID) +
   labs(title = "Species Richness by Cover Change", 
        x = "Cover Change", 
        y = "Average Species Richness") +
