@@ -63,12 +63,12 @@ levels(as.factor(as.data.frame(corine_status_wgs84[[1]])$U2006_CLC2000_V2020_20u
 
 ## 2.2. Convert occurrences to spatial object ----
 
-# Convert occurrences to spatial dataframe ----
+# Convert occurrences to spatial dataframe 
 occurrences_sp <- st_as_sf(occurrences_norway, 
                            coords=c("decimalLongitude","decimalLatitude"),
                            crs=crs(corine_status_wgs84))
 
-# Convert occurrences to spatial vector ----
+# Convert occurrences to spatial vector
 occurrences_vect <- vect(occurrences_sp)
 
 ## 2.3. Create additional layer with a unique cell ID for each CORINE STATUS cell ----
@@ -77,7 +77,7 @@ occurrences_vect <- vect(occurrences_sp)
 ID_raster <- corine_status_wgs84[[1]]
 
 # Assign each cell a unique number
-values(ID_raster) <- 1:ncell(corine_wgs84[[1]])
+values(ID_raster) <- 1:ncell(corine_status_wgs84[[1]])
 
 # Combine the ID raster with the CORINE STATUS raster
 corine_ID <- c(corine_status_wgs84, ID_raster)
@@ -111,6 +111,30 @@ write.csv(corine_status_occurrences_df, here("data",
 
 write.csv(corine_status_SSBid_df, here("data",
                                              "corine_satus_ID_all_layers_SSBid_df.csv"))
+
+
+# 3. COMPARE SPECIES RICHNESS BETWEEN CHANGED AND UNCHNGED PIXELS ----
+
+## 3.1. 2000 - 2006 ----
+
+# Convert occurrences_vect to dataframe
+occurrences_df <- as.data.frame(occurrences_vect)
+
+# Prep dataframe: subset for 2000-2006, exclude NA land cover, remove unneccesary columns, add cover change? column,
+occurrences_df_2000_2006 <- occurrences_df |>
+  select(V1, gbifID, year, species, land_cover_2000, land_cover_2006) |>
+  filter(!is.na (land_cover_2000) & !is.na(land_cover_2006)) |>
+  mutate(cover_change = if_else (land_cover_2000 == land_cover_2006, "Y", "N"))
+
+
+
+
+
+
+
+
+
+
 
 
 
