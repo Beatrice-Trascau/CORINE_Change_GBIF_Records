@@ -71,7 +71,10 @@ occurrences_sp <- st_as_sf(occurrences_norway,
 # Convert occurrences to spatial vector
 occurrences_vect <- vect(occurrences_sp)
 
-## 2.3. Create additional layer with a unique cell ID for each CORINE STATUS cell ----
+## 2.3. Extract SSB ID for occurrences ----
+occurrenes_SSB <- terra::intersect(occurrences_vect, norway_ssb_grids)
+
+## 2.4. Create additional layer with a unique cell ID for each CORINE STATUS cell ----
 
 #Create an empty raster with the same details as the first CORINE STATUS layer
 ID_raster <- corine_status_wgs84[[1]]
@@ -82,20 +85,37 @@ values(ID_raster) <- 1:ncell(corine_status_wgs84[[1]])
 # Combine the ID raster with the CORINE STATUS raster
 corine_ID <- c(corine_status_wgs84, ID_raster)
 
-## 2.4. Extract cell values for each occurrence record ----
-
-# Extract raster values for SSB IDs
-corine_ID_SSBs <- terra::extract(corine_ID, norway_ssb_grids)
-
-# Add extracted values to spatial dataframe
-occurrences_vect$SSB_ID <- corine_ID_SSBs[,2]
+## 2.5. Extract land cover cell values for each occurrence record ----
 
 # Extract raster values for occurrences into dataframe
-corine_status_occurrences_df <- terra::extract(corine_ID, occurrences_vect,
+corine_status_occurrences_df <- terra::extract(corine_ID, occurrenes_SSB,
                                             df = TRUE)
 # Save dataframes to file
 write.csv(corine_status_occurrences_df, here("data",
                                              "corine_satus_ID_all_layers_occurrences_df.csv"))
+
+## 2.6. Add extracted values to the occurrences ----
+
+# Convert SpatVector to dataframe
+occurrence_SSB_df <- as.data.frame(occurrenes_SSB)
+
+# Add columns from the dataframe with the extracted values
+occurrence_SSB_df <- bind_cols(occurrence_SSB_df, 
+                               select(corine_status_occurrences_df, 2:5))
+
+# For some reason there is a mismatch
+nrow(occurrence_SSB_df) #22405844
+nrow(corine_status_occurrences_df) #22406267
+
+# Truncate corine_status_occurrences_df to match occurrence_SSB_df - for now
+corine_status_occurrences_df_trimmed <- corine_status_occurrences_df[1:nrow(occurrence_SSB_df), 2:6]
+
+# Try binding again
+occurrence_SSB_df <- occurrence_SSB_df |>
+  mutate(land_cover_2000 = corine_status_occurrences_df_trimmed$U2006_CLC2000_V2020_20u1,
+         land_cover_2006 = corine_status_occurrences_df_trimmed$U2012_CLC2006_V2020_20u1,
+         land_cover_2012 = corine_status_occurrences_df_trimmed$U2018_CLC2012_V2020_20u1,
+         land_cover_2018 = corine_status_occurrences_df_trimmed$U2018_CLC2018_V2020_20u1)
 
 # 3. COMPARE SPECIES RICHNESS BETWEEN CHANGED AND UNCHNGED PIXELS ----
 
@@ -104,7 +124,7 @@ write.csv(corine_status_occurrences_df, here("data",
 # Convert occurrences_vect to dataframe
 occurrences_df <- as.data.frame(occurrences_vect)
 
-# Prep dataframe: subset for 2000-2006, exclude NA land cover, remove unneccesary columns, add cover change? column,
+# Prep dataframe: subset for 2000-2006, exclude NA land cover, remove unnecessary columns, add cover change? column,
 occurrences_df_2000_2006 <- occurrences_df |>
   select(V1, gbifID, year, species, land_cover_2000, land_cover_2006, cell_ID) |>
   filter(!is.na (land_cover_2000) & !is.na(land_cover_2006)) |>
