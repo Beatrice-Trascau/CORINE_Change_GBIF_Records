@@ -121,12 +121,9 @@ occurrence_SSB_df <- occurrence_SSB_df |>
 
 ## 3.1. 2000 - 2006 ----
 
-# Convert occurrences_vect to dataframe
-occurrences_df <- as.data.frame(occurrences_vect)
-
 # Prep dataframe: subset for 2000-2006, exclude NA land cover, remove unnecessary columns, add cover change? column,
-occurrences_df_2000_2006 <- occurrences_df |>
-  select(V1, gbifID, year, species, land_cover_2000, land_cover_2006, cell_ID) |>
+occurrences_df_2000_2006 <- occurrence_SSB_df |>
+  select(V1, gbifID, year, species, land_cover_2000, land_cover_2006, SSBid) |>
   filter(!is.na (land_cover_2000) & !is.na(land_cover_2006)) |>
   mutate(cover_change = if_else (land_cover_2000 == land_cover_2006, "N", "Y"))
 
