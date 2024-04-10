@@ -182,12 +182,144 @@ filtered_occ_2000_2006 <- filtered_occ_df_2000_2006_richness |>
 ggplot(filtered_occ_2000_2006, 
        aes(x = cover_change, y = species_richness, fill = cover_change)) +
   geom_violin(trim = FALSE) +
-  facet_wrap(~ land_cover_2000 + SSBid, scales = "free_y") +
+  facet_wrap(~ land_cover_2000 + SSBid, scales = "free_y", ncol = 5) +
   labs( x = "Cover Change", 
        y = "Species Richness") +
   theme_minimal()
 
+## 3.2. 2006 - 2012 ----
 
+# Prep dataframe: subset for 2000-2006, exclude NA land cover, remove unnecessary columns, add cover change? column,
+occ_df_2006_2012 <- occ_SSB_df |>
+  select(V1, gbifID, year, species, land_cover_2006, land_cover_2012, 
+         SSBid, corine_cell_ID, TARGET_FID) |>
+  filter(!is.na (land_cover_2006) & !is.na(land_cover_2012)) |>
+  filter(year >= 2006 & year <= 2012) |>
+  mutate(cover_change = if_else (land_cover_2006 == land_cover_2012, "N", "Y"))
+
+# Calculate species richness for each SSBid
+occ_df_2006_2012_richness  <- occ_df_2006_2012  |>
+  group_by(corine_cell_ID) |>
+  summarise(
+    species_richness = n_distinct(species),
+    land_cover_2006 = first(land_cover_2006),
+    land_cover_2012 = first(land_cover_2012),
+    cover_change = first(cover_change),
+    SSBid = first(SSBid))
+
+# Identify SSB IDs that have values for both cover_change = Y and cover_change = N
+ssb_ids_with_both <- occ_df_2006_2012_richness |>
+  group_by(SSBid) |>
+  filter(all(c("Y", "N") %in% cover_change)) |>
+  ungroup()
+
+# Calculate the number of unique corine_cell_IDs for each SSBid
+ssbid_counts <- ssb_ids_with_both |>
+  group_by(SSBid) |>
+  summarise(unique_corine_count = n_distinct(corine_cell_ID)) |>
+  ungroup()
+
+# Identify top 10 SSBids with most unique corine_cell_ID values
+top_ssbids <- ssbid_counts |>
+  arrange(desc(unique_corine_count)) |>
+  slice_head(n = 5)
+
+# Filter dataframe to only includes rows corresponding to the top 10 SSBids
+filtered_occ_df_2006_2012_richness <- occ_df_2006_2012_richness |>
+  filter(SSBid %in% top_ssbids$SSBid)
+
+# Map land cover values to their names
+land_cover_mapping <- setNames(c("Urban", "Complex Agriculture", "Agriculture & Natural Vegetation", 
+                                 "Forests", "Moors & Grasslands", "Transitional Woodland Shrub", 
+                                 "Sparsely Vegetated Areas"), 
+                               c(1, 80, 103, 250, 380, 590, 711))
+
+# Change values in df based on mapping
+filtered_occ_df_2006_2012_richness$land_cover_2006 <- factor(filtered_occ_df_2006_2012_richness$land_cover_2006,
+                                                             levels = names(land_cover_mapping),
+                                                             labels = land_cover_mapping)
+
+# Subset data based on unique combination of land cover in 2000 and SSB ID 
+filtered_occ_2006_2012 <- filtered_occ_df_2006_2012_richness |>
+  group_by(land_cover_2006, SSBid) |>
+  filter(n() > 1) |>
+  ungroup()
+
+# Plot comparison for each combination
+ggplot(filtered_occ_2006_2012, 
+       aes(x = cover_change, y = species_richness, fill = cover_change)) +
+  geom_violin(trim = FALSE) +
+  facet_wrap(~ land_cover_2006 + SSBid, scales = "free_y", ncol = 5) +
+  labs( x = "Cover Change", 
+        y = "Species Richness") +
+  theme_minimal()
+
+## 3.3. 2012 - 2018 ----
+
+# Prep dataframe: subset for 2012-2018, exclude NA land cover, remove unnecessary columns, add cover change? column,
+occ_df_2012_2018 <- occ_SSB_df |>
+  select(V1, gbifID, year, species, land_cover_2012, land_cover_2018, 
+         SSBid, corine_cell_ID, TARGET_FID) |>
+  filter(!is.na (land_cover_2012) & !is.na(land_cover_2018)) |>
+  filter(year >= 2012) |>
+  mutate(cover_change = if_else (land_cover_2012 == land_cover_2018, "N", "Y"))
+
+# Calculate species richness for each SSBid
+occ_df_2012_2018_richness  <- occ_df_2012_2018  |>
+  group_by(corine_cell_ID) |>
+  summarise(
+    species_richness = n_distinct(species),
+    land_cover_2012 = first(land_cover_2012),
+    land_cover_2018 = first(land_cover_2018),
+    cover_change = first(cover_change),
+    SSBid = first(SSBid))
+
+# Identify SSB IDs that have values for both cover_change = Y and cover_change = N
+ssb_ids_with_both <- occ_df_2012_2018_richness |>
+  group_by(SSBid) |>
+  filter(all(c("Y", "N") %in% cover_change)) |>
+  ungroup()
+
+# Calculate the number of unique corine_cell_IDs for each SSBid
+ssbid_counts <- ssb_ids_with_both |>
+  group_by(SSBid) |>
+  summarise(unique_corine_count = n_distinct(corine_cell_ID)) |>
+  ungroup()
+
+# Identify top 10 SSBids with most unique corine_cell_ID values
+top_ssbids <- ssbid_counts |>
+  arrange(desc(unique_corine_count)) |>
+  slice_head(n = 5)
+
+# Filter dataframe to only includes rows corresponding to the top 10 SSBids
+filtered_occ_df_2012_2018_richness <- occ_df_2012_2018_richness |>
+  filter(SSBid %in% top_ssbids$SSBid)
+
+# Map land cover values to their names
+land_cover_mapping <- setNames(c("Urban", "Complex Agriculture", "Agriculture & Natural Vegetation", 
+                                 "Forests", "Moors & Grasslands", "Transitional Woodland Shrub", 
+                                 "Sparsely Vegetated Areas"), 
+                               c(1, 80, 103, 250, 380, 590, 711))
+
+# Change values in df based on mapping
+filtered_occ_df_2012_2018_richness$land_cover_2012 <- factor(filtered_occ_df_2012_2018_richness$land_cover_2012,
+                                                             levels = names(land_cover_mapping),
+                                                             labels = land_cover_mapping)
+
+# Subset data based on unique combination of land cover in 2000 and SSB ID 
+filtered_occ_2012_2018 <- filtered_occ_df_2012_2018_richness |>
+  group_by(land_cover_2012, SSBid) |>
+  filter(n() > 1) |>
+  ungroup()
+
+# Plot comparison for each combination
+ggplot(filtered_occ_2012_2018, 
+       aes(x = cover_change, y = species_richness, fill = cover_change)) +
+  geom_violin(trim = FALSE) +
+  facet_wrap(~ land_cover_2012 + SSBid, scales = "free_y", ncol = 5) +
+  labs( x = "Cover Change", 
+        y = "Species Richness") +
+  theme_minimal()
 
 
 
