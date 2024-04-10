@@ -145,4 +145,39 @@ corine_ID_occurrences_2000_2006 <- terra::extract(corine_ID_2000_2006, occurrenc
 colnames(corine_ID_occurrences_2000_2006)
 levels(as.factor(corine_ID_occurrences_2000_2006$U2006_CHA0006_00_V2020_20u1))
 
+# 4. PLOT ONLY SPECIFIC CLASSES IN CORINE ----
+
+## 4.1. Sparsely vegetated areas in CORINE Status layer ----
+
+# Use only the 2000 layer
+sparse_veg_rast <- norway_corine_status_modified_stack[[1]]
+
+# Convert all other classes to NA
+sparse_veg_rast_2000 <- app(sparse_veg_rast,
+                            fun = function(x){x[x %in% c(1, 80, 103, 250, 380, 590)] <- NA; 
+                            return(x)})
+
+# Check what values there are in the raster
+unique_values <- unique(sparse_veg_rast_2000)
+print(unique_values)
+
+# Add norway shapefile 
+norway <- geodata::gadm(country = "NOR", level = 0, 
+                        path = tempdir(),
+                        version = "latest")
+
+# Re-project shapefile to match CORINE
+norway_corine_projection <- project(norway, crs(sparse_veg_rast))
+
+# Plot only sparsely vegetated areas
+ggplot() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position = "none",
+        panel.background = element_blank())+
+  geom_spatraster(data = sparse_veg_rast_2000) +
+  geom_sf(data=norway_corine_projection, fill=NA, color = "black")+
+  scale_fill_continuous(na.value=NA)
+
 
