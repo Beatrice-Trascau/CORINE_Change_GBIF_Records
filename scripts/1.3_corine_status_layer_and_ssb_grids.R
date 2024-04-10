@@ -101,50 +101,51 @@ occurrence_SSB_df <- as.data.frame(occurrenes_SSB)
 
 # Add columns from the dataframe with the extracted values
 occurrence_SSB_df <- bind_cols(occurrence_SSB_df, 
-                               select(corine_status_occurrences_df, 1:5))
+                               select(corine_status_occurrences_df, 2:5))
 
 # For some reason there is a mismatch
 nrow(occurrence_SSB_df) #22405844
 nrow(corine_status_occurrences_df) #22406267
 
 # Truncate corine_status_occurrences_df to match occurrence_SSB_df - for now
-corine_status_occurrences_df_trimmed <- corine_status_occurrences_df[1:nrow(occurrence_SSB_df), 1:6]
+corine_status_occurrences_df_trimmed <- corine_status_occurrences_df[1:nrow(occurrence_SSB_df), 2:6]
 
 # Try binding again
-occurrence_SSB_df <- occurrence_SSB_df |>
+occ_SSB_df <- occurrence_SSB_df |>
   mutate(land_cover_2000 = corine_status_occurrences_df_trimmed$U2006_CLC2000_V2020_20u1,
          land_cover_2006 = corine_status_occurrences_df_trimmed$U2012_CLC2006_V2020_20u1,
          land_cover_2012 = corine_status_occurrences_df_trimmed$U2018_CLC2012_V2020_20u1,
          land_cover_2018 = corine_status_occurrences_df_trimmed$U2018_CLC2018_V2020_20u1,
-         corine_cell_ID = corine_status_occurrences_df_trimmed$ID)
+         corine_cell_ID = corine_status_occurrences_df_trimmed$U2006_CLC2000_V2020_20u1.1)
 
 # 3. COMPARE SPECIES RICHNESS BETWEEN CHANGED AND UNCHNGED PIXELS ----
 
 ## 3.1. 2000 - 2006 ----
 
 # Prep dataframe: subset for 2000-2006, exclude NA land cover, remove unnecessary columns, add cover change? column,
-occurrences_df_2000_2006 <- occurrence_SSB_df |>
+occ_df_2000_2006 <- occ_SSB_df |>
   select(V1, gbifID, year, species, land_cover_2000, land_cover_2006, 
          SSBid, corine_cell_ID, TARGET_FID) |>
   filter(!is.na (land_cover_2000) & !is.na(land_cover_2006)) |>
+  filter(year <= 2006) |>
   mutate(cover_change = if_else (land_cover_2000 == land_cover_2006, "N", "Y"))
 
 # Calculate species richness for each SSBid
-occurrences_df_2000_2006_richness  <- occurrences_df_2000_2006  |>
-  group_by(TARGET_FID) |>
+occ_df_2000_2006_richness  <- occ_df_2000_2006  |>
+  group_by(corine_cell_ID) |>
   summarise(
     species_richness = n_distinct(species),
     land_cover_2000 = first(land_cover_2000),
     land_cover_2006 = first(land_cover_2006),
     cover_change = first(cover_change),
-    TARGET_FID = first(TARGET_FID))
+    SSBid = first(SSBid))
 
 # Identify the top 10 corine_cell_ID with highest number of records
-top_10_SSBids <- occurrences_df_2000_2006_richness |>
+top_10_cell_IDs <- occ_df_2000_2006_richness |>
   count(corine_cell_ID) |>
   arrange(desc(n)) |>
   slice_head(n = 10) 
-  pull(SSBid)
+  pull(corine_cell_ID)
   
 # Keep just the occurrences in the top 10
 occurrences_df_2000_2006_richness_top_10  <- occurrences_df_2000_2006_richness  |>
