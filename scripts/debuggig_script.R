@@ -180,4 +180,40 @@ ggplot() +
   geom_sf(data=norway_corine_projection, fill=NA, color = "black")+
   scale_fill_continuous(na.value=NA)
 
+## 4.2. Loop to plot all classes individually ----
+
+# Define land cover classes and their values
+values <- c(1, 80, 103, 250, 380, 590, 711)
+names <- c("Urban Areas", "Complex Agriculture", "Forests", 
+           "Heathland & Grasslands", "Transitional Woodland Shrub", 
+           "Sparsely Vegetated Areas", "Water Bodies")
+
+# Create empty list to store ploits
+plots_list <- list()
+
+for (i in seq_along(values)) {
+  # Create a binary raster: 1 for the current class, NA otherwise
+  binary_rast <- app(sparse_veg_rast, fun = function(x) ifelse(x == values[i], 1, NA))
+  
+  # Plot binary raster
+  p <- ggplot() +
+    geom_spatraster(data = binary_rast) +
+    scale_fill_manual(values = c("1" = "blue", "NA" = "transparent")) +
+    labs(title = names[i], x = NULL, y = NULL) +
+    theme_minimal() +
+    theme(legend.position = "none", 
+          plot.title = element_text(hjust = 0.5),
+          axis.title = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          panel.background = element_blank(),
+          panel.grid = element_blank())
+  
+  # Add plot to list
+  plots_list[[i]] <- p
+}
+
+# Combine all plots into a single composite plot using cowplot
+plot_grid(plots_list[[1]], plots_list[[2]])
+
 
