@@ -140,16 +140,20 @@ occ_df_2000_2006_richness  <- occ_df_2000_2006  |>
     cover_change = first(cover_change),
     SSBid = first(SSBid))
 
-# Identify the top 10 corine_cell_ID with highest number of records
-top_10_cell_IDs <- occ_df_2000_2006_richness |>
-  count(corine_cell_ID) |>
-  arrange(desc(n)) |>
-  slice_head(n = 10) 
-  pull(corine_cell_ID)
+# Calculate the number of unique corine_cell_IDs for each SSBid
+ssbid_counts <- occ_df_2000_2006_richness |>
+  group_by(SSBid) |>
+  summarise(unique_corine_count = n_distinct(corine_cell_ID)) |>
+  ungroup()
+
+# Identify top 10 SSBids with most unique corine_cell_ID values
+top_ssbids <- ssbid_counts |>
+  arrange(desc(unique_corine_count)) |>
+  slice_head(n = 10)
   
-# Keep just the occurrences in the top 10
-occurrences_df_2000_2006_richness_top_10  <- occurrences_df_2000_2006_richness  |>
-  filter(SSBid %in% top_10_SSBids)
+# Filter dataframe to only includes rows corresponding to the top 10 SSBids
+filtered_occ_df_2000_2006_richness <- occ_df_2000_2006_richness |>
+  filter(SSBid %in% top_ssbids$SSBid)
 
 # Subset data based on unique combination of land cover in 2000 and SSB ID 
 filtered_occurrences_2000_2006 <- occurrences_df_2000_2006_richness |>
