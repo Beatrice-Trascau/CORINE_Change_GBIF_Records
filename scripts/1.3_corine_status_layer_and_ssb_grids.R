@@ -34,7 +34,8 @@ library(ggplot2)
 norway_corine_status_modified_stack <- rast(here("data", 
                                                  "norway_corine_status_modified_stack.tif"))
 
-ssb_grids <- vect(here("data", "raw_data", "ruter500m_Norge.shp"))
+ssb_grids <- vect(here("data", "raw_data",
+                       "SSB0500M_L", "ruter500m_Norge.shp"))
 
 occurrences_norway <- fread(here("data", "cleaned_occurrences.txt"))
 
