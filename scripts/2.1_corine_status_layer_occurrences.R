@@ -8,7 +8,10 @@
 # 0. PACKAGES ----
 library(here)
 library(terra)
+library(data.table)
 library(sf)
+library(tidyterra)
+library(tidyverse)
 
 # 1. LOAD & PREPARE DATA -----
 
@@ -54,13 +57,56 @@ occurrences_sp <- st_as_sf(occurrences_norway,
 
 # 2. COUNT OCCURRENCES IN CHANGED AND UNCHANGED PIXELS 2000 - 2006 ----
 
-## 2.1. Count records in changed pixels ----
+## 2.1. Count records in changed pixels - Method 1 ----
 
 # Identify the pixels that change their land cover between 2000 and 2006
-change_pixels <- corine_status_wgs84[[1]] != corine_status_wgs84[[2]]
+#change_pixels <- corine_status_wgs84[[1]] != corine_status_wgs84[[2]]
 
 # Convert to polygons
-change_pixels_sf <- st_as_sf(as.polygons(change_pixels, dissolve = TRUE))
+#change_pixels_sf <- st_as_sf(as.polygons(change_pixels, dissolve = TRUE))
 
 # Extract records found in the changed pixels
-records_in_changed_pixels <- st_join(occurrences_sp, change_pixels_sf, join = st_intersects)
+#records_in_changed_pixels <- st_join(occurrences_sp, change_pixels_sf, join = st_intersects)
+
+## 2.2. Count records in changed pixels - Method 2 ----
+
+# Convert occurrences to spatial vector
+occurrences_vect <- vect(occurrences_sp)
+
+#Create an empty raster with the same details as the first CORINE STATUS layer
+ID_raster <- corine_status_wgs84[[1]]
+
+# Assign each cell a unique number
+values(ID_raster) <- 1:ncell(corine_status_wgs84[[1]])
+
+# Change name of layer in ID_raster so it does not duplicate the ones in corine_status_wgs84
+ID_raster <- ID_raster |>
+  rename(cell_ID = U2006_CLC2000_V2020_20u1)
+
+# Combine the ID raster with the CORINE STATUS raster
+corine_ID <- c(corine_status_wgs84, ID_raster)
+
+# Extract raster values for occurrences into dataframe
+corine_status_occurrences_df <- terra::extract(corine_ID, occurrences_vect,
+                                               df = TRUE)
+# Save dataframes to file
+write.csv(corine_status_occurrences_df, here("data",
+                                             "corine_satus_occurrence_count_df.csv"))
+
+
+# Add columns from the dataframe with the extracted values
+occurrence_corine_df <- bind_cols(occurrences_norway, 
+                               select(corine_status_occurrences_df, 2:5))
+
+## 2.3. Plot the number of occurrence records for pixels that have changed land cover between 2000 - 2006 ----
+
+# Add column that indicates change in land cover between 2000 and 2006
+occurrence_corine_df <- occurrence_corine_df |>
+  filter()
+  rename(land_cover_2000 = U2006_CLC2000_V2020_20u1,
+         land_cover_2006 = U2012_CLC2006_V2020_20u1,
+         land_cover_2012 = U2018_CLC2012_V2020_20u1,
+         land_cover_2018 = U2018_CLC2018_V2020_20u1) |>
+  filter(!is.na (land_cover_2000) & !is.na(land_cover_2006)) |>
+  mutate(cover_change2000.2006 = if_else (land_cover_2000 == land_cover_2006, "N", "Y"))
+  
