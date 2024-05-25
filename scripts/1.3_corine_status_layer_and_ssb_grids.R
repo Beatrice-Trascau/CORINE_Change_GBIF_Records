@@ -93,31 +93,28 @@ corine_status_occurrences_df <- terra::extract(corine_ID, occurrenes_SSB,
                                             df = TRUE)
 # Save dataframes to file
 write.csv(corine_status_occurrences_df, here("data",
-                                             "corine_satus_ID_all_layers_occurrences_df.csv"))
+                                             "corine_status_ID_all_layers_occurrences_df.csv"))
 
 ## 2.6. Add extracted values to the occurrences ----
 
 # Convert SpatVector to dataframe
-occurrence_SSB_df <- as.data.frame(occurrenes_SSB)
+occurrence_SSB_df <- as.data.frame(occurrenes_SSB) |>
+  mutate(land_cover2000 = U2006_CLC2000_V2020_20u1,
+         land_cover2006 = U2012_CLC2006_V2020_20u1,
+         land_cover2012 = U2018_CLC2012_V2020_20u1,
+         land_cover2018 = U2018_CLC2018_V2020_20u1)
 
 # Add columns from the dataframe with the extracted values
 occurrence_SSB_df <- bind_cols(occurrence_SSB_df, 
-                               select(corine_status_occurrences_df, 2:5))
+                               select(corine_status_occurrences_df, 2:6))
 
-# For some reason there is a mismatch
-nrow(occurrence_SSB_df) #22405844
-nrow(corine_status_occurrences_df) #22406267
+# Check column names
+colnames(occurrence_SSB_df)
 
-# Truncate corine_status_occurrences_df to match occurrence_SSB_df - for now
-corine_status_occurrences_df_trimmed <- corine_status_occurrences_df[1:nrow(occurrence_SSB_df), 2:6]
+# Save to file
+save(occurrence_SSB_df, file = here::here("data","occurrences_SSB_land_cover.rda"))
+save(occurrence_SSB_df, file = here::here("data","occurrences_SSB_land_cover.rds"))
 
-# Try binding again
-occ_SSB_df <- occurrence_SSB_df |>
-  mutate(land_cover_2000 = corine_status_occurrences_df_trimmed$U2006_CLC2000_V2020_20u1,
-         land_cover_2006 = corine_status_occurrences_df_trimmed$U2012_CLC2006_V2020_20u1,
-         land_cover_2012 = corine_status_occurrences_df_trimmed$U2018_CLC2012_V2020_20u1,
-         land_cover_2018 = corine_status_occurrences_df_trimmed$U2018_CLC2018_V2020_20u1,
-         corine_cell_ID = corine_status_occurrences_df_trimmed$U2006_CLC2000_V2020_20u1.1)
 
 # 3. COMPARE SPECIES RICHNESS BETWEEN CHANGED AND UNCHNGED PIXELS ----
 
