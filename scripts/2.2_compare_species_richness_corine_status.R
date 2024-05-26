@@ -1,7 +1,7 @@
 ##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
 # 2.2_corine_change_layer_and_ssb_grids
-# This script contains code which compares the number of occurrence records and
+# This script contains code which compares the number of 
 # species richness between CORINE pixels that are (not)changing and SSB IDs
 ##----------------------------------------------------------------------------##
 
