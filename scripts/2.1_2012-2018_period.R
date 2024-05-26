@@ -72,51 +72,55 @@ before <- c(2009, 2010, 2011, 2012)
 after <- c(2015, 2016, 2017, 2018)
 
 # Filter the occurrences for each period
-occ_changed_before_2006.2012 <- occ_SSB_land_cover2006.2012 |>
-  filter(cover_change2006.2012 == "Y") |>
+occ_changed_before_2012.2018 <- occ_SSB_land_cover2012.2018 |>
+  filter(cover_change2012.2018 == "Y") |>
   filter(year %in% before)
 
-occ_changed_after_2006.2012 <- occ_SSB_land_cover2006.2012 |>
-  filter(cover_change2006.2012 == "Y") |>
+occ_changed_after_2012.2018 <- occ_SSB_land_cover2012.2018 |>
+  filter(cover_change2012.2018 == "Y") |>
   filter(year %in% after)
 
 # Count the number of records per cell for each period
-occ_counts_changed_before_2006.2012 <- occ_changed_before_2006.2012 |>
+occ_counts_changed_before_2012.2018 <- occ_changed_before_2012.2018 |>
   group_by(cell_ID) |>
-  summarise(occ_changed_before_2006.2012 = n())
+  summarise(occ_changed_before_2012.2018 = n())
 
-occ_counts_changed_after_2006.2012 <- occ_changed_after_2006.2012 |>
+occ_counts_changed_after_2012.2018 <- occ_changed_after_2012.2018 |>
   group_by(cell_ID) |>
-  summarise(occ_changed_after_2006.2012 = n())
+  summarise(occ_changed_after_2012.2018 = n())
 
 # Merge the two in a single df
-occ_counts_changed2006.2012 <- full_join(occ_counts_changed_before_2006.2012, 
-                                         occ_counts_changed_after_2006.2012, by = "cell_ID") |>
-  replace_na(list(occ_changed_before_2006.2012 = 0, occ_changed_after_2006.2012 = 0))
+occ_counts_changed2012.2018 <- full_join(occ_counts_changed_before_2012.2018, 
+                                         occ_counts_changed_after_2012.2018, by = "cell_ID") |>
+  replace_na(list(occ_changed_before_2012.2018 = 0, occ_changed_after_2012.2018 = 0))
+
+# Ensure count_period1 and count_period2 are numeric
+occ_counts_changed2012.2018 <- occ_counts_changed2012.2018 |>
+  mutate(occ_changed_before_2012.2018 = occ_changed_before_2012.2018,
+         occ_changed_after_2012.2018 = occ_changed_after_2012.2018)
 
 # Compare the number of occurrences before and after
-occ_counts_changed2006.2012 <- occ_counts_changed2006.2012 |>
-  mutate(dominant_period = ifelse(occ_changed_before_2006.2012 > occ_changed_after_2006.2012, "2003-2006", "2012-2015"))
+occ_counts_changed2012.2018 <- occ_counts_changed2012.2018 |>
+  mutate(dominant_period_2012.2018 = ifelse(occ_changed_before_2012.2018 > occ_changed_after_2012.2018, "2009-2012", "2015-2018"))
 
 # Create a new raster indicating dominant period
-dominant_period_raster <- ID_raster
-values(dominant_period_raster) <- NA
+dominant_period_raster_changed2012.2018 <- ID_raster
+values(dominant_period_raster_changed2012.2018) <- NA
 
 # Assign values based on dominant period
-dominant_period_raster[match(occ_counts_changed2006.2012$cell_ID, values(ID_raster))] <- 
-  ifelse(occ_counts_changed2006.2012$dominant_period == "2003-2006", 1, 2)
+dominant_period_raster_changed2012.2018[match(occ_counts_changed2012.2018$cell_ID, values(ID_raster))] <- 
+  ifelse(occ_counts_changed2012.2018$dominant_period_2012.2018 == "2009-2012", 1, 2)
 
 # Convert raster to df for plotting
-dominant_period_df <- as.data.frame(dominant_period_raster, xy = TRUE, na.rm = TRUE) |>
-  mutate(dominant_period = if_else(U2006_CLC2000_V2020_20u1 == 1, "2003-2006", "2012-2015"))
-
+dominant_period_changed2012.2018_df <- as.data.frame(dominant_period_raster_changed2012.2018, xy = TRUE, na.rm = TRUE) |>
+  mutate(dominant_period = if_else(U2006_CLC2000_V2020_20u1 == 1, "2009-2012", "2015-2018"))
 
 # Plot the map
-dominant_period_changed2006_2012 <- ggplot() +
+dominant_period_changed2012_2018 <- ggplot() +
   geom_sf(data = norway, fill = "lightgrey", color = "black") +
-  geom_point(data = dominant_period_df, 
+  geom_point(data = dominant_period_changed2012.2018_df, 
              aes(x = x, y = y, color = dominant_period), size = 2) +
-  scale_color_manual(values = c("2003-2006" = "#800080", "2012-2015" = "#FFD700")) +
+  scale_color_manual(values = c("2009-2012" = "#800080", "2015-2018" = "#FFD700")) +
   coord_sf() +
   labs(x = "Longitude", y = "Latitude", color = "Period") +
   theme_classic() +
@@ -133,59 +137,59 @@ dominant_period_changed2006_2012 <- ggplot() +
     legend.text = element_text(size = 14))
 
 # Convert ggplot to interactive plot with plotly
-interactive_dominant_period_changed2006_2012 <- ggplotly(dominant_period_changed2006_2012)
+interactive_dominant_period_changed2012_2018 <- ggplotly(dominant_period_changed2012_2018)
 
 # Save interactive plot as html file
-htmlwidgets::saveWidget(interactive_dominant_period_changed2006_2012, 
-                        here("figures","dominant_period_changed_pixels2006_2012_map.html"))
+htmlwidgets::saveWidget(interactive_dominant_period_changed2012_2018, 
+                        here("figures","dominant_period_changed_pixels2012_2018_map.html"))
 
 ### 2.2.2 Unchanged Pixels ----
 
 # Filter the occurrences for each period
-occ_unchanged_before_2006.2012 <- occ_SSB_land_cover2006.2012 |>
-  filter(cover_change2006.2012 == "N") |>
+occ_unchanged_before_2012.2018 <- occ_SSB_land_cover2012.2018 |>
+  filter(cover_change2012.2018 == "N") |>
   filter(year %in% before)
 
-occ_unchanged_after_2006.2012 <- occ_SSB_land_cover2006.2012 |>
-  filter(cover_change2006.2012 == "N") |>
+occ_unchanged_after_2012.2018 <- occ_SSB_land_cover2012.2018 |>
+  filter(cover_change2012.2018 == "N") |>
   filter(year %in% after)
 
 # Count the number of records per cell for each period
-occ_counts_unchanged_before_2006.2012 <- occ_unchanged_before_2006.2012 |>
+occ_counts_unchanged_before_2012.2018 <- occ_unchanged_before_2012.2018 |>
   group_by(cell_ID) |>
-  summarise(occ_unchanged_before_2006.2012 = n())
+  summarise(occ_unchanged_before_2012.2018 = n())
 
-occ_counts_unchanged_after_2006.2012 <- occ_unchanged_after_2006.2012 |>
+occ_counts_unchanged_after_2012.2018 <- occ_unchanged_after_2012.2018 |>
   group_by(cell_ID) |>
-  summarise(occ_unchanged_after_2006.2012 = n())
+  summarise(occ_unchanged_after_2012.2018 = n())
 
 # Merge the two in a single df
-occ_counts_unchanged2006.2012 <- full_join(occ_counts_unchanged_before_2006.2012, 
-                                           occ_counts_unchanged_after_2006.2012, by = "cell_ID") |>
-  replace_na(list(occ_unchanged_before_2006.2012 = 0, occ_unchanged_after_2006.2012 = 0))
+occ_counts_unchanged2012.2018 <- full_join(occ_counts_unchanged_before_2012.2018, 
+                                           occ_counts_unchanged_after_2012.2018, by = "cell_ID") |>
+  replace_na(list(occ_unchanged_before_2012.2018 = 0, occ_unchanged_after_2012.2018 = 0))
 
 # Compare the number of occurrences before and after
-occ_counts_unchanged2006.2012 <- occ_counts_unchanged2006.2012 |>
-  mutate(dominant_period = ifelse(occ_unchanged_before_2006.2012 > occ_unchanged_after_2006.2012, "2003-2006", "2012-2015"))
+occ_counts_unchanged2012.2018 <- occ_counts_unchanged2012.2018 |>
+  mutate(dominant_period = ifelse(occ_unchanged_before_2012.2018 > occ_unchanged_after_2012.2018, "2009-2012", "2015-2018"))
 
 # Create a new raster indicating dominant period
-dominant_period_raster_unchanged_2006.2012 <- ID_raster
-values(dominant_period_raster_unchanged_2006.2012) <- NA
+dominant_period_raster_unchanged_2012.2018 <- ID_raster
+values(dominant_period_raster_unchanged_2012.2018) <- NA
 
 # Assign values based on dominant period
-dominant_period_raster_unchanged_2006.2012[match(occ_counts_unchanged2006.2012$cell_ID, values(ID_raster))] <- 
-  ifelse(occ_counts_unchanged2006.2012$dominant_period == "2003-2006", 1, 2)
+dominant_period_raster_unchanged_2012.2018[match(occ_counts_unchanged2012.2018$cell_ID, values(ID_raster))] <- 
+  ifelse(occ_counts_unchanged2012.2018$dominant_period == "2009-2012", 1, 2)
 
 # Convert raster to df for plotting
-dominant_period_unchanged_2006.2012_df <- as.data.frame(dominant_period_raster_unchanged_2006.2012, xy = TRUE, na.rm = TRUE) |>
-  mutate(dominant_period = if_else(U2006_CLC2000_V2020_20u1 == 1, "2003-2006", "2012-2015"))
+dominant_period_unchanged_2012.2018_df <- as.data.frame(dominant_period_raster_unchanged_2012.2018, xy = TRUE, na.rm = TRUE) |>
+  mutate(dominant_period = if_else(U2006_CLC2000_V2020_20u1 == 1, "2009-2012", "2015-2018"))
 
 # Plot the map
-dominant_period_unchanged2006_2012 <- ggplot() +
+dominant_period_unchanged2012_2018 <- ggplot() +
   geom_sf(data = norway, fill = "lightgrey", color = "black") +
-  geom_point(data = dominant_period_unchanged_2006.2012_df, 
+  geom_point(data = dominant_period_unchanged_2012.2018_df, 
              aes(x = x, y = y, color = dominant_period), size = 2) +
-  scale_color_manual(values = c("2003-2006" = "#800080", "2012-2015" = "#FFD700")) +
+  scale_color_manual(values = c("2009-2012" = "#800080", "2015-2018" = "#FFD700")) +
   coord_sf() +
   labs(x = "Longitude", y = "Latitude", color = "Period") +
   theme_classic() +
@@ -202,8 +206,8 @@ dominant_period_unchanged2006_2012 <- ggplot() +
     legend.text = element_text(size = 14))
 
 # Convert ggplot to interactive plot with plotly
-interactive_dominant_period_unchanged2006_2012 <- ggplotly(dominant_period_unchanged2006_2012)
+interactive_dominant_period_unchanged2012_2018 <- ggplotly(dominant_period_unchanged2012_2018)
 
 # Save interactive plot as html file
-htmlwidgets::saveWidget(interactive_dominant_period_unchanged2006_2012, 
-                        "dominant_period_unchanged_pixels2006_2012_map.html")
+htmlwidgets::saveWidget(interactive_dominant_period_unchanged2012_2018, 
+                        "dominant_period_unchanged_pixels2012_2018_map.html")
