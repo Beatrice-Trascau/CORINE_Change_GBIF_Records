@@ -16,6 +16,7 @@ library(patchwork)
 library(styler)
 library(scales)
 library(cowplot)
+library(plotly)
 
 # 1. LOAD & PREPARE DATA -----
 
@@ -117,33 +118,37 @@ plot_grid(changed_violins, unchanged_violins , ncol = 1)
 
 ## 2.2. Map of Norway showing which pixels have more records before change (1997-2000) and which have more records after change (2006-2009) ----
 
+### 2.2.1 Changed Pixels ----
+
 # Define before and after period
 before <- c(1997, 1998, 1999, 2000)
 after <- c(2006, 2007, 2008, 2009)
 
 # Filter the occurrences for each period
-occ_before <- occ_SSB_land_cover2000.2006 |>
+occ_changed_before <- occ_SSB_land_cover2000.2006 |>
+  filter(cover_change2000.2006 == "Y") |>
   filter(year %in% before)
 
-occ_after <- occ_SSB_land_cover2000.2006 |>
+occ_changed_after <- occ_SSB_land_cover2000.2006 |>
+  filter(cover_change2000.2006 == "Y") |>
   filter(year %in% after)
 
 # Count the number of records per cell for each period
-occ_counts_before <- occ_before |>
+occ_counts_changed_before <- occ_changed_before |>
   group_by(cell_ID) |>
-  summarise(count_before = n())
+  summarise(occ_changed_before = n())
 
-occ_counts_after <- occ_after |>
+occ_counts_changed_after <- occ_changed_after |>
   group_by(cell_ID) |>
-  summarise(count_after = n())
+  summarise(occ_after_changed = n())
 
 # Merge the two in a single df
-occ_counts2000.2006 <- full_join(occ_counts_before, occ_counts_after, by = "cell_ID") |>
-  replace_na(list(count_before = 0, count_after = 0))
+occ_counts_changed2000.2006 <- full_join(occ_counts_changed_before, occ_counts_changed_after, by = "cell_ID") |>
+  replace_na(list(occ_changed_before = 0, occ_after_changed = 0))
 
 # Compare the number of occurrences before and after
-occ_counts2000.2006 <- occ_counts2000.2006 |>
-  mutate(dominant_period = ifelse(count_before > count_after, "1997-2000", "2006-2009"))
+occ_counts_changed2000.2006 <- occ_counts_changed2000.2006 |>
+  mutate(dominant_period = ifelse(occ_changed_before > occ_after_changed, "1997-2000", "2006-2009"))
 
 # Load the CORINE
 norway_corine_status_modified_stack <- rast(here("data", "norway_corine_status_modified_stack.tif"))
@@ -163,16 +168,108 @@ dominant_period_raster <- ID_raster
 values(dominant_period_raster) <- NA
 
 # Assign values based on dominant period
-dominant_period_raster[match(occ_counts2000.2006$corine_cell_ID, values(ID_raster))] <- ifelse(occ_counts2000.2006$dominant_period == "1997-2000", 1, 2)
+dominant_period_raster[match(occ_counts_changed2000.2006$cell_ID, values(ID_raster))] <- ifelse(occ_counts_changed2000.2006$dominant_period == "1997-2000", 1, 2)
 
-# Conver raster to df for plotting
+# Convert raster to df for plotting
 dominant_period_df <- as.data.frame(dominant_period_raster, xy = TRUE, na.rm = TRUE) |>
-  mutate(dominant_period = factor(df$layer, levels = c(1, 2), labels = c("1997-2000", "2006-2009")))
+  mutate(dominant_period = if_else(U2006_CLC2000_V2020_20u1 == 1, "1997-2000", "2006-2009"))
+
+# Norway shapefile
+norway <- geodata::gadm(country = "NOR", level = 0, 
+                        path = tempdir(),
+                        version = "latest")
+# Plot the map
+dominant_period_changed2000_2006 <- ggplot() +
+  geom_sf(data = norway, fill = "lightgrey", color = "black") +
+  geom_point(data = dominant_period_df, 
+             aes(x = x, y = y, color = dominant_period), size = 2) +
+  scale_color_manual(values = c("1997-2000" = "#800080", "2006-2009" = "#FFD700")) +
+  coord_sf() +
+  labs(x = "Longitude", y = "Latitude", color = "Period") +
+  theme_classic() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid = element_blank(),
+    axis.line = element_blank(),
+    legend.position = "bottom", 
+    legend.title = element_blank(),
+    legend.text = element_text(size = 14))
+
+# Convert ggplot to interactive plot with plotly
+interactive_dominant_period_changed2000_2006 <- ggplotly(dominant_period_changed2000_2006)
+
+# Save interactive plot as html file
+htmlwidgets::saveWidget(interactive_dominant_period_changed2000_2006, 
+                        "dominant_period_changed_pixels2000_2006_map.html")
+
+### 2.2.2 Unchanged Pixels ----
+
+# Filter the occurrences for each period
+occ_unchanged_before <- occ_SSB_land_cover2000.2006 |>
+  filter(cover_change2000.2006 == "N") |>
+  filter(year %in% before)
+
+occ_unchanged_after <- occ_SSB_land_cover2000.2006 |>
+  filter(cover_change2000.2006 == "N") |>
+  filter(year %in% after)
+
+# Count the number of records per cell for each period
+occ_counts_unchanged_before <- occ_unchanged_before |>
+  group_by(cell_ID) |>
+  summarise(occ_unchanged_before = n())
+
+occ_counts_unchanged_after <- occ_unchanged_after |>
+  group_by(cell_ID) |>
+  summarise(occ_unchanged_after = n())
+
+# Merge the two in a single df
+occ_counts_unchanged2000.2006 <- full_join(occ_counts_unchanged_before, occ_counts_unchanged_after, by = "cell_ID") |>
+  replace_na(list(occ_unchanged_before = 0, occ_unchanged_after = 0))
+
+# Compare the number of occurrences before and after
+occ_counts_unchanged2000.2006 <- occ_counts_unchanged2000.2006 |>
+  mutate(dominant_period = ifelse(occ_unchanged_before > occ_unchanged_after, "1997-2000", "2006-2009"))
+
+# Create a new raster indicating dominant period
+dominant_period_raster_unchanged_2000.2006 <- ID_raster
+values(dominant_period_raster_unchanged_2000.2006) <- NA
+
+# Assign values based on dominant period
+dominant_period_raster_unchanged_2000.2006[match(occ_counts_unchanged2000.2006$cell_ID, values(ID_raster))] <- 
+  ifelse(occ_counts_unchanged2000.2006$dominant_period == "1997-2000", 1, 2)
+
+# Convert raster to df for plotting
+dominant_period_unchanged_2000.2006_df <- as.data.frame(dominant_period_raster_unchanged_2000.2006, xy = TRUE, na.rm = TRUE) |>
+  mutate(dominant_period = if_else(U2006_CLC2000_V2020_20u1 == 1, "1997-2000", "2006-2009"))
 
 # Plot the map
-ggplot(dominant_period_df) +
-  geom_raster(aes(x = x, y = y, fill = dominant_period)) +
-  scale_fill_manual(values = c("1997-2000" = "purple", "2006-2009" = "yellow")) +
-  coord_fixed() +
-  labs(x = "Longitude", y = "Latitude", fill = "Period") +
-  theme_classic()
+dominant_period_unchanged2000_2006 <- ggplot() +
+  geom_sf(data = norway, fill = "lightgrey", color = "black") +
+  geom_point(data = dominant_period_unchanged_2000.2006_df, 
+             aes(x = x, y = y, color = dominant_period), size = 2) +
+  scale_color_manual(values = c("1997-2000" = "#800080", "2006-2009" = "#FFD700")) +
+  coord_sf() +
+  labs(x = "Longitude", y = "Latitude", color = "Period") +
+  theme_classic() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid = element_blank(),
+    axis.line = element_blank(),
+    legend.position = "bottom", 
+    legend.title = element_blank(),
+    legend.text = element_text(size = 14))
+
+# Convert ggplot to interactive plot with plotly
+interactive_dominant_period_unchanged2000_2006 <- ggplotly(dominant_period_unchanged2000_2006)
+
+# Save interactive plot as html file
+htmlwidgets::saveWidget(interactive_dominant_period_unchanged2000_2006, 
+                        here("figures","dominant_period_unchanged_pixels2000_2006_map.html"))
