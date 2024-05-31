@@ -102,7 +102,7 @@ download_files(status_urls, status_filenames)
 corine_change_stack <- read_rasters(change_filenames)
 corine_status_stack <- read_rasters(status_filenames)
 
-# 2. CUT AND MASK CHANGE LAYERS TO NORWAY ----
+# 2. CUT AND MASK CHANGE LAYERS TO NORWAY --------------------------------------
 
 ## 2.1. Download country shapefile ----
 norway <- geodata::gadm(country = "NOR", level = 0, 
@@ -111,7 +111,7 @@ norway <- geodata::gadm(country = "NOR", level = 0,
 #Check shapefile
 plot(norway)
 
-## 2.2. Re-project Norway shapefile to match projection of CORINE layers ----
+## 2.2. Re-project Norway shapefile to match projection of CORINE layers -------
 
 # Check projections
 crs(norway, proj = TRUE)
@@ -123,22 +123,22 @@ norway_corine_projection <- project(norway, crs(corine_change_stack))
 # Check projection
 crs(norway_corine_projection, proj = TRUE) #projection correct now
 
-## 2.2. Crop and mask CORINE stack to Norway ----
-
-# Crop and mask
-norway_corine_change_stack <- crop(corine_change_stack, norway_corine_projection,
-                                   mask = TRUE)
+## 2.3. Crop and mask CORINE stack to Norway -----------------------------------
+norway_corine_change_stack <- crop_mask_to_norway(corine_change_stack, 
+                                                  norway_corine_projection)
+norway_corine_status_stack <- crop_mask_to_norway(corine_status_stack, 
+                                                  norway_corine_projection)
 
 # Save the cropped layers 
-terra::writeRaster(norway_corine_change_stack,
-                   here("data", "norway_corine_change_stack.tif"))
-
-# Check the newly cut layers
-mapview(norway_corine_change_stack[[1]])
+terra::writeRaster(norway_corine_change_stack, here("data", "derived_data",
+                                                    "norway_corine_change_stack.tif"))
+terra::writeRaster(norway_corine_status_stack, here("data", "derived_data",
+                                                    "norway_corine_status_stack.tif"), 
+                   overwrite = TRUE)
 
 # 3. MODIFY VALUES OF CHANGE LAYERS TO HELP IDENTIFY LAND COVER CHANGES----
-#The class codes/values are changed to unique numbers which will help identify the land cover transitions between years
-#this will only be done for the Norway stack, as this is the one that will be used for analysis
+#The class codes/values are changed to unique numbers which will help identify 
+  # the land cover transitions between years
 
 ## 3.1. Change land cover class values ----
 
