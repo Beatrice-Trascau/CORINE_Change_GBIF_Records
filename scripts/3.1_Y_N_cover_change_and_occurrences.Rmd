@@ -14,15 +14,17 @@ library(here)
 library(dplyr)
 library(lme4)
 library(DHARMa)
+library(glmmTMB)
+library(pscl)
 library(ggplot2)
 ```
 
-```{r data load, include = FALSE}
+```{r data load, include = FALSE, eval = FALSE}
 load(here("data", "occurrences_SSB_land_cover.rda"))
 occ_SSB_land_cover <- occurrence_SSB_df
 ```
 
-```{r prepare df for analyis, include = FALSE}
+```{r prepare df for analyis, include = FALSE, eval = FALSE}
 
 # 1. First period of change: 2000-2006 -------------------------------------------------
 
@@ -98,23 +100,20 @@ occ_df_after_records <- bind_rows(occ_df_after_2000.2006_records,
 
 ```
 
-## Model 1: Number of occurrences after change by land cover, time period and SSB ID
+## Attempt 1: Model 1: Number of occurrences after change by land cover, time period and SSB ID - negative binomial
 
-```{r model 1, include = FALSE}
+```{r model 1, include = FALSE, eval = FALSE}
 
 # Run negative binomial model
-model1_nb <- glmer.nb(ocurrences_after ~ cover_change * time_period + (1|SSBid),
-                   data = occ_df_after_records)
+model1_nb <- glmer.nb(ocurrences_after ~ cover_change * time_period + (1|SSBid),                    data = occ_df_after_records)
 
 # Save model output to file to save time next time
 save(model1_nb, file = here::here("data", "models", "model1_nb.RData"))
 ```
 
-### Model validation
+### Model Validation
 
 #### Convergence Check
-
-Checking if the model converges
 
 ```{r convergence check}
 
@@ -124,6 +123,8 @@ load(here::here("data", "models", "model1_nb.RData"))
 # Get summary of the model
 summary(model1_nb)
 ```
+
+Model output suggests a significant effect of time and a significant interaction between time period and land cover change (Y) but no significant effect of land cover. Some high correlation values between cover_change_Y and cover_change_Y:2006_2012 as well as cover_change_Y and cover_change_Y:2012_2018. But this is likely to be expected as cover_change_Y is nested into cover_change_Y:2006_2012 and cover_change_Y:2012_2018. Most residuals (from scaled residuals) are close to zero. But the maximum residual (= 534.64) is very large. The AIC and BIC values are also very large.
 
 #### Simulate Residuals with DHARMa
 
@@ -136,6 +137,8 @@ model1_nb_simulation <- simulateResiduals(fittedModel = model1_nb)
 plot(model1_nb_simulation)
 ```
 
+Simulated residuals deviate significantly from expectations, are overdispersed and have many outliers. The within-group deviations from uniformity are significant. Test for homogeneity of variance is significant.
+
 #### Residuals Diagnostics
 
 ```{r residuals diagnostics}
@@ -144,24 +147,142 @@ plot(model1_nb_simulation)
 testResiduals(model1_nb_simulation)
 
 # Plot residuals
-plot(residuals(model1_nb))
+#plot(residuals(model1_nb))
 ```
+
+Everything that could go be with theresiduals has gone wrong.
 
 #### Check Random Effects
 
 ```{r random effects}
 
-# Check distribution 
+# Check distribution
+#ranef(model1_nb)
 ```
 
 #### Test for Overdispersion
 
 ```{r test for overdispersion}
-testOverdispersion(model1_nb_simulation)
+testDispersion(model1_nb_simulation)
 ```
+
+Residuals are significantly overdispersed.
 
 #### Test for Zero-Inflation
 
 ```{r test for zero-inflation}
 testZeroInflation(model1_nb_simulation)
+```
+
+Significant zero inflation. Attempting a zero-inflated negative binomial model to address these issues.
+
+## Attempt 2: Model 1: Number of occurrences after change by land cover (Y/N) and SSB ID - zero inflated negative binomial
+
+```{r model 2. include = FALSE, eval = FALSE}
+
+# Run zero inflated negative binomial model
+model2_nb_zero <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBid),
+                          ziformula = ~ 1,
+                          family = nbinom2, 
+                          data = occ_df_after_records)
+
+# Save model output to file to save time next time
+save(model2_nb_zero, file = here::here("data", "models", "model2_nb_zero.RData"))
+```
+
+### Model Validation
+
+#### Convergence Check
+
+```{r convergence check}
+
+# Load model from file
+load(here::here("data", "models", "model2_nb_zero.RData"))
+
+# Get summary of the model
+summary(model2_nb_zero)
+```
+
+Model output suggests a significant effect of time and a significant interaction between time period and land cover change (Y) but no significant effect of land cover. AIC and BIC values still large. Dispersion parameter = 0.50.
+
+#### Simulate Residuals with DHARMa
+
+```{r residuals, include = FALSE}
+
+# Simulate residuals 
+model2_nb_zero_simulation <- simulateResiduals(fittedModel = model2_nb_zero)
+
+# Plot simulated residuals
+plot(model2_nb_zero_simulation)
+```
+
+Simulated residuals deviate significantly from expectations, are overdispersed and have many outliers. The within-group deviations from uniformity are significant. Test for homogeneity of variance is significant.
+
+#### Test for Overdispersion
+
+```{r test for overdipserison}
+testDispersion(model2_nb_zero_simulation)
+```
+
+Test for overdispersion is significant.
+
+#### Test for Zero-Inflation
+
+```{r test for zero-inflation}
+testZeroInflation(model2_nb_zero_simulation)
+```
+
+Test for zero inflation is significant. Clearly, this model is not usable either.
+
+## Attempt 3: Model 1: Number of occurrences after change by land cover change (Y/N) and SSB ID - Non-zero inflated negative binomial with glmmTMB
+
+```{r model 3. include = FALSE, eval = FALSE}
+
+# Run negative binomial model
+model3_nb <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBid),
+                          family = nbinom2, 
+                          data = occ_df_after_records)
+
+# Save model output to file to save time next time
+save(model3_nb, file = here::here("data", "models", "model3_nb.RData"))
+```
+
+### Model Validation
+
+#### Convergence Check
+
+```{r convergence check}
+
+# Load model from file
+load(here::here("data", "models", "model3_nb.RData"))
+
+# Get summary of the model
+summary(model3_nb)
+```
+
+Model output suggests a significant effect of time and a significant interaction between time period and land cover change (Y) but no significant effect of land cover. AIC and BIC values still large. Dispersion parameter = 0.50.
+
+#### Simulate Residuals with DHARMa
+
+```{r simulate residuals}
+
+# Simulate residuals 
+model3_nb_simulation <- simulateResiduals(fittedModel = model3_nb)
+
+# Plot simulated residuals
+plot(model3_nb_simulation)
+```
+
+Simulated residuals deviate significantly from expectations, are overdispersed and have many outliers. The within-group deviations from uniformity are significant. Test for homogeneity of variance is significant.
+
+#### Test for Overdispersion
+
+```{r test for overdispersion}
+testDispersion(model3_nb_simulation)
+```
+
+#### Test for Zero-Inflation
+
+```{r test for zero inflation}
+testZeroInflation(model3_nb_simulation)
 ```
