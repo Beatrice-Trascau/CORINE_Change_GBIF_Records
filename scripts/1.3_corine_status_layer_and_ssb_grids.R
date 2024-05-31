@@ -83,6 +83,10 @@ ID_raster <- corine_status_wgs84[[1]]
 # Assign each cell a unique number
 values(ID_raster) <- 1:ncell(corine_status_wgs84[[1]])
 
+# Change name of layer in ID_raster so it does not duplicate the ones in corine_status_wgs84
+ID_raster <- ID_raster |>
+  rename(cell_ID = U2006_CLC2000_V2020_20u1)
+
 # Combine the ID raster with the CORINE STATUS raster
 corine_ID <- c(corine_status_wgs84, ID_raster)
 
@@ -98,7 +102,10 @@ write.csv(corine_status_occurrences_df, here("data",
 ## 2.6. Add extracted values to the occurrences ----
 
 # Convert SpatVector to dataframe
-occurrence_SSB_df <- as.data.frame(occurrenes_SSB) |>
+occurrence_SSB_df <- as.data.frame(occurrenes_SSB)
+
+# Change names in corine_status_occurrences_df
+corine_status_occurrences_df <- corine_status_occurrences_df |>
   mutate(land_cover2000 = U2006_CLC2000_V2020_20u1,
          land_cover2006 = U2012_CLC2006_V2020_20u1,
          land_cover2012 = U2018_CLC2012_V2020_20u1,
