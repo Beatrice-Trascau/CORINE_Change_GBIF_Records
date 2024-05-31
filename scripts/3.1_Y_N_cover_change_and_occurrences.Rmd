@@ -1,0 +1,51 @@
+---
+title: "glmms_land_cover_change(y/n)_and_occurrences"
+author: "Beatrice Trascau"
+date: "2024-05-31"
+output: html_document
+---
+
+# **3.1. GLMMS: Land Cover Change (Y/N) and Occurrence Records**
+
+This markdown outlines the process of modelling the number of species occurrence records in relation to land cover changes, time and SSB ID.
+
+```{r library load, include = FALSE}
+library(here)
+library(dplyr)
+library(lme4)
+library(ggplot2)
+```
+
+```{r data load, include = FALSE}
+load(here("data", "occurrences_SSB_land_cover.rda"))
+occ_SSB_land_cover <- occurrence_SSB_df
+```
+
+```{r prepare df for analyis, include = FALSE}
+
+# 1. First period of change: 2000-2006
+
+# Prepare data for the period 2006-2009
+occ_df_after_2000.2006 <- occ_SSB_land_cover |>
+  select(V1, gbifID, year, species, land_cover2000, land_cover2006, 
+         SSBid, cell_ID, TARGET_FID) |>
+  filter(!is.na(land_cover2000) & !is.na(land_cover2006)) |>
+  filter(year >= 2006 & year <= 2009) |>
+  mutate(cover_change = if_else(land_cover2000 == land_cover2006, "N", "Y"))
+
+# Calculate number of records for the period 2006-2009
+occ_df_after_2000.2006_records <- occ_df_after_2000.2006 |>
+  group_by(cell_ID) |>
+  summarise(
+    ocurrences_after = n(),
+    land_cover2000 = first(land_cover2000),
+    land_cover2006 = first(land_cover2006),
+    cover_change = first(cover_change),
+    SSBid = first(SSBid)) |>
+  mutate(time_period = "2000-2006")
+
+# 2. Second period of change: 2006 - 2012
+
+
+
+```
