@@ -1,6 +1,6 @@
 ##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
-# 1.1_corine_change_layer_exploration
+# 1.2_corine_change_layer_exploration
 # This script contains code which explores the CORINE land cover CHANGE layers, 
 # calculates land cover changes between 2000-2006, 2006-2012, 2012-2018 and 
 # 2000-2018 and visualises the changes for each period
@@ -18,15 +18,83 @@ library(networkD3)
 library(gt)
 library(cowplot)
 
+# 1. DEFINE FUNCTIONS ----------------------------------------------------------
+
+## 1.1. Function to download file if it does not exist -------------------------
+download_file <- function(url, destfile) {
+  if (!file.exists(destfile)) {
+    download.file(url, destfile)
+  }
+}
+
+## 1.2. Function to prepare data for Sankey plot -------------------------------
+
+# Create a dataframe of change with source and target cover class
+prepare_sankey_data <- function(change_layer, class_meaning, source_year, target_year) {
+  change_df <- as.data.frame(freq(change_layer)) |>
+    mutate(source_year = source_year,
+           target_year = target_year,
+           difference = value) |>
+    select(-layer)
+  
+  # Create meaning df
+  class_meaning_filtered <- class_meaning |>
+    filter(difference %in% change_df$value) |>
+    rename(value = difference)
+  
+  # Merge Sankey df and class_meaning_df
+  change_meaning <- merge(change_df, class_meaning_filtered, by = "value")
+  
+  # Add source_year to source_names to easily distinguish between the years
+  sankey_data <- change_meaning |>
+    unite(source, c(source_year, source_name), sep = ".", remove = FALSE) |>
+    unite(target, c(target_year, target_name), sep = ".", remove = FALSE) |>
+    filter(value != 0) |>
+    select(count, source, target) |>
+    relocate(source, target, count) |>
+    mutate(target = paste(target, " ", sep = ""))
+  
+  return(sankey_data)
+}
+
+## 1.3. Function to create barplot ---------------------------------------------
+create_bar_plot <- function(gain_loss_data, filename, title) {
+  scaling_factor <- 10
+  gain_loss_data$scaled_count <- ifelse(abs(gain_loss_data$count) > 90,
+                                        gain_loss_data$count / scaling_factor,
+                                        gain_loss_data$count)
+  
+  ggplot(gain_loss_data, aes(x = focus, y = scaled_count, fill = transition)) +
+    geom_bar(stat="identity", position="stack") +
+    scale_y_continuous(
+      name = bquote("Area changes"~("km"^2)),
+      sec.axis = sec_axis(~ . * scaling_factor, name = bquote("Area changes"~("km"^2)))
+    ) +
+    xlab("Land Cover Classes") +
+    scale_fill_manual(values = c("dodgerblue2", "#E31A1C","green4",
+                                 "#6A3D9A", "#FF7F00",
+                                 "gold1","maroon"),
+                      name = "Land Cover Classes",
+                      labels = c("Agriculture & Vegetation", "Complex Agriculture",
+                                 "Forests", "Moors, Heathland & Grassland",
+                                 "Sparse Vegetation", "Transitional Woodland Shrub",
+                                 "Urban Fabric")) +
+    scale_x_discrete(labels = c("Agriculture & Vegetation", "Complex Agriculture",
+                                "Forests", "Moors, Heathland & Grassland",
+                                "Sparse Vegetation", "Transitional Woodland Shrub",
+                                "Urban Fabric")) +
+    ggtitle(title) +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 30, hjust = 1))
+    #ggsave(here("figures", filename), width = 10, height = 5.37)
+}
+
 # 1. READ IN MODIFIED CORINE CHANGE LAYERS ----
 
 ## 1.1. Download layers (if needed) ----
 
-# Add download link from box
-# norway_corine_change_stack <- ("https://ntnu.box.com/shared/static/97g9x4839ij4lnlldji2wh8e0e2lm5bf.tif")
-
-# Download the files
-# download.file(norway_corine_change_stack, "norway_corine_change_stack.tif")
+download_file("https://ntnu.box.com/shared/static/97g9x4839ij4lnlldji2wh8e0e2lm5bf.tif", 
+              "data/norway_corine_change_modified_stack.tif")
 
 ## 1.2. Read in layers -----
 norway_corine_change_modified_stack <- rast(here("data", 
@@ -44,6 +112,98 @@ mapview(norway_corine_change_modified_stack[[1]])
 ## 2.2. Extract number of pixels where change is detected ----
 freq(norway_corine_change_modified_stack[[1]]) #197 443 pixels with change
 # the Land Cover Status Layers (2000 - 2006) had 176 833 pixels with change
+
+# 3. LAND COVER TRANSITIONS ----------------------------------------------------
+
+# Define class modifications for easier mapping 
+class_modifications <- list(
+  list(from = 1:11, to = 1),
+  list(from = c(12, 18, 20), to = 80),
+  list(from = 21, to = 103),
+  list(from = c(23, 24, 25), to = 250),
+  list(from = c(26, 27), to = 380),
+  list(from = 29, to = 590),
+  list(from = 32, to = 711),
+  list(from = c(30, 31, 33, 34, 35, 36, 39, 40, 41, 43, 44, 127, 128), to = NA))
+
+# Prepare class meaning dataframe
+class_meaning <- data.frame(
+  source_number = c(rep(1,7), rep(80,7), rep(103,7), rep(250,7), rep(380,7), 
+                    rep(590,7), rep(711,7)),
+  source_name = c(rep("Urban Fabric",7), 
+                  rep("Complex Agriculture",7), 
+                  rep("Agriculture & Vegetation",7),
+                  rep("Forests",7), 
+                  rep("Moors, Heath & Grass",7),
+                  rep("Transitional Woodland Shrub",7),
+                  rep("Sparse Vegetation",7)),
+  target_number = c(rep(c(1,80,103,250,380,590,711), 7)),
+  target_name = c(rep(c("Urban Fabric", "Complex Agriculture", "Agriculture & Vegetation",
+                        "Forests", "Moors, Heath & Grass", "Transitional Woodland Shrub",
+                        "Sparse Vegetation"), 7)),
+  difference = c(rep(0,7), rep(79,7), rep(102,7), rep(249,7), rep(379,7), 
+                 rep(589,7), rep(710,7)))
+
+# Calculate and visualise changes for each period
+periods <- list(
+  list(start = 1, end = 2, source_year = "2000", target_year = "2006"),
+  list(start = 3, end = 4, source_year = "2006", target_year = "2012"),
+  list(start = 5, end = 6, source_year = "2012", target_year = "2018"),
+  list(start = 1, end = 6, source_year = "2000", target_year = "2018"))
+
+for (period in periods) {
+  change_layer <- norway_corine_change_modified_stack[[period$start]] - norway_corine_change_modified_stack[[period$end]]
+  
+  sankey_data <- prepare_sankey_data(change_layer, class_meaning, period$source_year, period$target_year)
+  
+  # Plot Sankey data outside the function
+  sankey_data_long <- sankey_data %>%
+    pivot_longer(cols = c(source, target), names_to = "key", values_to = "value") %>%
+    group_by(key) %>%
+    mutate(node = value) %>%
+    ungroup() %>%
+    arrange(key) %>%
+    mutate(x = as.integer(factor(key, levels = c("source", "target")))) %>%
+    group_by(node) %>%
+    mutate(next_node = lead(node, order_by = x)) %>%
+    ungroup()
+  
+  unique_nodes <- unique(c(sankey_data_long$node, sankey_data_long$next_node))
+  num_nodes <- length(unique_nodes)
+  palette <- hue_pal()(num_nodes)
+  
+  ggplot(sankey_data_long, aes(x = x, next_x = x + 1, node = node, next_node = next_node, fill = factor(node), label = node)) +
+    geom_sankey(flow.alpha = 0.5, show.legend = FALSE) +
+    geom_sankey_label(size = 3, color = "black", hjust = 0.5) +
+    theme_void() +
+    scale_fill_manual(values = palette) +
+    theme(legend.position = "none")
+    #ggsave(here("figures", paste0("network_", period$source_year, ".", period$target_year, "_all_classes.svg")), width = 10, height = 5.37)
+  
+  # Calculate and prepare data for bar plots
+  change_meaning <- merge(as.data.frame(freq(change_layer)), class_meaning, by.x = "value", by.y = "difference")
+  
+  loss_data <- change_meaning |>
+    filter(value != 0) |>
+    mutate(count = count * (-0.01),
+           focus = source_name,
+           transition = target_name) |>
+    select(focus, transition, count)
+  
+  gain_data <- change_meaning |>
+    filter(value != 0) |>
+    mutate(count = count * 0.01,
+           focus = target_name,
+           transition = source_name) |>
+    select(focus, transition, count)
+  
+  gain_loss_data <- rbind(loss_data, gain_data)
+  
+  create_bar_plot(gain_loss_data, paste0("gain_loss_", period$source_year, ".", period$target_year, "_dual_y_axis.svg"), 
+                  paste0("Land Cover Transitions ", period$source_year, " - ", period$target_year))
+}
+
+
 
 # 3. LAND COVER TRANSITIONS 2000 - 2006 ----
 
