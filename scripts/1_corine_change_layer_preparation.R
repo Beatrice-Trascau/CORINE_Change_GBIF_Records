@@ -84,34 +84,27 @@ class_modifications <- list(
   list(from = 32, to = 711),
   list(from = c(30, 31, 33, 34, 35, 36, 39, 40, 41, 43, 44, 127, 128), to = NA))
 
-# 0. PACKAGES ----
-library(here)
-library(terra)
-library(sf)
-library(geodata)
-library(mapview)
+# 2. READ IN CORINE LAYERS -----------------------------------------------------
 
-# 1. READ IN CORINE LAYERS -----------------------------------------------------
-
-## 1.1. Download layers (if needed) ----
+## 2.1. Download layers (if needed) ----
 download_files(change_urls, change_filenames)
 download_files(status_urls, status_filenames)
 
 
-## 1.2. Read in  layers --------------------------------------------------------
+## 2.2. Read in  layers --------------------------------------------------------
 corine_change_stack <- read_rasters(change_filenames)
 corine_status_stack <- read_rasters(status_filenames)
 
-# 2. CUT AND MASK CHANGE LAYERS TO NORWAY --------------------------------------
+# 3. CUT AND MASK CHANGE LAYERS TO NORWAY --------------------------------------
 
-## 2.1. Download country shapefile ----
+## 3.1. Download country shapefile ----
 norway <- geodata::gadm(country = "NOR", level = 0, 
                         path = tempdir(),
                         version = "latest")
 #Check shapefile
 plot(norway)
 
-## 2.2. Re-project Norway shapefile to match projection of CORINE layers -------
+## 3.2. Re-project Norway shapefile to match projection of CORINE layers -------
 
 # Check projections
 crs(norway, proj = TRUE)
@@ -123,7 +116,7 @@ norway_corine_projection <- project(norway, crs(corine_change_stack))
 # Check projection
 crs(norway_corine_projection, proj = TRUE) #projection correct now
 
-## 2.3. Crop and mask CORINE stack to Norway -----------------------------------
+## 3.3. Crop and mask CORINE stack to Norway -----------------------------------
 norway_corine_change_stack <- crop_mask_to_norway(corine_change_stack, 
                                                   norway_corine_projection)
 norway_corine_status_stack <- crop_mask_to_norway(corine_status_stack, 
@@ -136,144 +129,25 @@ terra::writeRaster(norway_corine_status_stack, here("data", "derived_data",
                                                     "norway_corine_status_stack.tif"), 
                    overwrite = TRUE)
 
-# 3. MODIFY VALUES OF CHANGE LAYERS TO HELP IDENTIFY LAND COVER CHANGES----
+# 4. MODIFY VALUES OF CHANGE LAYERS TO HELP IDENTIFY LAND COVER CHANGES --------
 #The class codes/values are changed to unique numbers which will help identify 
   # the land cover transitions between years
 
-## 3.1. Change land cover class values ----
+## 4.1. Modify classes in change layers ----------------------------------------
 
-# Urban Fabric
-# all the urban classes are pooled together, due to their sparse distribution across Norway
-norway_corine_change_modified <- app(norway_corine_change_stack,
-                                     fun = function(x){x[x %in% c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)] <- 1; 
-                                     return(x)})
+norway_corine_change_modified <- modify_class_values(norway_corine_change_stack, 
+                                                     class_modifications)
 
-# Complex agricultural patterns
-norway_corine_change_modified <- app(norway_corine_change_modified,
-                                     fun = function(x){x[x %in% c(12, 18, 20)] <- 80; 
-                                     return(x)})
+## 4.2. Modify classes in status layers ----------------------------------------
+norway_corine_change_modified <- modify_class_values(norway_corine_change_stack, 
+                                                     class_modifications)
 
-# Agriculture and significant natural vegetation
-norway_corine_change_modified <- app(norway_corine_change_modified,
-                                     fun = function(x){x[x == 21] <- 103; 
-                                     return(x)})
-
-# Forests
-norway_corine_change_modified <- app(norway_corine_change_modified,
-                                     fun = function(x){x[x %in% c(23, 24, 25)] <- 250; 
-                                     return(x)})
-
-# Moors, Heathland & Natural Grassland
-norway_corine_change_modified <- app(norway_corine_change_modified,
-                                     fun = function(x){x[x %in% c(26, 27)] <- 380; 
-                                     return(x)})
-# Transitional woodland shrub
-norway_corine_change_modified <- app(norway_corine_change_modified,
-                                     fun = function(x){x[x == 29] <- 590; return(x)})
-
-# Sparsely vegetated areas
-norway_corine_change_modified <- app(norway_corine_change_modified,
-                                     fun = function(x){x[x == 32] <- 711; return(x)})
-
-# Other classes
-norway_corine_change_modified <- app(norway_corine_change_modified,
-                                     fun = function(x){x[x %in% c(30, 31, 33, 34, 35, 36, 39, 40, 41, 43, 44, 127, 128)] <- NA; 
-                                     return(x)})
-
-# Save the changed layers 
-terra::writeRaster(norway_corine_change_modified, 
-                   here("data", "norway_corine_change_modified_stack.tif"),
+## 4.3. Save modified layers ---------------------------------------------------
+terra::writeRaster(norway_corine_change_modified, here("data", "derived_data",
+                                                       "norway_corine_change_modified_stack.tif"), 
                    overwrite = TRUE)
-
-# 4. READ IN CORINE STATUS LAYERS ----
-
-## 4.1. Download status layers (if needed) ----
-
-#Add Download link from box
-# U2006_CLC2000_V2020_20u1 <- ("https://ntnu.box.com/shared/static/ffmbbb89aikwg64tg9ei30c8fnf7chl2.tif")
-# U2012_CLC2006_V2020_20u1 <- ("https://ntnu.box.com/shared/static/2x6g9jaov5rex3u0xt3hq9mmy91d63ew.tif")
-# U2018_CLC2012_V2020_20u1 <- ("https://ntnu.box.com/shared/static/ut1pcbnj7xgfwv3ptahu5c3krdy24l7d.tif")
-# U2018_CLC2018_V2020_20u1 <- ("https://ntnu.box.com/shared/static/iub514rfjnkopg3nu4nc18j4axq5jfon.tif")
-# 
-# #Download the files
-# download.file(U2006_CLC2000_V2020_20u1, "U2006_CLC2000_V2020_20u1.tif")
-# download.file(U2012_CLC2006_V2020_20u1, "U2012_CLC2006_V2020_20u1.tif")
-# download.file(U2018_CLC2012_V2020_20u1, "U2018_CLC2012_V2020_20u1.tif")
-# download.file(U2018_CLC2018_V2020_20u1, "U2018_CLC2018_V2020_20u1.tif")
-
-## 4.2. Read in status layers ----
-
-# Read in CORINE layers downloaded above
-corine_status_2000 <- rast(here("data", "raw_data", "U2006_CLC2000_V2020_20u1.tif"))
-corine_status_2006 <- rast(here("data", "raw_data", "U2012_CLC2006_V2020_20u1.tif"))
-corine_status_2012 <- rast(here("data", "raw_data", "U2018_CLC2012_V2020_20u1.tif"))
-corine_status_2018 <- rast(here("data", "raw_data", "U2018_CLC2018_V2020_20u1.tif"))
-
-# Stack layers into one object
-corine_status_stack <- c(corine_status_2000, corine_status_2006,
-                         corine_status_2012, corine_status_2018)
-
-# 5. CUT AND MASK STATUS LAYERS TO NORWAY ----
-
-# Crop and mask CORINE STATUS to Norway
-norway_corine_status_stack <- crop(corine_status_stack, norway_corine_projection,
-                            mask = TRUE)
-
-# Save the cropped status layers
-terra::writeRaster(norway_corine_status_stack,
-                   here("data", "norway_corine_status_stack.tif"),
+terra::writeRaster(norway_corine_status_modified, here("data", "derived_data",
+                                                       "norway_corine_status_modified_stack.tif"), 
                    overwrite = TRUE)
-
-# 6. MODIFY VALUES OF STATUS LAYERS TO HELP IDENTIFY LAND COVER CHANGES ----
-#The class codes/values are changed to unique numbers which will help identify the land cover transitions between years
-#this will only be done for the Norway stack, as this is the one that will be used for analysis
-
-## 6.1. Change land cover class values ----
-
-# Urban Fabric
-# all the urban classes are pooled together, due to their sparse distribution across Norway
-norway_corine_status_modified <- app(norway_corine_change_stack,
-                                     fun = function(x){x[x %in% c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)] <- 1; 
-                                     return(x)})
-
-# Complex agricultural patterns
-norway_corine_status_modified <- app(norway_corine_status_modified,
-                                     fun = function(x){x[x %in% c(12, 18, 20)] <- 80; 
-                                     return(x)})
-
-# Agriculture and significant natural vegetation
-norway_corine_status_modified <- app(norway_corine_status_modified,
-                                     fun = function(x){x[x == 21] <- 103; 
-                                     return(x)})
-
-# Forests
-norway_corine_status_modified <- app(norway_corine_status_modified,
-                                     fun = function(x){x[x %in% c(23, 24, 25)] <- 250; 
-                                     return(x)})
-
-# Moors, Heathland & Natural Grassland
-norway_corine_status_modified <- app(norway_corine_status_modified,
-                                     fun = function(x){x[x %in% c(26, 27)] <- 380; 
-                                     return(x)})
-# Transitional woodland shrub
-norway_corine_status_modified <- app(norway_corine_status_modified,
-                                     fun = function(x){x[x == 29] <- 590; return(x)})
-
-# Sparsely vegetated areas
-norway_corine_status_modified <- app(norway_corine_status_modified,
-                                     fun = function(x){x[x == 32] <- 711; return(x)})
-
-# Other classes
-norway_corine_status_modified <- app(norway_corine_status_modified,
-                                     fun = function(x){x[x %in% c(30, 31, 33, 34, 35, 36, 39, 40, 41, 43, 44, 127, 128)] <- NA; 
-                                     return(x)})
-
-# Save the changed layers 
-terra::writeRaster(norway_corine_status_modified, 
-                   here("data", "norway_corine_status_modified_stack.tif"),
-                   overwrite = TRUE)
-
-
 
 # END OF SCRIPT ----
-
