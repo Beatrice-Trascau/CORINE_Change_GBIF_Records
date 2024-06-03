@@ -12,6 +12,7 @@ This markdown outlines the process of modelling the number of species occurrence
 ```{r library load, include = FALSE}
 library(here)
 library(dplyr)
+library(lattice)
 library(lme4)
 library(DHARMa)
 library(glmmTMB)
@@ -27,6 +28,13 @@ occ_SSB_land_cover <- occurrence_SSB_df
 ```{r prepare df for analyis, include = FALSE, eval = FALSE}
 
 # 1. First period of change: 2000-2006 -------------------------------------------------
+
+# Change column names for easier df manipulation
+occ_SSB_land_cover <- occ_SSB_land_cover |>
+  rename(land_cover2000 = U2006_CLC2000_V2020_20u1,
+         land_cover2006 = U2012_CLC2006_V2020_20u1,
+         land_cover2012 = U2018_CLC2012_V2020_20u1,
+         land_cover2018 = U2018_CLC2018_V2020_20u1)
 
 # Prepare data for the period 2006-2009
 occ_df_after_2000.2006 <- occ_SSB_land_cover |>
@@ -99,6 +107,79 @@ occ_df_after_records <- bind_rows(occ_df_after_2000.2006_records,
                                   occ_df_after_2012.2018_records)
 
 ```
+
+## Data Exploration
+
+### Inspect Data
+
+```{r inspect data}
+glimpse(occ_df_after_records)
+```
+
+### Check for Outliers
+
+```{r check outliers}
+
+# Barplot of number of occurrences
+ggplot(occ_df_after_records , 
+       aes(x = cover_change, y = ocurrences_after, fill = time_period))+
+  geom_boxplot()+
+  theme_classic()
+
+  
+
+```
+
+There are some very clear outliers in the number of occurrence records, more so for the pixels where the land cover doesn't change.
+
+### Check Normality
+
+```{r check normality}
+
+# Plot histogram of number of records by time period
+occ_df_after_records |>
+  filter(ocurrences_after < 100) |>
+  ggplot(aes(x = ocurrences_after)) +
+  geom_histogram(binwidth = 2, position = "dodge", 
+                 alpha = 0.4) +
+  facet_grid(time_period ~ ., scales = "free") +
+  theme_classic()
+```
+
+Could be either exponential or geometric distribution - but absolutely not normal.
+
+```{r goodness of fit tests for  geometric distribution}
+
+```
+
+### Check Zero Inflation
+
+```{r check zero inflation}
+
+# Calculate % of rows with values of 0 for number of occurrences
+100 * sum(occ_df_after_records$ocurrences_after == 0) / nrow(occ_df_after_records)
+#suspicious
+```
+
+### Check for Collinearity
+
+Covariates in model (cover change, SSB ID and time period) are all categorial. No need to check for collinearity between them.
+
+### Check Relationships
+
+```{r check relationships}
+
+# Plot relationships
+occ_df_after_records |>
+  ggplot(aes(x = time_period, y = ocurrences_after)) +
+  geom_point() +
+  facet_wrap(~cover_change) +
+  theme_classic()
+
+
+```
+
+Relationships difficult to determine but seems that in the case of the pixels where there is land cover change, the relationship with time is not linear.
 
 ## Attempt 1: Model 1: Number of occurrences after change by land cover, time period and SSB ID - negative binomial
 
