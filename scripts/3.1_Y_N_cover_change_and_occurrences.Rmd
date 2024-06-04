@@ -266,12 +266,14 @@ Significant zero inflation. Attempting a zero-inflated negative binomial model t
 # Run zero inflated negative binomial model
 model2_nb_zero <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBid),
                           ziformula = ~ 1,
-                          family = nbinom2, 
+                          family = nbinom1, 
                           data = occ_df_after_records)
 
 # Save model output to file to save time next time
 save(model2_nb_zero, file = here::here("data", "models", "model2_nb_zero.RData"))
 ```
+
+Run this with family = nbiom1 instead of family = nbiom2.
 
 ### Model Validation
 
