@@ -207,7 +207,7 @@ load(here::here("data", "models", "model1_nb.RData"))
 summary(model1_nb)
 ```
 
-Model output suggests a significant effect of time and a significant interaction between time period and land cover change (Y) but no significant effect of land cover. Some high correlation values between cover_change_Y and cover_change_Y:2006_2012 as well as cover_change_Y and cover_change_Y:2012_2018. But this is likely to be expected as cover_change_Y is nested into cover_change_Y:2006_2012 and cover_change_Y:2012_2018. Most residuals (from scaled residuals) are close to zero. But the maximum residual (= 534.64) is very large. The AIC and BIC values are also very large.
+Model output suggests a significant effect of time and a significant interaction between time period and land cover change (Y) but no significant effect of land cover. Some high correlation values between cover_change_Y and cover_change_Y:2006_2012 as well as cover_change_Y and cover_change_Y:2012_2018. But this is to be expected as cover_change_Y is nested into cover_change_Y:2006_2012 and cover_change_Y:2012_2018. Most residuals (from scaled residuals) are close to zero. But the maximum residual (= 534.64) is very large. The AIC and BIC values are also very large.
 
 #### Simulate Residuals with DHARMa
 
@@ -486,3 +486,55 @@ ggplot(occ_df_before_after ,
 ```
 
 Just as with the occurrences after the land cover change, the occurrences before also have some very high outliers, more so for the pixels where there is no change in land cover.
+
+#### Check Normality
+
+```{r normality before}
+
+# Plot histogram of number of records by time period
+occ_df_before_after |>
+  filter(ocurrences_before < 100) |>
+  ggplot(aes(x = ocurrences_before)) +
+  geom_histogram(binwidth = 2, position = "dodge", 
+                 alpha = 0.4) +
+  facet_grid(time_period ~ ., scales = "free") +
+  theme_classic()
+```
+
+Distribution not normal.
+
+#### Check Zero Inflation
+
+```{r zero inflation before after}
+
+# Calculate % of rows with values of 0 for number of occurrences
+100 * sum(occ_df_before_after$ocurrences_after == 0) / nrow(occ_df_before_after) #0.001
+100 * sum(occ_df_before_after$ocurrences_before == 0) / nrow(occ_df_before_after) # 0.007
+
+```
+
+No problems with zero inflation - or so it seems.
+
+#### Check Relationships
+
+```{r check relationship before after}
+occ_df_before_after |>
+  ggplot(aes(x = ocurrences_before, y = ocurrences_after, fill = cover_change)) +
+  geom_point(size = 2) +
+  facet_wrap(~time_period) +
+  theme_classic()
+```
+
+### Model Setup
+
+```{r model 1, include = FALSE, eval = FALSE}
+
+# Run negative binomial model
+model5_nb <- glmer.nb(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(ocurrences_before) + (1 | SSBid),
+                      data = occ_df_before_after)
+
+# Save model output to file to save time next time
+save(model5_nb, file = here::here("data", "models", "model5_nb.RData"))
+```
+
+Error in eval(mc, parent.frame(1L)) : PIRLS loop resulted in NaN value - problem with the offset?
