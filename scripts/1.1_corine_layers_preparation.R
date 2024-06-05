@@ -8,7 +8,7 @@
 # 1. DEFINE FUNCTIONS ----------------------------------------------------------
 
 ## 1.1. Function to download files if they do not yet exist --------------------
-download_files <- function(urls, filenames, dir = "data/raw_data") {
+download_files <- function(urls, filenames, dir = here("data", "raw_data")) {
   if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
   for (i in seq_along(urls)) {
     file_path <- file.path(dir, filenames[i])
@@ -19,8 +19,14 @@ download_files <- function(urls, filenames, dir = "data/raw_data") {
 }
 
 ## 1.2. Function to read rasters -----------------------------------------------
-read_rasters <- function(filenames, dir = "data/raw_data") {
-  rasters <- lapply(filenames, function(x) rast(here(dir, x)))
+read_rasters <- function(filenames, dir = here("data/raw_data")) {
+  rasters <- lapply(filenames, function(x) {
+    file_path <- file.path(dir, x)
+    if (!file.exists(file_path)) {
+      stop(paste("File does not exist:", file_path))
+    }
+    rast(file_path)
+  })
   return(do.call(c, rasters))
 }
 
