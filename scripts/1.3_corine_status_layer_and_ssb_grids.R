@@ -11,10 +11,11 @@ library(terra)
 library(sf)
 library(data.table)
 library(tidyverse)
+library(tidyterra)
 library(dplyr)
 library(ggplot2)
 
-# 1. LOAD DATA ----
+# 1. LOAD DATA -----------------------------------------------------------------
 
 # Add download link from box
 # norway_corine_status_modified_stack <- ("https://ntnu.box.com/shared/static/z1751qp8epnqkmjs8mex9vdl29tjjr5i.tif")
@@ -35,17 +36,24 @@ norway_corine_status_modified_stack <- rast(here("data",
                                                  "norway_corine_status_modified_stack.tif"))
 
 ssb_grids <- vect(here("data", "raw_data",
-                       "SSB010KM", "Ruter_10km_Norge.shp"))
+                       "SSB050KM", "ssb50km.shp"))
 
 occurrences_norway <- fread(here("data", "cleaned_occurrences.txt"))
 
-# 2. ADD GBIF OCCURRENCE RECORDS ----
+# Download shapefile of municipalities
+norway_municipalities <- geodata::gadm(country = "NOR", level = 2, 
+                                       path = tempdir(),
+                                       version = "latest")
 
-## 2.1. Re-project CORINE STATUS and SSB grids to match the occurrences ----
+# 2. ADD GBIF OCCURRENCE RECORDS -----------------------------------------------
+
+## 2.1. Re-project CORINE, SSB grid and municipalities to match occurrences ----
 
 # Check projections
-crs(norway_corine_status_modified_stack, proj = TRUE) #"+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
+crs(norway_corine_status_modified_stack, proj = TRUE) 
+  #"+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
 crs(ssb_grids, proj = TRUE) #"+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs"
+crs(norway_municipalities, proj = TRUE) # "+proj=longlat +datum=WGS84 +no_defs"
 
 # Re-project SSB grids to match the projection of occurrences
 norway_ssb_grids <- terra::project(ssb_grids,
@@ -55,9 +63,17 @@ norway_ssb_grids <- terra::project(ssb_grids,
 corine_status_wgs84 <- project(norway_corine_status_modified_stack, 
                         "+proj=longlat +datum=WGS84 +no_defs", method = "near")
 
+# Re-project Norway municipalities
+norway_municipalities_wgs84 <- project(norway_municipalities, 
+                                       "+proj=longlat +datum=WGS84 +no_defs")
+
 # Check that projections match
-crs(norway_ssb_grids, proj = TRUE) # "+proj=longlat +datum=WGS84 +no_defs"
-crs(corine_status_wgs84[[1]], proj = TRUE) #"+proj=longlat +datum=WGS84 +no_defs"
+if (crs(norway_ssb_grids, proj = TRUE) ==  crs(corine_status_wgs84[[1]], proj = TRUE) 
+    && crs(corine_status_wgs84[[1]], proj = TRUE) == crs(norway_municipalities_wgs84, proj = TRUE)){
+  print ("Projections correct")
+} else {
+  print ("Projections NOT correct")
+}
 
 # Check values for reprojected CORINE layer
 levels(as.factor(as.data.frame(corine_status_wgs84[[1]])$U2006_CLC2000_V2020_20u1))
@@ -72,10 +88,14 @@ occurrences_sp <- st_as_sf(occurrences_norway,
 # Convert occurrences to spatial vector
 occurrences_vect <- vect(occurrences_sp)
 
-## 2.3. Extract SSB ID for occurrences ----
+## 2.3. Extract SSB ID for occurrences -----------------------------------------
 occurrenes_SSB <- terra::intersect(occurrences_vect, norway_ssb_grids)
 
-## 2.4. Create additional layer with a unique cell ID for each CORINE STATUS cell ----
+## 2.4. Extract municipality for occurrences -----------------------------------
+occurrences_municipalities <- terra::intersect(occurrenes_SSB,
+                                               norway_municipalities_wgs84)
+
+## 2.4. Create layer with a unique cell ID for each CORINE cell ----------------
 
 #Create an empty raster with the same details as the first CORINE STATUS layer
 ID_raster <- corine_status_wgs84[[1]]
@@ -83,23 +103,23 @@ ID_raster <- corine_status_wgs84[[1]]
 # Assign each cell a unique number
 values(ID_raster) <- 1:ncell(corine_status_wgs84[[1]])
 
-# Change name of layer in ID_raster so it does not duplicate the ones in corine_status_wgs84
+# Change name of layer in ID_raster to avoid replication of the ones in CORINE
 ID_raster <- ID_raster |>
   rename(cell_ID = U2006_CLC2000_V2020_20u1)
 
 # Combine the ID raster with the CORINE STATUS raster
 corine_ID <- c(corine_status_wgs84, ID_raster)
 
-## 2.5. Extract land cover cell values for each occurrence record ----
+## 2.5. Extract land cover cell values for each occurrence record --------------
 
 # Extract raster values for occurrences into dataframe
-corine_status_occurrences_df <- terra::extract(corine_ID, occurrenes_SSB,
+corine_status_occurrences_df <- terra::extract(corine_ID, occurrences_municipalities,
                                             df = TRUE)
 # Save dataframes to file
-write.csv(corine_status_occurrences_df, here("data",
-                                             "corine_status_ID_all_layers_occurrences_df.csv"))
+save(occurrence_SSB_df, file = here::here("data", "derived_data",
+                                          "CORINE_Status_SSB_municipalities_occ_df.rda"))
 
-## 2.6. Add extracted values to the occurrences ----
+## 2.6. Add extracted values to the occurrences --------------------------------
 
 # Convert SpatVector to dataframe
 occurrence_SSB_df <- as.data.frame(occurrenes_SSB)
@@ -119,218 +139,5 @@ occurrence_SSB_df <- bind_cols(occurrence_SSB_df,
 colnames(occurrence_SSB_df)
 
 # Save to file
-save(occurrence_SSB_df, file = here::here("data","occurrences_SSB_land_cover.rda"))
-save(occurrence_SSB_df, file = here::here("data","occurrences_SSB_land_cover.rds"))
-
-
-# 3. COMPARE SPECIES RICHNESS BETWEEN CHANGED AND UNCHNGED PIXELS ----
-
-## 3.1. 2000 - 2006 ----
-
-# Prep dataframe: subset for 2000-2006, exclude NA land cover, remove unnecessary columns, add cover change? column,
-occ_df_2000_2006 <- occ_SSB_df |>
-  select(V1, gbifID, year, species, land_cover_2000, land_cover_2006, 
-         SSBid, corine_cell_ID, TARGET_FID) |>
-  filter(!is.na (land_cover_2000) & !is.na(land_cover_2006)) |>
-  filter(year <= 2006) |>
-  mutate(cover_change = if_else (land_cover_2000 == land_cover_2006, "N", "Y"))
-
-# Calculate species richness for each SSBid
-occ_df_2000_2006_richness  <- occ_df_2000_2006  |>
-  group_by(corine_cell_ID) |>
-  summarise(
-    species_richness = n_distinct(species),
-    land_cover_2000 = first(land_cover_2000),
-    land_cover_2006 = first(land_cover_2006),
-    cover_change = first(cover_change),
-    SSBid = first(SSBid))
-
-# Identify SSB IDs that have values for both cover_change = Y and cover_change = N
-ssb_ids_with_both <- occ_df_2000_2006_richness |>
-  group_by(SSBid) |>
-  filter(all(c("Y", "N") %in% cover_change)) |>
-  ungroup()
-
-# Calculate the number of unique corine_cell_IDs for each SSBid
-ssbid_counts <- ssb_ids_with_both |>
-  group_by(SSBid) |>
-  summarise(unique_corine_count = n_distinct(corine_cell_ID)) |>
-  ungroup()
-
-# Identify top 10 SSBids with most unique corine_cell_ID values
-top_ssbids <- ssbid_counts |>
-  arrange(desc(unique_corine_count)) |>
-  slice_head(n = 5)
-  
-# Filter dataframe to only includes rows corresponding to the top 10 SSBids
-filtered_occ_df_2000_2006_richness <- occ_df_2000_2006_richness |>
-  filter(SSBid %in% top_ssbids$SSBid)
-
-# Map land cover values to their names
-land_cover_mapping <- setNames(c("Urban", "Complex Agriculture", "Agriculture & Natural Vegetation", 
-                                 "Forests", "Moors & Grasslands", "Transitional Woodland Shrub", 
-                                 "Sparsely Vegetated Areas"), 
-                               c(1, 80, 103, 250, 380, 590, 711))
-
-# Change values in df based on mapping
-filtered_occ_df_2000_2006_richness$land_cover_2000 <- factor(filtered_occ_df_2000_2006_richness$land_cover_2000,
-                                                             levels = names(land_cover_mapping),
-                                                             labels = land_cover_mapping)
-
-# Subset data based on unique combination of land cover in 2000 and SSB ID 
-filtered_occ_2000_2006 <- filtered_occ_df_2000_2006_richness |>
-  group_by(land_cover_2000, SSBid) |>
-  filter(n() > 1) |>
-  ungroup()
-
-# Plot comparison for each combination
-ggplot(filtered_occ_2000_2006, 
-       aes(x = cover_change, y = species_richness, fill = cover_change)) +
-  geom_violin(trim = FALSE) +
-  facet_wrap(~ land_cover_2000 + SSBid, scales = "free_y", ncol = 5) +
-  labs( x = "Cover Change", 
-       y = "Species Richness") +
-  theme_minimal()
-
-## 3.2. 2006 - 2012 ----
-
-# Prep dataframe: subset for 2000-2006, exclude NA land cover, remove unnecessary columns, add cover change? column,
-occ_df_2006_2012 <- occ_SSB_df |>
-  select(V1, gbifID, year, species, land_cover_2006, land_cover_2012, 
-         SSBid, corine_cell_ID, TARGET_FID) |>
-  filter(!is.na (land_cover_2006) & !is.na(land_cover_2012)) |>
-  filter(year >= 2006 & year <= 2012) |>
-  mutate(cover_change = if_else (land_cover_2006 == land_cover_2012, "N", "Y"))
-
-# Calculate species richness for each SSBid
-occ_df_2006_2012_richness  <- occ_df_2006_2012  |>
-  group_by(corine_cell_ID) |>
-  summarise(
-    species_richness = n_distinct(species),
-    land_cover_2006 = first(land_cover_2006),
-    land_cover_2012 = first(land_cover_2012),
-    cover_change = first(cover_change),
-    SSBid = first(SSBid))
-
-# Identify SSB IDs that have values for both cover_change = Y and cover_change = N
-ssb_ids_with_both <- occ_df_2006_2012_richness |>
-  group_by(SSBid) |>
-  filter(all(c("Y", "N") %in% cover_change)) |>
-  ungroup()
-
-# Calculate the number of unique corine_cell_IDs for each SSBid
-ssbid_counts <- ssb_ids_with_both |>
-  group_by(SSBid) |>
-  summarise(unique_corine_count = n_distinct(corine_cell_ID)) |>
-  ungroup()
-
-# Identify top 10 SSBids with most unique corine_cell_ID values
-top_ssbids <- ssbid_counts |>
-  arrange(desc(unique_corine_count)) |>
-  slice_head(n = 5)
-
-# Filter dataframe to only includes rows corresponding to the top 10 SSBids
-filtered_occ_df_2006_2012_richness <- occ_df_2006_2012_richness |>
-  filter(SSBid %in% top_ssbids$SSBid)
-
-# Map land cover values to their names
-land_cover_mapping <- setNames(c("Urban", "Complex Agriculture", "Agriculture & Natural Vegetation", 
-                                 "Forests", "Moors & Grasslands", "Transitional Woodland Shrub", 
-                                 "Sparsely Vegetated Areas"), 
-                               c(1, 80, 103, 250, 380, 590, 711))
-
-# Change values in df based on mapping
-filtered_occ_df_2006_2012_richness$land_cover_2006 <- factor(filtered_occ_df_2006_2012_richness$land_cover_2006,
-                                                             levels = names(land_cover_mapping),
-                                                             labels = land_cover_mapping)
-
-# Subset data based on unique combination of land cover in 2000 and SSB ID 
-filtered_occ_2006_2012 <- filtered_occ_df_2006_2012_richness |>
-  group_by(land_cover_2006, SSBid) |>
-  filter(n() > 1) |>
-  ungroup()
-
-# Plot comparison for each combination
-ggplot(filtered_occ_2006_2012, 
-       aes(x = cover_change, y = species_richness, fill = cover_change)) +
-  geom_violin(trim = FALSE) +
-  facet_wrap(~ land_cover_2006 + SSBid, scales = "free_y", ncol = 5) +
-  labs( x = "Cover Change", 
-        y = "Species Richness") +
-  theme_minimal()
-
-## 3.3. 2012 - 2018 ----
-
-# Prep dataframe: subset for 2012-2018, exclude NA land cover, remove unnecessary columns, add cover change? column,
-occ_df_2012_2018 <- occ_SSB_df |>
-  select(V1, gbifID, year, species, land_cover_2012, land_cover_2018, 
-         SSBid, corine_cell_ID, TARGET_FID) |>
-  filter(!is.na (land_cover_2012) & !is.na(land_cover_2018)) |>
-  filter(year >= 2012) |>
-  mutate(cover_change = if_else (land_cover_2012 == land_cover_2018, "N", "Y"))
-
-# Calculate species richness for each SSBid
-occ_df_2012_2018_richness  <- occ_df_2012_2018  |>
-  group_by(corine_cell_ID) |>
-  summarise(
-    species_richness = n_distinct(species),
-    land_cover_2012 = first(land_cover_2012),
-    land_cover_2018 = first(land_cover_2018),
-    cover_change = first(cover_change),
-    SSBid = first(SSBid))
-
-# Identify SSB IDs that have values for both cover_change = Y and cover_change = N
-ssb_ids_with_both <- occ_df_2012_2018_richness |>
-  group_by(SSBid) |>
-  filter(all(c("Y", "N") %in% cover_change)) |>
-  ungroup()
-
-# Calculate the number of unique corine_cell_IDs for each SSBid
-ssbid_counts <- ssb_ids_with_both |>
-  group_by(SSBid) |>
-  summarise(unique_corine_count = n_distinct(corine_cell_ID)) |>
-  ungroup()
-
-# Identify top 10 SSBids with most unique corine_cell_ID values
-top_ssbids <- ssbid_counts |>
-  arrange(desc(unique_corine_count)) |>
-  slice_head(n = 5)
-
-# Filter dataframe to only includes rows corresponding to the top 10 SSBids
-filtered_occ_df_2012_2018_richness <- occ_df_2012_2018_richness |>
-  filter(SSBid %in% top_ssbids$SSBid)
-
-# Map land cover values to their names
-land_cover_mapping <- setNames(c("Urban", "Complex Agriculture", "Agriculture & Natural Vegetation", 
-                                 "Forests", "Moors & Grasslands", "Transitional Woodland Shrub", 
-                                 "Sparsely Vegetated Areas"), 
-                               c(1, 80, 103, 250, 380, 590, 711))
-
-# Change values in df based on mapping
-filtered_occ_df_2012_2018_richness$land_cover_2012 <- factor(filtered_occ_df_2012_2018_richness$land_cover_2012,
-                                                             levels = names(land_cover_mapping),
-                                                             labels = land_cover_mapping)
-
-# Subset data based on unique combination of land cover in 2000 and SSB ID 
-filtered_occ_2012_2018 <- filtered_occ_df_2012_2018_richness |>
-  group_by(land_cover_2012, SSBid) |>
-  filter(n() > 1) |>
-  ungroup()
-
-# Plot comparison for each combination
-ggplot(filtered_occ_2012_2018, 
-       aes(x = cover_change, y = species_richness, fill = cover_change)) +
-  geom_violin(trim = FALSE) +
-  facet_wrap(~ land_cover_2012 + SSBid, scales = "free_y", ncol = 5) +
-  labs( x = "Cover Change", 
-        y = "Species Richness") +
-  theme_minimal()
-
-
-
-
-
-
-
-
-
+save(occurrence_SSB_df, file = here::here("data", "derived_data",
+                                          "occurrences_SSB_municipalities_land_cover.rda"))
