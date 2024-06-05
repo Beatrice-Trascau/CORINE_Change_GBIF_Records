@@ -123,10 +123,10 @@ norway_corine_status_stack <- crop_mask_to_norway(corine_status_stack,
                                                   norway_corine_projection)
 
 # Save the cropped layers 
-terra::writeRaster(norway_corine_change_stack, here("data", "derived_data",
-                                                    "norway_corine_change_stack.tif"))
-terra::writeRaster(norway_corine_status_stack, here("data", "derived_data",
-                                                    "norway_corine_status_stack.tif"), 
+terra::writeRaster(norway_corine_change_stack, 
+                   here("data", "derived_data", "norway_corine_change_stack.tif"))
+terra::writeRaster(norway_corine_status_stack, 
+                   here("data", "derived_data", "norway_corine_status_stack.tif"), 
                    overwrite = TRUE)
 
 # 4. MODIFY VALUES OF CHANGE LAYERS TO HELP IDENTIFY LAND COVER CHANGES --------
@@ -143,11 +143,11 @@ norway_corine_change_modified <- modify_class_values(norway_corine_change_stack,
                                                      class_modifications)
 
 ## 4.3. Save modified layers ---------------------------------------------------
-terra::writeRaster(norway_corine_change_modified, here("data", "derived_data",
-                                                       "norway_corine_change_modified_stack.tif"), 
+terra::writeRaster(norway_corine_change_modified, 
+                   here("data", "derived_data", "norway_corine_change_modified_stack.tif"), 
                    overwrite = TRUE)
-terra::writeRaster(norway_corine_status_modified, here("data", "derived_data",
-                                                       "norway_corine_status_modified_stack.tif"), 
+terra::writeRaster(norway_corine_status_modified, 
+                   here("data", "derived_data","norway_corine_status_modified_stack.tif"), 
                    overwrite = TRUE)
 
 # END OF SCRIPT ----
