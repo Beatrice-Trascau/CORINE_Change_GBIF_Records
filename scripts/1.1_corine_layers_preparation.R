@@ -101,8 +101,12 @@ corine_status_stack <- read_rasters(status_filenames)
 norway <- geodata::gadm(country = "NOR", level = 0, 
                         path = tempdir(),
                         version = "latest")
-#Check shapefile
+# Check shapefile
 plot(norway)
+
+# Save shapefile
+writeVector(norway, here::here("data", "raw_data", "raw_norway_shapefile",
+                               "norway.shp"))
 
 ## 3.2. Re-project Norway shapefile to match projection of CORINE layers -------
 
@@ -115,6 +119,11 @@ norway_corine_projection <- project(norway, crs(corine_change_stack))
 
 # Check projection
 crs(norway_corine_projection, proj = TRUE) #projection correct now
+
+# Save re-projected norway shapefile
+writeVector(norway, here::here("data", "derived_data", 
+                               "reprojected_norway_shapefile", 
+                               "norway_corine_projection.shp"))
 
 ## 3.3. Crop and mask CORINE stack to Norway -----------------------------------
 norway_corine_change_stack <- crop_mask_to_norway(corine_change_stack, 
