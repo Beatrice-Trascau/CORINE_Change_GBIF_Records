@@ -22,8 +22,8 @@ library(ggplot2)
 ```
 
 ```{r data load, include = FALSE, eval = FALSE}
-load(here("data", "occurrences_SSB_land_cover.rda"))
-occ_SSB_land_cover <- occurrence_SSB_df
+load(here("data", "derived_data", "occurrences_SSB_municipalities_land_cover.rda"))
+occ_SSB_land_cover <- occurrence_municipalities_df
 ```
 
 ```{r prepare df for analyis, include = FALSE, eval = FALSE}
@@ -40,7 +40,7 @@ occ_SSB_land_cover <- occ_SSB_land_cover |>
 # Prepare data for the period 2006-2009
 occ_df_after_2000.2006 <- occ_SSB_land_cover |>
   select(V1, gbifID, year, species, land_cover2000, land_cover2006, 
-         SSBid, cell_ID, TARGET_FID) |>
+         SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2000) & !is.na(land_cover2006)) |>
   filter(year >= 2006 & year <= 2009) |>
   mutate(cover_change = if_else(land_cover2000 == land_cover2006, "N", "Y"))
@@ -53,7 +53,8 @@ occ_df_after_2000.2006_records <- occ_df_after_2000.2006 |>
     land_cover2000 = first(land_cover2000),
     land_cover2006 = first(land_cover2006),
     cover_change = first(cover_change),
-    SSBid = first(SSBid)) |>
+    SSBID = first(SSBID),
+    NAME_2 = first(NAME_2)) |>
   mutate(time_period = "2000-2006") |>
   select(-c(land_cover2000, land_cover2006))
 
@@ -62,7 +63,7 @@ occ_df_after_2000.2006_records <- occ_df_after_2000.2006 |>
 # Prepare data for the period 2012-2015
 occ_df_after_2006.2012 <- occ_SSB_land_cover |>
   select(V1, gbifID, year, species, land_cover2006, land_cover2012, 
-         SSBid, cell_ID, TARGET_FID) |>
+         SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2006) & !is.na(land_cover2012)) |>
   filter(year >= 2012 & year <= 2015) |>
   mutate(cover_change = if_else(land_cover2006 == land_cover2012, "N", "Y"))
@@ -75,7 +76,8 @@ occ_df_after_2006.2012_records <- occ_df_after_2006.2012 |>
     land_cover2006 = first(land_cover2006),
     land_cover2012 = first(land_cover2012),
     cover_change = first(cover_change),
-    SSBid = first(SSBid)) |>
+    SSBID = first(SSBID),
+    NAME_2 = first(NAME_2)) |>
   mutate(time_period = "2006-2012") |>
   select(-c(land_cover2006, land_cover2012))
 
@@ -84,7 +86,7 @@ occ_df_after_2006.2012_records <- occ_df_after_2006.2012 |>
 # Prepare data for the period 2015-2018
 occ_df_after_2012.2018 <- occ_SSB_land_cover |>
   select(V1, gbifID, year, species, land_cover2012, land_cover2018, 
-         SSBid, cell_ID, TARGET_FID) |>
+         SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2012) & !is.na(land_cover2018)) |>
   filter(year >= 2015 & year <= 2018) |>
   mutate(cover_change = if_else(land_cover2012 == land_cover2018, "N", "Y"))
@@ -97,7 +99,8 @@ occ_df_after_2012.2018_records <- occ_df_after_2012.2018 |>
     land_cover2012 = first(land_cover2012),
     land_cover2018 = first(land_cover2018),
     cover_change = first(cover_change),
-    SSBid = first(SSBid)) |>
+    SSBID = first(SSBID),
+    NAME_2 = first(NAME_2)) |>
   mutate(time_period = "2012-2018") |>
   select(-c(land_cover2012, land_cover2018))
 
