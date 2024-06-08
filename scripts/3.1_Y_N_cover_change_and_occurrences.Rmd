@@ -106,10 +106,16 @@ occ_df_after_2012.2018_records <- occ_df_after_2012.2018 |>
 
 # 4. Combine the above 3 into a single df ----------------------------------------------
 
-occ_df_after_records <- bind_rows(occ_df_after_2000.2006_records,
+occ_y_n_cover_change_after_records_for_model <- bind_rows(occ_df_after_2000.2006_records,
                                   occ_df_after_2006.2012_records,
                                   occ_df_after_2012.2018_records) |>
-  select(-cell_ID)
+  select(-cell_ID) |>
+  rename(municipality = NAME_2)
+
+# 5. Write dataframe to file -----------------------------------------------------------
+save(occ_y_n_cover_change_after_records_for_model, 
+     file = here::here("data", "derived_data",
+                       "occ_y_n_cover_change_after_records_for_model.rda"))
 
 ```
 
@@ -118,7 +124,12 @@ occ_df_after_records <- bind_rows(occ_df_after_2000.2006_records,
 ### Inspect Data
 
 ```{r inspect data}
-glimpse(occ_df_after_records)
+
+# Read in data
+load(here::here("data", "derived_data",
+                "occ_y_n_cover_change_after_records_for_model.rda"))
+
+glimpse(occ_y_n_cover_change_after_records_for_model)
 ```
 
 ### Check for Outliers
@@ -126,7 +137,7 @@ glimpse(occ_df_after_records)
 ```{r check outliers}
 
 # Barplot of number of occurrences
-ggplot(occ_df_after_records , 
+ggplot(occ_y_n_cover_change_after_records_for_model , 
        aes(x = cover_change, y = ocurrences_after, fill = time_period))+
   geom_boxplot()+
   theme_classic()
@@ -142,7 +153,7 @@ There are some very clear outliers in the number of occurrence records, more so 
 ```{r check normality}
 
 # Plot histogram of number of records by time period
-occ_df_after_records |>
+occ_y_n_cover_change_after_records_for_model |>
   filter(ocurrences_after < 100) |>
   ggplot(aes(x = ocurrences_after)) +
   geom_histogram(binwidth = 2, position = "dodge", 
@@ -162,7 +173,7 @@ Could be either exponential or geometric distribution - but absolutely not norma
 ```{r check zero inflation}
 
 # Calculate % of rows with values of 0 for number of occurrences
-100 * sum(occ_df_after_records$ocurrences_after == 0) / nrow(occ_df_after_records)
+100 * sum(occ_y_n_cover_change_after_records_for_model$ocurrences_after == 0) / nrow(occ_y_n_cover_change_after_records_for_model)
 #suspicious
 ```
 
@@ -175,7 +186,7 @@ Covariates in model (cover change, SSB ID and time period) are all categorial. N
 ```{r check relationships}
 
 # Plot relationships
-occ_df_after_records |>
+occ_y_n_cover_change_after_records_for_model |>
   ggplot(aes(x = time_period, y = ocurrences_after)) +
   geom_point() +
   facet_wrap(~cover_change) +
@@ -191,11 +202,15 @@ Relationships difficult to determine but seems that in the case of the pixels wh
 ```{r model 1, include = FALSE, eval = FALSE}
 
 # Run negative binomial model
-model1_nb <- glmer.nb(ocurrences_after ~ cover_change * time_period + (1|SSBid),                    data = occ_df_after_records)
+model1_nb <- glmer.nb(ocurrences_after ~ cover_change * time_period + (1|municipality),                    data = occ_y_n_cover_change_after_records_for_model)
 
 # Save model output to file to save time next time
 save(model1_nb, file = here::here("data", "models", "model1_nb.RData"))
 ```
+
+The model: ocurrences_after \~ cover_change \* time_period + (1\|SSBID) failed to converge: "Warning: Model failed to converge with max\|grad\| = 0.00724284 (tol = 0.002, component 1)Warning: Model is nearly unidentifiable: very large eigenvalue - Rescale variables?"
+
+The model ocurrences_after \~ cover_change \* time_period + (1\|municipality) also failed to converge: "Warning: Model failed to converge with max\|grad\| = 0.00214456 (tol = 0.002, component 1)Warning: Model is nearly unidentifiable: very large eigenvalue - Rescale variables?"
 
 ### Model Validation
 
@@ -270,7 +285,7 @@ Significant zero inflation. Attempting a zero-inflated negative binomial model t
 model2_nb_zero <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBid),
                           ziformula = ~ 1,
                           family = nbinom1, 
-                          data = occ_df_after_records)
+                          data = occ_y_n_cover_change_after_records_for_model)
 
 # Save model output to file to save time next time
 save(model2_nb_zero, file = here::here("data", "models", "model2_nb_zero.RData"))
@@ -327,9 +342,9 @@ Test for zero inflation is significant. Clearly, this model is not usable either
 ```{r model 3. include = FALSE, eval = FALSE}
 
 # Run negative binomial model
-model3_nb <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBid),
-                          family = nbinom2, 
-                          data = occ_df_after_records)
+model3_nb <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
+                          family = nbinom1, 
+                          data = occ_y_n_cover_change_after_records_for_model)
 
 # Save model output to file to save time next time
 save(model3_nb, file = here::here("data", "models", "model3_nb.RData"))
@@ -388,7 +403,7 @@ GAMMs seem to only run with Poisson data, which does not fit for our data.
 # Prepare data for the period 2006-2009
 occ_df_before_2000.2006 <- occ_SSB_land_cover |>
   select(V1, gbifID, year, species, land_cover2000, land_cover2006, 
-         SSBid, cell_ID, TARGET_FID) |>
+         SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2000) & !is.na(land_cover2006)) |>
   filter(year >= 1997 & year <= 2000) |>
   mutate(cover_change = if_else(land_cover2000 == land_cover2006, "N", "Y"))
@@ -401,7 +416,8 @@ occ_df_before_2000.2006_records <- occ_df_before_2000.2006 |>
     land_cover2000 = first(land_cover2000),
     land_cover2006 = first(land_cover2006),
     cover_change = first(cover_change),
-    SSBid = first(SSBid)) |>
+    SSBID = first(SSBID),
+    NAME_2 = first(NAME_2)) |>
   mutate(time_period = "2000-2006") |>
   select(-c(land_cover2000, land_cover2006))
 
@@ -410,7 +426,7 @@ occ_df_before_2000.2006_records <- occ_df_before_2000.2006 |>
 # Prepare data for the period 2003-2006
 occ_df_before_2006.2012 <- occ_SSB_land_cover |>
   select(V1, gbifID, year, species, land_cover2006, land_cover2012, 
-         SSBid, cell_ID, TARGET_FID) |>
+         SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2006) & !is.na(land_cover2012)) |>
   filter(year >= 2003 & year <= 2006) |>
   mutate(cover_change = if_else(land_cover2006 == land_cover2012, "N", "Y"))
@@ -423,7 +439,8 @@ occ_df_before_2006.2012_records <- occ_df_before_2006.2012 |>
     land_cover2006 = first(land_cover2006),
     land_cover2012 = first(land_cover2012),
     cover_change = first(cover_change),
-    SSBid = first(SSBid)) |>
+    SSBID = first(SSBID),
+    NAME_2 = first(NAME_2)) |>
   mutate(time_period = "2006-2012") |>
   select(-c(land_cover2006, land_cover2012))
 
@@ -432,7 +449,7 @@ occ_df_before_2006.2012_records <- occ_df_before_2006.2012 |>
 # Prepare data for the period 2009-2012
 occ_df_before_2012.2018 <- occ_SSB_land_cover |>
   select(V1, gbifID, year, species, land_cover2012, land_cover2018, 
-         SSBid, cell_ID, TARGET_FID) |>
+         SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2012) & !is.na(land_cover2018)) |>
   filter(year >= 2009 & year <= 2012) |>
   mutate(cover_change = if_else(land_cover2012 == land_cover2018, "N", "Y"))
@@ -445,7 +462,8 @@ occ_df_before_2012.2018_records <- occ_df_before_2012.2018 |>
     land_cover2012 = first(land_cover2012),
     land_cover2018 = first(land_cover2018),
     cover_change = first(cover_change),
-    SSBid = first(SSBid)) |>
+    SSBID = first(SSBID),
+    NAME_2 = first(NAME_2)) |>
   mutate(time_period = "2012-2018") |>
   select(-c(land_cover2012, land_cover2018))
 
@@ -454,7 +472,8 @@ occ_df_before_2012.2018_records <- occ_df_before_2012.2018 |>
 occ_df_before_records <- bind_rows(occ_df_before_2000.2006_records,
                                   occ_df_before_2006.2012_records,
                                   occ_df_before_2012.2018_records) |>
-  select(-cell_ID)
+  select(-cell_ID) |>
+  rename(municipality = NAME_2)
 
 
 # 5. Combine occ_df_before_records wtih occ_df_after_records ---------------------------
@@ -462,13 +481,18 @@ occ_df_before_records <- bind_rows(occ_df_before_2000.2006_records,
 # Full join of the dfs on SSBid and time_period
 occ_df_before_after <- full_join(occ_df_after_records,
                                  occ_df_before_records,
-                                 by = c("SSBid", "time_period", "cover_change"))
+                                 by = c("SSBID", "time_period", 
+                                        "cover_change", "municipality"))
 
 # Replace NA with 0 for occurrences_before and occurrences_after
-occ_df_before_after <- occ_df_before_after |>
+occ_df_before_after_for_model <- occ_df_before_after |>
   mutate(ocurrences_after = ifelse(is.na(ocurrences_after), 0, ocurrences_after),
          ocurrences_before = ifelse(is.na(ocurrences_before), 0, ocurrences_before))
 
+
+# 5. Write dataframe to file -----------------------------------------------------------
+save(occ_df_before_after_for_model, file = here::here("data", "derived_data",
+                                          "occ_df_before_after_for_model.rda"))
 
 ```
 
