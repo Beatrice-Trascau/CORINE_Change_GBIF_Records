@@ -122,7 +122,7 @@ save(occurrence_SSB_df, file = here::here("data", "derived_data",
 ## 2.6. Add extracted values to the occurrences --------------------------------
 
 # Convert SpatVector to dataframe
-occurrence_SSB_df <- as.data.frame(occurrenes_SSB)
+occurrence_municipalities_df <- as.data.frame(occurrences_municipalities)
 
 # Change names in corine_status_occurrences_df
 corine_status_occurrences_df <- corine_status_occurrences_df |>
@@ -132,12 +132,12 @@ corine_status_occurrences_df <- corine_status_occurrences_df |>
          land_cover2018 = U2018_CLC2018_V2020_20u1)
 
 # Add columns from the dataframe with the extracted values
-occurrence_SSB_df <- bind_cols(occurrence_SSB_df, 
+occurrence_municipalities_df <- bind_cols(occurrence_municipalities_df, 
                                select(corine_status_occurrences_df, 2:6))
 
 # Check column names
-colnames(occurrence_SSB_df)
+colnames(occurrence_municipalities_df)
 
 # Save to file
-save(occurrence_SSB_df, file = here::here("data", "derived_data",
+save(occurrence_municipalities_df, file = here::here("data", "derived_data",
                                           "occurrences_SSB_municipalities_land_cover.rda"))
