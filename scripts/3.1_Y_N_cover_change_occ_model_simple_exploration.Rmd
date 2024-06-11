@@ -1,0 +1,341 @@
+---
+title: "glmms_land_cover_change(y/n)_and_occurrences"
+author: "Beatrice Trascau"
+date: "2024-05-31"
+output: html_document
+---
+
+# **3.1. GLMMS: Land Cover Change (Y/N) and Occurrence Records (Simple Model)**
+
+This markdown outlines the process of modelling the number of species occurrence records in relation to land cover changes, time and SSB ID.
+
+The models ran as part of this are as follows:
+
+| Model Number | Function | Family  | Link  | SSBID/Municipality | Ran? |
+|--------------|----------|---------|-------|--------------------|------|
+| 1.1          | glmer.nb |         |       | SSBID              |      |
+| 1.2          | glmmTMB  | nbinom1 | log   | SSBID              |      |
+| 1.3          | glmmTMB  | nbinom1 | log   | Municipality       |      |
+| 1.4          | glmmTMB  | nbinom1 | logit | SSBID              |      |
+| 1.5          | glmmTMB  | nbinom2 | logit | Municipality       |      |
+
+```{r library load, include = FALSE}
+library(here)
+library(dplyr)
+library(lattice)
+library(lme4)
+library(DHARMa)
+library(glmmTMB)
+library(mgcv)
+library(gamm4)
+library(ggplot2)
+```
+
+## Data Exploration
+
+### Inspect Data
+
+```{r inspect data}
+
+# Read in data
+load(here::here("data", "derived_data",
+                "occ_y_n_cover_change_after_records_for_model.rda"))
+
+glimpse(occ_y_n_cover_change_after_records_for_model)
+```
+
+### Check for Outliers
+
+```{r check outliers}
+
+# Barplot of number of occurrences
+ggplot(occ_y_n_cover_change_after_records_for_model , 
+       aes(x = cover_change, y = ocurrences_after, fill = time_period))+
+  geom_boxplot()+
+  theme_classic()
+```
+
+There are some very clear outliers in the number of occurrence records, more so for the pixels where the land cover doesn't change.
+
+### Check Normality
+
+```{r check normality}
+
+# Plot histogram of number of records by time period
+occ_y_n_cover_change_after_records_for_model |>
+  filter(ocurrences_after < 100) |>
+  ggplot(aes(x = ocurrences_after)) +
+  geom_histogram(binwidth = 2, position = "dodge", 
+                 alpha = 0.4) +
+  facet_grid(time_period ~ ., scales = "free") +
+  theme_classic()
+```
+
+### Check Zero Inflation
+
+```{r check zero inflation}
+
+# Calculate % of rows with values of 0 for number of occurrences
+100 * sum(occ_y_n_cover_change_after_records_for_model$ocurrences_after == 0) / nrow(occ_y_n_cover_change_after_records_for_model)
+#suspicious
+```
+
+### Check for Collinearity
+
+Covariates in model (cover change, SSB ID and time period) are all categorial. No need to check for collinearity between them.
+
+### Check Relationships
+
+```{r check relationships}
+
+# Plot relationships
+occ_y_n_cover_change_after_records_for_model |>
+  ggplot(aes(x = time_period, y = ocurrences_after)) +
+  geom_point() +
+  facet_wrap(~cover_change) +
+  theme_classic()
+
+
+```
+
+Relationships difficult to determine but seems that in the case of the pixels where there is land cover change, the relationship with time is not linear.
+
+## Model 1.1.
+
+The model: ocurrences_after \~ cover_change \* time_period + (1\|SSBID) failed to converge: "Warning: Model failed to converge with max\|grad\| = 0.00724284 (tol = 0.002, component 1)Warning: Model is nearly unidentifiable: very large eigenvalue - Rescale variables?"
+
+The model ocurrences_after \~ cover_change \* time_period + (1\|municipality) also failed to converge: "Warning: Model failed to converge with max\|grad\| = 0.00214456 (tol = 0.002, component 1)Warning: Model is nearly unidentifiable: very large eigenvalue - Rescale variables?"
+
+This model ran with no problems when the finer SSB ID grid was previously used.
+
+## Model 1.2.
+
+### Model Validation
+
+#### Convergence Check
+
+```{r convergence check}
+
+# Load model from file
+load(here::here("data", "models", "model1.2_nb_SSB.RData"))
+
+# Get summary of the model
+summary(model1.2_nb_SSB)
+```
+
+Model output suggests a significant effect of time and a significant interaction between time period and land cover change (Y) but no significant effect of land cover. AIC and BIC values still large. Dispersion parameter = 45.7.
+
+#### Check Residuals
+
+```{r model 1 attempt 2 check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model1.2_nb_SSB),
+  Residuals = residuals(model1.2_nb_SSB))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+#### Simulate Residuals with DHARMa
+
+```{r simulate residuals}
+
+# Simulate residuals 
+model1.2_nb_SSB_simulation <- simulateResiduals(fittedModel = model1.2_nb_SSB)
+
+# Plot simulated residuals
+plot(model1.2_nb_SSB_simulation)
+```
+
+Simulated residuals deviate significantly from expectations, are overdispersed and have many outliers. The within-group deviations from uniformity are significant. Test for homogeneity of variance is significant.
+
+#### Test for Overdispersion
+
+```{r test for overdispersion}
+testDispersion(model1.2_nb_SSB_simulation)
+```
+
+Simulated residuals significantly overdispersed.
+
+#### Test for Zero-Inflation
+
+```{r test for zero inflation}
+testZeroInflation(model1.2_nb_SSB_simulation)
+```
+
+Simulated residuals significantly zero inflated.
+
+## Model 1.3.
+
+### Model Validation
+
+#### Convergence Check
+
+```{r convergence check}
+
+# Load model from file
+load(here::here("data", "models", "model1.3_nb_municipality.RData"))
+
+# Get summary of the model
+summary(model1.3_nb_municipality)
+```
+
+Model output suggests a significant effect of time and a significant interaction between time period and land cover change (Y) but no significant effect of land cover. AIC and BIC values still large. Dispersion parameter = 45.5.
+
+#### Check Residuals
+
+```{r model 1, attempt 3 check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model1.3_nb_municipality),
+  Residuals = residuals(model1.3_nb_municipality))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+#### Simulate Residuals with DHARMa
+
+```{r model 1 attempt 3 simulate residuals}
+
+# Simulate residuals 
+model1.3_nb_municipality_simulation <- simulateResiduals(fittedModel = model1.3_nb_municipality)
+
+# Plot simulated residuals
+plot(model1.3_nb_municipality_simulation)
+```
+
+#### Test for Overdispersion
+
+```{r model 1 attempt 3 test overdispersion}
+testDispersion(model1.3_nb_municipality_simulation)
+```
+
+Residuals significantly overdispersed.
+
+#### Test for Zero-Inflation
+
+```{r model 1 attempt 3 test zero-inflation}
+testZeroInflation(model1.3_nb_municipality_simulation)
+```
+
+Residuals significantly zero-inflated.
+
+## Model 1.4.
+
+### Model Validation
+
+#### Convergence Check
+
+```{r model 1, attempt 4, convergence check}
+
+# Load model from file
+load(here::here("data", "models", "model1.4_nb_SSB.RData"))
+
+# Get summary of the model
+summary(model1.4_nb_SSB)
+```
+
+No significant effect of time or land cover change. Estimates of the effect sizes are also very small.
+
+#### Check Residuals
+
+```{r model 1, attempt 4, check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model1.4_nb_SSB),
+  Residuals = residuals(model1.4_nb_SSB))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+#### Simulate Residuals
+
+```{r model 1, attempt 4, simulate residuals}
+
+# Simulate residuals 
+model1.4_nb_SSB_simulation <- simulateResiduals(fittedModel = model1.4_nb_SSB)
+
+# Plot simulated residuals
+plot(model1.4_nb_SSB_simulation)
+```
+
+#### Test Overdispersion
+
+```{r model 1, attempt 4, test overdispersion}
+testDispersion(model1.4_nb_SSB_simulation)
+```
+
+Residuals signficantly overdispersed.
+
+#### Test Zero-Inflation
+
+```{r model 1, attempt 4, test zero-inflation}
+testZeroInflation(model1.4_nb_SSB_simulation)
+```
+
+Residuals significantly zero-inflated.
+
+## Model 1.5.
+
+### Model Validation
+
+#### Convergence Check
+
+```{r model 1, attempt 5, convergence check}
+
+# Load model from file
+load(here::here("data", "models", "model1.5_nb_municipality.RData"))
+
+# Get summary of the model
+summary(model1.5_nb_municipality)
+```
+
+#### Check Residuals
+
+```{r model 1, attempt 5, check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model1.5_nb_municipality),
+  Residuals = residuals(model1.5_nb_municipality))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+#### Simulate Residuals
+
+```{r model 1, attempt 5, simulate residuals}
+
+# Simulate residuals 
+model1.5_nb_municipality_simulation <- simulateResiduals(fittedModel = model1.5_nb_municipality)
+
+# Plot simulated residuals
+plot(model1.5_nb_municipality_simulation)
+```
+
+#### Test Overdispersion
+
+```{r model 1, attempt 5, check overdispersion}
+testDispersion(model1.5_nb_municipality_simulation) 
+```
+
+#### Test Zero-Inflation
+
+```{r model 1, attempt 5, check zero-inflation}
+testZeroInflation(model1.5_nb_municipality_simulation) 
+```
