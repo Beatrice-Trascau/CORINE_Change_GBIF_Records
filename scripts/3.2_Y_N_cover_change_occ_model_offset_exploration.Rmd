@@ -1,0 +1,162 @@
+---
+title: "glmms_land_cover_change(y/n)_occ_and_offset"
+author: "Beatrice Trascau"
+date: "2024-06-11"
+output: html_document
+---
+
+# **3.2. GLMMS: Land Cover Change (Y/N) and Occurrence Records (Model with Offset)**
+
+This markdown outlines the process of modelling the number of species occurrence records in relation to land cover changes, time and SSB ID with the number of occurrences before the land cover changes as an offset.
+
+The models ran as part of this are as follows:
+
+| Model Number | Function | Family  | Link | SSBID/Municipality | Ran?                                            |
+|----------|----------|----------|----------|----------|-----------------------|
+| 2.1          | glmer.nb |         |      | SSBID              | No - too large                                  |
+| 2.2          | glmer.nb |         |      | SSBID              | No - NaNs introduced                            |
+| 2.3.         | glmmTMB  | nbinom1 | log  | SSBID              | No - negative log-likeligood is NaN at starting |
+| 2.4          | glmmTMB  | nbinom1 | log  | Municipality       | No - negative log-likeligood is NaN at starting |
+| 2.5          | glmmTMB  | nbinom2 | log  | SSBID              | YES!                                            |
+
+## Data Exploration
+
+Inspect the dataframe used for modeling that also contains the number of occurrences before a land cover change.
+
+### Data Exploration
+
+#### Inspect Data
+
+```{r inspect before after data}
+
+# Read in data
+load(here::here("data", "derived_data",
+                "occ_y_n_cover_change_before_after_for_modell.rda"))
+
+glimpse(occ_y_n_cover_change_before_after_for_modell)
+```
+
+#### Check for Outliers
+
+```{r check outliers}
+# Barplot of number of occurrences
+ggplot(occ_y_n_cover_change_before_after_for_modell , 
+       aes(x = cover_change, y = ocurrences_before, fill = time_period))+
+  geom_boxplot()+
+  theme_classic()
+```
+
+Just as with the occurrences after the land cover change, the occurrences before also have some very high outliers, more so for the pixels where there is no change in land cover.
+
+#### Check Normality
+
+```{r normality before}
+
+# Plot histogram of number of records by time period
+occ_y_n_cover_change_before_after_for_modell |>
+  filter(ocurrences_before < 100) |>
+  ggplot(aes(x = ocurrences_before)) +
+  geom_histogram(binwidth = 2, position = "dodge", 
+                 alpha = 0.4) +
+  facet_grid(time_period ~ ., scales = "free") +
+  theme_classic()
+```
+
+Distribution not normal.
+
+#### Check Zero Inflation
+
+```{r zero inflation before after}
+
+# Calculate % of rows with values of 0 for number of occurrences
+100 * sum(occ_y_n_cover_change_before_after_for_modell$ocurrences_after == 0) / nrow(occ_y_n_cover_change_before_after_for_modell) #0.001
+
+100 * sum(occ_y_n_cover_change_before_after_for_modell$ocurrences_before == 0) / nrow(occ_y_n_cover_change_before_after_for_modell) # 0.007
+
+```
+
+No problems with zero inflation - or so it seems.
+
+#### Check Relationships
+
+```{r check relationship before after}
+occ_y_n_cover_change_before_after_for_modell |>
+  ggplot(aes(x = ocurrences_before, y = ocurrences_after, fill = cover_change)) +
+  geom_point(size = 2) +
+  facet_wrap(~time_period) +
+  theme_classic()
+```
+
+## Model 2.1.
+
+ocurrences_after \~ cover_change \* time_period \* ocurrences_before + offset(ocurrences_before) + (1 \| SSBID)
+
+Error in qr.default(X, tol = tol, LAPACK = FALSE) : too large a matrix for LINPACK.
+
+This error seems to be related to running out of memory to run the model with. I will try to run the models on a random subset of the data.
+
+## Model 2.2.
+
+This is identical to model 2.1. but on a subset of the data.
+
+Error in eval(mc, parent.frame(1L)) : PIRLS loop resulted in NaN.
+
+## Model 2.3. & 2.4.
+
+ocurrences_after \~ cover_change \* time_period \* ocurrences_before + offset(ocurrences_before) + (1 \| SSBID)
+
+Model did not run: Error in fitTMB(TMBStruc) : negative log-likelihood is NaN at starting parameter values. This is likley caused by the extreme values in the number of occurrences.
+
+## Model 2.5.
+
+### Model Validation
+
+#### Convergence Check
+
+```{r model 2.5. convergence check}
+
+# Load model from file
+load(here::here("data", "models", "model2.5_nb.RData"))
+
+# Get summary of the model
+summary(model2.5_nb)
+
+```
+
+#### Check Residuals
+
+```{r model 2.5. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model2.5_nb),
+  Residuals = residuals(model2.5_nb))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+#### Simulate Residuals with DHARMa
+
+```{r model 2.5. simulate residuals}
+
+# Simulate residuals 
+model2.5_nb_SSB_simulation <- simulateResiduals(fittedModel = model2.5_nb)
+
+# Plot simulated residuals
+plot(model2.5_nb_SSB_simulation)
+```
+
+#### Test for Overdispersion
+
+```{r model 2.5. check overdispersion}
+testDispersion(model2.5_nb_SSB_simulation)
+```
+
+#### Test for Zero-Inflation
+
+```{r model 2.5. check zero inflation}
+testZeroInflation(model2.5_nb_SSB_simulation)
+```
