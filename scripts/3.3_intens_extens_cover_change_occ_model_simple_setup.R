@@ -2,7 +2,8 @@
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
 # 3.3_intens_extens_cover_change_occ_model_simple_setup
 # This script contains code which runs the simple models looking at the effect 
-# of land cover change (Y/N) on the number of occurrences in a pixel
+# of land cover change (intensification/extensification) on the number of 
+# occurrences in a pixel
 ##----------------------------------------------------------------------------##
 
 # 0. LOAD PACKAGES -------------------------------------------------------------
