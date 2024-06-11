@@ -12,7 +12,7 @@ This markdown outlines the process of modelling the number of species occurrence
 The models ran as part of this are as follows:
 
 | Model Number | Function | Family  | Link | SSBID/Municipality | Ran?                                            |
-|----------|----------|----------|----------|----------|-----------------------|
+|--------------|----------|---------|------|--------------------|-------------------------------------------------|
 | 2.1          | glmer.nb |         |      | SSBID              | No - too large                                  |
 | 2.2          | glmer.nb |         |      | SSBID              | No - NaNs introduced                            |
 | 2.3.         | glmmTMB  | nbinom1 | log  | SSBID              | No - negative log-likeligood is NaN at starting |
