@@ -105,6 +105,10 @@ occ_df_before_records <- bind_rows(occ_df_before_2000.2006_records,
 
 ## 1.5. Combine occ_df_before_records wtih occ_df_after_records ----------------
 
+# Read in dataframe with occurrences after a change
+load(here("data", "derived_data", 
+          "occ_y_n_cover_change_after_records_for_model.rda"))
+
 # Full join of the dfs on SSBid and time_period
 occ_df_before_after <- full_join(occ_y_n_cover_change_after_records_for_model,
                                  occ_df_before_records,
