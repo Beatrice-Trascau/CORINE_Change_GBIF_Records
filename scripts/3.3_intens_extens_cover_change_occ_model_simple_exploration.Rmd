@@ -22,12 +22,7 @@ library(ggplot2)
 
 ```
 
-```{r data load, include = FALSE, eval = FALSE}
-load(here("data", "derived_data", "occurrences_SSB_municipalities_land_cover.rda"))
-occ_SSB_land_cover <- occurrence_municipalities_df
-```
-
-## Data Preparations for Model
+## 
 
 ```{r prepare df for analyis, include = FALSE, eval = FALSE}
 
