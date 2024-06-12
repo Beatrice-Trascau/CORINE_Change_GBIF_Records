@@ -228,7 +228,7 @@ model3.7_extens_intens_nb_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_
 save(model3.7_extens_intens_nb_SSB, file = here::here("data", "models", 
                                                       "model3.7_extens_intens_nb_SSB.RData"))
 
-## 2.7. N binomial with glmmTMB, nbiom2 (logit link), Municipality -------------
+## 2.8. N binomial with glmmTMB, nbiom2 (logit link), Municipality -------------
 
 # Model 3.8
 model3.8_extens_intens_nb_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|municipality),
