@@ -1,0 +1,292 @@
+---
+title: "Land Cover Change (Types) and Occurrence Records & Time"
+author: "Beatrice Trascau"
+date: "2024-06-12"
+output: html_document
+---
+
+# Introduction
+
+This markdown outlines the process of modelling the number of species occurrence records in relation to land cover changes, time and SSB ID. Here, we use the individual types of land cover changes. These models were ran on a 10% subset of the data (\~3 mil records) to save computational power.
+
+The defined model was:
+
+occurrences_after \~ cover_change(types) \* time_period + (1\|SSBID)
+
+occurrences_after \~ cover_change(types) \* time_period + (1\|municipality)
+
+The models variants ran as part of this are as follows:
+
+| Model Number | Function | Family  | Link  | SSBID/Municipality | Ran? |
+|--------------|----------|---------|-------|--------------------|------|
+| 5.1.         | glmmTMB  | nbinom1 | log   | SSBID              |      |
+| 5.2.         | glmmTMB  | nbinom1 | log   | Municipality       |      |
+| 5.3.         | glmmTMB  | nbinom1 | logit | SSBID              |      |
+| 5.4.         | glmmTMB  | nbinom1 | logit | Municipality       |      |
+| 5.5.         | glmmTMB  | nbinom2 | log   | SSBID              |      |
+| 5.6.         | glmmTMB  | nbinom2 | log   | Municipality       |      |
+| 5.7.         | glmmTMB  | nbinom2 | logit | SSBID              |      |
+| 5.8.         | glmmTMB  | nbinom2 | logit | Municipality       |      |
+
+```{r library load, include = FALSE}
+library(here)
+library(dplyr)
+library(lattice)
+library(lme4)
+library(DHARMa)
+library(glmmTMB)
+library(mgcv)
+library(gamm4)
+library(ggplot2)
+```
+
+# Data Exploration
+
+## Inspect Data
+
+```{r inspect data}
+
+# Read data in 
+load(here::here("data", "derived_data",
+                "occ_cover_change_types_after_records_for_model.rda"))
+
+# Check data structure
+glimpse(occ_cover_change_types_after_records_for_model)
+```
+
+## Check for Outliers
+
+```{r check outliers}
+
+# Barplot of number of occurrences
+ggplot(occ_cover_change_types_after_records_for_model , 
+       aes(x = cover_change, y = ocurrences_after, fill = time_period))+
+  geom_boxplot()+
+  theme_classic()
+```
+
+## Check Normality
+
+```{r check normality}
+
+# Plot histogram of number of records by time period
+occ_cover_change_types_after_records_for_model |>
+  filter(ocurrences_after < 100) |>
+  ggplot(aes(x = ocurrences_after)) +
+  geom_histogram(binwidth = 2, position = "dodge", 
+                 alpha = 0.4) +
+  facet_grid(time_period ~ ., scales = "free") +
+  theme_classic()
+```
+
+## Check Relationships
+
+```{r check relationships}
+
+# Plot relationships
+occ_cover_change_types_after_records_for_model |>
+  ggplot(aes(x = time_period, y = ocurrences_after)) +
+  geom_point() +
+  facet_wrap(~cover_change) +
+  theme_classic()
+```
+
+# Model 5.1.
+
+```{r model 5.1. convergence check}
+# Load model from file
+load(here::here("data", "models", "model5.1_nb_SSB.RData"))
+
+# Get summary of the model
+summary(model5.1_nb_SSB)
+```
+
+## Check Residuals
+
+```{r model 5.1. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model5.1_nb_SSB),
+  Residuals = residuals(model5.1_nb_SSB))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+# Model 5.2.
+
+```{r model 5.2. convergence check}
+# Load model from file
+load(here::here("data", "models", "model5.2_municipality.RData"))
+
+# Get summary of the model
+summary(model5.2_municipality)
+```
+
+## Check Residuals
+
+```{r model 5.2. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model5.2_municipality),
+  Residuals = residuals(model5.2_municipality))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+# Model 5.3.
+
+```{r model 5.3. convergence check}
+# Load model from file
+load(here::here("data", "models", "model5.3_SSB.RData"))
+
+# Get summary of the model
+summary(model5.3_SSB)
+```
+
+## Check Residuals
+
+```{r model 5.3. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model5.3_SSB),
+  Residuals = residuals(model5.3_SSB))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+# Model 5.4.
+
+```{r model 5.4. convergence check}
+# Load model from file
+load(here::here("data", "models", "model5.4_municipality.RData"))
+
+# Get summary of the model
+summary(model5.4_municipality)
+```
+
+## Check Residuals
+
+```{r model 5.4. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model5.4_municipality),
+  Residuals = residuals(model5.4_municipality))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+# Model 5.5.
+
+```{r model 5.5. convergence check}
+# Load model from file
+load(here::here("data", "models", "model5.5_SSB.RData"))
+
+# Get summary of the model
+summary(model5.5_SSB)
+```
+
+## Check Residuals
+
+```{r model 5.5. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model5.5_SSB),
+  Residuals = residuals(model5.5_SSB))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+# Model 5.6.
+
+```{r model 5.6. convergence check}
+# Load model from file
+load(here::here("data", "models", "model5.6_municipality.RData"))
+
+# Get summary of the model
+summary(model5.6_municipality)
+```
+
+## Check Residuals
+
+```{r model 5.6. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model5.6_municipality),
+  Residuals = residuals(model5.6_municipality))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+# Model 5.7.
+
+```{r model 5.7. convergence check}
+# Load model from file
+load(here::here("data", "models", "model5.7_SSB.RData"))
+
+# Get summary of the model
+summary(model5.7_SSB)
+```
+
+## Check Residuals
+
+```{r model 5.7. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model5.7_SSB),
+  Residuals = residuals(model5.7_SSB))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+# Model 5.8.
+
+```{r model 5.8. convergence check}
+# Load model from file
+load(here::here("data", "models", "model5.8_SSB.RData"))
+
+# Get summary of the model
+summary(model5.8_SSB)
+```
+
+## Check Residuals
+
+```{r model 5.8. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model5.8_SSB),
+  Residuals = residuals(model5.8_SSB))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
