@@ -1,0 +1,79 @@
+---
+title: "Land Cover Change (Types) and Occurrence Records, Time & Offset"
+author: "Beatrice Trascau"
+date: "2024-06-12"
+output: html_document
+---
+
+# Introduction
+
+This markdown outlines the process of modelling the number of occurrence records after a land cover change in relation to land cover changes, time and SSB ID with the number of occurrences before the land cover changes as an offset. Here, we use the individual types of land cover changes. These models were ran on a 10% subset of the data (\~3 mil records) to save computational power.
+
+The defined model was:
+
+occurrences_after \~ cover_change (types) \* time_period \* occurrence_before + offset(occurrence_before) + (1\|SSBID) (Model 4.1.)
+
+Model was run with glmmTMB package, nbinom2 family, log link.
+
+```{r library load, include = FALSE}
+library(here)
+library(dplyr)
+library(lattice)
+library(lme4)
+library(DHARMa)
+library(glmmTMB)
+library(mgcv)
+library(gamm4)
+library(ggplot2)
+```
+
+# Data Exploration
+
+Inspect the dataframe used for modeling that also contains the number of occurrences before a land cover change.
+
+## Data Exploration
+
+### Inspect Data
+
+```{r inspect before after data}
+
+# Read in data
+load(here::here("data", "derived_data",
+                "occ_cover_change_types_before_after_for_model.rda"))
+
+# Get glimpse of data
+glimpse(occ_cover_change_types_before_after_for_model)
+
+```
+
+Size of data does not allow easy data exploration.
+
+# Model 6.1.
+
+## Model Validation
+
+### Convergence Check
+
+```{r model 6.1. convergence check}
+
+# Load model from file
+load(here::here("data", "models", "model6.1.RData"))
+
+# Get summary of the model
+summary(model6.1)
+```
+
+### Check Residuals
+
+```{r model 6.1. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model6.1),
+  Residuals = residuals(model6.1))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
