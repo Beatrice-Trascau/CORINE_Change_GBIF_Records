@@ -138,6 +138,8 @@ ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
   theme_classic()
 ```
 
+Significant effect of time, the occurrences before, cover change + time, and cover change + time + occurrences before.
+
 #### Simulate Residuals with DHARMa
 
 ```{r model 2.5. simulate residuals}
