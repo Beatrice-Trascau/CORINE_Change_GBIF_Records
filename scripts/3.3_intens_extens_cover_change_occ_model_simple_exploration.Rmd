@@ -1,13 +1,33 @@
 ---
-title: "glmms_land_cover_change(intens/extens)_and_occurrences"
+title: "Land Cover Change (Intensification/Extensification) and Occurrence Records & Time"
 author: "Beatrice Trascau"
 date: "2024-06-09"
 output: html_document
 ---
 
-# **3.2. GLMMS: Land Cover Change (Intensification/Extensification) and Occurrence Records**
+# **Introduction**
 
-This markdown outlines the process of modelling the number of species occurrence records in relation to land cover changes, time and SSB ID. Here, land cover changes are categorised as representing either a form of intensification or extensification or land-use.
+This markdown outlines the process of modelling the number of species occurrence records in relation to land cover changes, time and SSB ID. Here, land cover changes are categorised as representing either a form of intensification or extensification or land-use. These models were ran on a 10% subset of the data (\~3 mil records) to save computational power.
+
+The defined model was:
+
+occurrences_after \~ cover_change (intens/extens/no change) \* time_period + (1\|SSBID)
+
+occurrences_after \~ cover_change (intens/extens/no change) \* time_period + (1\|municipality)
+
+The models variants ran as part of this are as follows:
+
+| Model Number | Function | Family  | Link  | SSBID/Municipality | Ran? |
+|--------------|----------|---------|-------|--------------------|------|
+| 3.1.         | glmmTMB  | nbinom1 | log   | SSBID              |      |
+| 3.2.         | glmmTMB  | nbinom1 | log   | Municipality       |      |
+| 3.3.         | glmmTMB  | nbinom1 | logit | SSBID              |      |
+| 3.4.         | glmmTMB  | nbinom1 | logit | Municipality       |      |
+| 3.5.         | glmmTMB  | nbinom2 | log   | SSBID              |      |
+| 3.6.         | glmmTMB  | nbinom2 | log   | Municipality       |      |
+| 3.7.         | glmmTMB  | nbinom2 | logit | SSBID              |      |
+| 3.8.         | glmmTMB  | nbinom2 | logit | Municipality       |      |
+|              |          |         |       |                    |      |
 
 ```{r library load, include = FALSE}
 library(here)
@@ -22,139 +42,22 @@ library(ggplot2)
 
 ```
 
-## 
+# Data Exploration
 
-```{r prepare df for analyis, include = FALSE, eval = FALSE}
-
-# 1. First period of change: 2000-2006 -------------------------------------------------
-
-# Change column names for easier df manipulation
-occ_SSB_land_cover <- occ_SSB_land_cover |>
-  rename(land_cover2000 = U2006_CLC2000_V2020_20u1,
-         land_cover2006 = U2012_CLC2006_V2020_20u1,
-         land_cover2012 = U2018_CLC2012_V2020_20u1,
-         land_cover2018 = U2018_CLC2018_V2020_20u1)
-
-# Prepare data for the period 2006-2009
-occ_df_after_2000.2006 <- occ_SSB_land_cover |>
-  select(V1, gbifID, year, species, land_cover2000, land_cover2006, 
-         SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2000) & !is.na(land_cover2006)) |>
-  filter(year >= 2006 & year <= 2009) |>
-  mutate(cover_change = case_when(
-    land_cover2000 - land_cover2006 %in% c(79, 102, 249, 379, 589, 710,
-                                           23, 147, 170, 608, 631, -102,
-                                           -79, 487, 510, 277, 300, -340,
-                                           -331, -461) ~ "Intensification",
-    land_cover2000 - land_cover2006 %in% c(-249, -379, -589, -170, -300, -510,
-                                           -147, -277, -487, 130, -210, 461, 331,
-                                           121, 340, -23, -710, -121, -608) ~ "Extensification",
-    land_cover2000 - land_cover2006 == 0 ~ "No_change"
-  ))
-
-# Calculate number of records for the period 2006-2009
-occ_df_after_2000.2006_records <- occ_df_after_2000.2006 |>
-  group_by(cell_ID) |>
-  summarise(
-    ocurrences_after = n(),
-    land_cover2000 = first(land_cover2000),
-    land_cover2006 = first(land_cover2006),
-    cover_change = first(cover_change),
-    SSBID = first(SSBID),
-    NAME_2 = first(NAME_2)) |>
-  mutate(time_period = "2000-2006") |>
-  select(-c(land_cover2000, land_cover2006))
-
-# 2. Second period of change: 2006 - 2012 ----------------------------------------------
-
-# Prepare data for the period 2012-2015
-occ_df_after_2006.2012 <- occ_SSB_land_cover |>
-  select(V1, gbifID, year, species, land_cover2006, land_cover2012, 
-         SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2006) & !is.na(land_cover2012)) |>
-  filter(year >= 2012 & year <= 2015) |>
-  mutate(cover_change = case_when(
-    land_cover2000 - land_cover2006 %in% c(79, 102, 249, 379, 589, 710,
-                                           23, 147, 170, 608, 631, -102,
-                                           -79, 487, 510, 277, 300, -340,
-                                           -331, -461) ~ "Intensification",
-    land_cover2000 - land_cover2006 %in% c(-249, -379, -589, -170, -300, -510,
-                                           -147, -277, -487, 130, -210, 461, 331,
-                                           121, 340, -23, -710, -121, -608) ~ "Extensification",
-    land_cover2000 - land_cover2006 == 0 ~ "No_change"
-  ))
-
-# Calculate number of records for the period 2012-2015
-occ_df_after_2006.2012_records <- occ_df_after_2006.2012 |>
-  group_by(cell_ID) |>
-  summarise(
-    ocurrences_after = n(),
-    land_cover2006 = first(land_cover2006),
-    land_cover2012 = first(land_cover2012),
-    cover_change = first(cover_change),
-    SSBID = first(SSBID),
-    NAME_2 = first(NAME_2)) |>
-  mutate(time_period = "2006-2012") |>
-  select(-c(land_cover2006, land_cover2012))
-
-# 3. Third period of change: 2012 - 2018 ----------------------------------------------
-
-# Prepare data for the period 2015-2018
-occ_df_after_2012.2018 <- occ_SSB_land_cover |>
-  select(V1, gbifID, year, species, land_cover2012, land_cover2018, 
-         SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2012) & !is.na(land_cover2018)) |>
-  filter(year >= 2015 & year <= 2018) |>
-  mutate(cover_change = case_when(
-    land_cover2000 - land_cover2006 %in% c(79, 102, 249, 379, 589, 710,
-                                           23, 147, 170, 608, 631, -102,
-                                           -79, 487, 510, 277, 300, -340,
-                                           -331, -461) ~ "Intensification",
-    land_cover2000 - land_cover2006 %in% c(-249, -379, -589, -170, -300, -510,
-                                           -147, -277, -487, 130, -210, 461, 331,
-                                           121, 340, -23, -710, -121, -608) ~ "Extensification",
-    land_cover2000 - land_cover2006 == 0 ~ "No_change"
-  ))
-
-# Calculate number of records for the period 1997-2000
-occ_df_after_2012.2018_records <- occ_df_after_2012.2018 |>
-  group_by(cell_ID) |>
-  summarise(
-    ocurrences_after = n(),
-    land_cover2012 = first(land_cover2012),
-    land_cover2018 = first(land_cover2018),
-    cover_change = first(cover_change),
-    SSBID = first(SSBID),
-    NAME_2 = first(NAME_2)) |>
-  mutate(time_period = "2012-2018") |>
-  select(-c(land_cover2012, land_cover2018))
-
-# 4. Combine the above 3 into a single df ----------------------------------------------
-
-occ_intens_extens_after_records_for_model <- bind_rows(occ_df_after_2000.2006_records,
-                                  occ_df_after_2006.2012_records,
-                                  occ_df_after_2012.2018_records) |>
-  select(-cell_ID) |>
-  rename(municipality = NAME_2)
-
-# 5. Write dataframe to file -----------------------------------------------------------
-save(occ_intens_extens_after_records_for_model, file = here::here("data", "derived_data",
-                                          "occ_intens_extens_after_records_for_model.rda"))
-
-```
-
-## Data Exploration
-
-### Inspect Data
+## Inspect Data
 
 ```{r inspect data}
-# Read data in 
 
+# Read data in 
+load(here::here("data", "derived_data",
+                "occ_intens_extens_after_records_for_model.rda"))
+
+# Check data structure
 glimpse(occ_intens_extens_after_records_for_model)
 
 ```
 
-### Check for Outliers
+## Check for Outliers
 
 ```{r check outliers}
 
@@ -165,7 +68,7 @@ ggplot(occ_intens_extens_after_records_for_model ,
   theme_classic()
 ```
 
-### Check Normality
+## Check Normality
 
 ```{r check normality}
 
@@ -179,7 +82,7 @@ occ_intens_extens_after_records_for_model |>
   theme_classic()
 ```
 
-### Check Zero Inflation
+## Check Zero Inflation
 
 ```{r check zero inflation}
 
@@ -188,11 +91,11 @@ occ_intens_extens_after_records_for_model |>
 #suspicious
 ```
 
-### Check for Collinearity
+## Check for Collinearity
 
 Covariates in model (cover change, SSB ID and time period) are all categorial. No need to check for collinearity between them.
 
-### Check Relationships
+## Check Relationships
 
 ```{r check relationships}
 
@@ -205,15 +108,202 @@ occ_intens_extens_after_records_for_model |>
 
 ```
 
-## Model 3: Attempt 1: Number of occurrences after change by land cover, time period and SSB ID - NB glmmTMB
+# Model 3.1.
 
-```{r model 3 attempt 1 include = FALSE, eval = FALSE}
+```{r model 3.1. convergence check}
+# Load model from file
+load(here::here("data", "models", "model3_extens_intens_nb_SSB.RData"))
 
-# Run negative binomial model
-model3_extens_intens_nb_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
-                          family = nbinom1, 
-                          data = occ_intens_extens_after_records_for_model)
+# Get summary of the model
+summary(model3_extens_intens_nb_SSB)
+```
 
-# Save model output to file to save time next time
-save(model3_extens_intens_nb_SSB, file = here::here("data", "models", "model3_extens_intens_nb_SSB.RData"))
+## Check Residuals
+
+```{r model 3.1. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model3_extens_intens_nb_SSB),
+  Residuals = residuals(model3_extens_intens_nb_SSB))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+# Model 3.2.
+
+```{r model 3.2. convergence check}
+# Load model from file
+load(here::here("data", "models", "model3.2_extens_intens_nb_SSB.RData"))
+
+# Get summary of the model
+summary(model3.2_extens_intens_nb_SSB)
+```
+
+## Check Residuals
+
+```{r model 3.2. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model3.2_extens_intens_nb_SSB),
+  Residuals = residuals(model3.2_extens_intens_nb_SSB))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+# Model 3.3.
+
+```{r model 3.3. convergence check}
+# Load model from file
+load(here::here("data", "models", "model3.3_extens_intens_nb_SSB.RData"))
+
+# Get summary of the model
+summary(model3.3_extens_intens_nb_SSB)
+```
+
+## Check Residuals
+
+```{r model 3.3. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model3.3_extens_intens_nb_SSB),
+  Residuals = residuals(model3.3_extens_intens_nb_SSB))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+# Model 3.4.
+
+```{r model 3.4. convergence check}
+# Load model from file
+load(here::here("data", "models", "model3.4_extens_intens_nb_SSB.RData"))
+
+# Get summary of the model
+summary(model3.4_extens_intens_nb_SSB)
+```
+
+## Check Residuals
+
+```{r model 3.4. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model3.4_extens_intens_nb_SSB),
+  Residuals = residuals(model3.4_extens_intens_nb_SSB))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+# Model 3.5.
+
+```{r model 3.5. convergence check}
+# Load model from file
+load(here::here("data", "models", "model3.5_extens_intens_nb_SSB.RData"))
+
+# Get summary of the model
+summary(model3.5_extens_intens_nb_SSB)
+```
+
+## Check Residuals
+
+```{r model 3.5. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model3.5_extens_intens_nb_SSB),
+  Residuals = residuals(model3.5_extens_intens_nb_SSB))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+# Model 3.6.
+
+```{r model 3.6. convergence check}
+# Load model from file
+load(here::here("data", "models", "model3.6_extens_intens_nb_SSB.RData"))
+
+# Get summary of the model
+summary(model3.6_extens_intens_nb_SSB)
+```
+
+## Check Residuals
+
+```{r model 3.6. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model3.6_extens_intens_nb_SSB),
+  Residuals = residuals(model3.6_extens_intens_nb_SSB))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+# Model 3.7.
+
+```{r model 3.7. convergence check}
+# Load model from file
+load(here::here("data", "models", "model3.7_extens_intens_nb_SSB.RData"))
+
+# Get summary of the model
+summary(model3.7_extens_intens_nb_SSB)
+```
+
+## Check Residuals
+
+```{r model 3.7. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model3.7_extens_intens_nb_SSB),
+  Residuals = residuals(model3.7_extens_intens_nb_SSB))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
+```
+
+# Model 3.8.
+
+```{r model 3.8. convergence check}
+# Load model from file
+load(here::here("data", "models", "model3.8_extens_intens_nb_SSB.RData"))
+
+# Get summary of the model
+summary(model3.8_extens_intens_nb_SSB)
+```
+
+## Check Residuals
+
+```{r model 3.8. check residuals}
+
+# Create tibble for plotting
+plot_data <- tibble(
+  Fitted = fitted(model3.8_extens_intens_nb_SSB),
+  Residuals = residuals(model3.8_extens_intens_nb_SSB))
+
+# Plot the residuals vs fitted values
+ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
+  geom_point() +
+  theme_classic()
 ```
