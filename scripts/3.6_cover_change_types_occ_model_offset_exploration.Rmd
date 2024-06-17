@@ -11,7 +11,7 @@ This markdown outlines the process of modelling the number of occurrence records
 
 The defined model was:
 
-occurrences_after \~ cover_change (types) \* time_period \* occurrence_before + offset(occurrence_before) + (1\|SSBID) (Model 4.1.)
+occurrences_after \~ cover_change (types) \* time_period \* occurrence_before + offset(occurrence_before) + (1\|SSBID) (Model 6.1.)
 
 Model was run with glmmTMB package, nbinom2 family, log link.
 
