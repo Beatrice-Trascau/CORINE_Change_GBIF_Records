@@ -151,7 +151,7 @@ save(subset_data_cover_change_types_before_after,
 # Run model
 model6.1 <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(ocurrences_before) + (1 | SSBID),
                     family = nbinom2,
-                    data = subset_data_intens_extens_before_after)
+                    data = subset_data_cover_change_types_before_after)
 
 # Save model output to file to save time next time
 save(model6.1, file = here::here("data", "models", "model6.1.RData"))
