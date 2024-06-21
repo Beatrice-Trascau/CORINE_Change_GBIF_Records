@@ -28,11 +28,14 @@ sapply(package_vec, install_load_package)
 
 # 2. FUNCTION TO ONLY DOWNLOAD FILES THAT ARE NOT ALREADY IN THE FOLDERS -------
 
-conditional_download <- function(url, target) {
-  if (!file.exists(target)) {
-    download.file(url=url, destfile=target)
-  }
-  else {
-    print("File already downloaded!")
+download_files <- function(urls, filenames, dir = here("data", "raw_data")) {
+  if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
+  for (i in seq_along(urls)) {
+    file_path <- file.path(dir, filenames[i])
+    if (!file.exists(file_path)) {
+      download.file(urls[i], file_path)
+    }
   }
 }
+
+# 3. 
