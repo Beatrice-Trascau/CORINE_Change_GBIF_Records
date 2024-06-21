@@ -5,14 +5,17 @@
 # functions used in the analysis
 ##----------------------------------------------------------------------------##
 
-# Function to load/install packages needed for analysis
-install.load.package <- function(x) {
+# 1. FUNCTION TO LOAD/INSTALL PACKAGES NEEDED FOR ANALYIS ----------------------
+
+# Define function
+install_load_package <- function(x) {
   if (!require(x, character.only = TRUE)) {
     install.packages(x, repos = "http://cran.us.r-project.org")
   }
   require(x, character.only = TRUE)
 }
 
+# Define list of packages
 package_vec <- c("here", "terra", "sf", "geodata", "mapview",
                  "tidyverse", "dplyr", "ggplot2", "ggalluvial",
                  "networkD3", "gt", "cowplot", "data.table",
@@ -20,11 +23,11 @@ package_vec <- c("here", "terra", "sf", "geodata", "mapview",
                  "plotly", "lme4", "DHARMa", "glmmTMB", 
                  "tidyterra") # specify packages
 
-## executing install & load for each package
-sapply(package_vec, install.load.package)
+# Execute the function
+sapply(package_vec, install_load_package)
 
+# 2. FUNCTION TO ONLY DOWNLOAD FILES THAT ARE NOT ALREADY IN THE FOLDERS -------
 
-# Function to only download files that are not already in the folders
 conditional_download <- function(url, target) {
   if (!file.exists(target)) {
     download.file(url=url, destfile=target)
