@@ -5,49 +5,7 @@
 # CHANGE and STATUS layers for further analysis
 ##----------------------------------------------------------------------------##
 
-# 1. DEFINE FUNCTIONS ----------------------------------------------------------
-
-## 1.1. Function to download files if they do not yet exist --------------------
-download_files <- function(urls, filenames, dir = here("data", "raw_data")) {
-  if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
-  for (i in seq_along(urls)) {
-    file_path <- file.path(dir, filenames[i])
-    if (!file.exists(file_path)) {
-      download.file(urls[i], file_path)
-    }
-  }
-}
-
-## 1.2. Function to read rasters -----------------------------------------------
-read_rasters <- function(filenames, dir = here("data/raw_data")) {
-  rasters <- lapply(filenames, function(x) {
-    file_path <- file.path(dir, x)
-    if (!file.exists(file_path)) {
-      stop(paste("File does not exist:", file_path))
-    }
-    rast(file_path)
-  })
-  return(do.call(c, rasters))
-}
-
-## 1.3. Function to crop and mask rasters to Norway ----------------------------
-crop_mask_to_norway <- function(raster_stack, norway_shape) {
-  return(crop(raster_stack, norway_shape, mask = TRUE))
-}
-
-## 1.4. Function to modify classes in the rasters ------------------------------
-modify_class_values <- function(raster_stack, class_modifications) {
-  modified_stack <- raster_stack
-  for (mod in class_modifications) {
-    modified_stack <- app(modified_stack, fun = function(x) {
-      x[x %in% mod$from] <- mod$to
-      return(x)
-    })
-  }
-  return(modified_stack)
-}
-
-## 1.5. Define URLs, names and new values for rasters --------------------------
+# 1. DEFINE URLS, NAMES AND NEW VALUES FOR RASTERS -----------------------------
 
 # URLs and Filenames for the CORINE Change Layers
 change_urls <- c(
@@ -159,10 +117,12 @@ norway_corine_change_modified <- modify_class_values(norway_corine_change_stack,
 
 ## 4.3. Save modified layers ---------------------------------------------------
 terra::writeRaster(norway_corine_change_modified, 
-                   here("data", "derived_data", "norway_corine_change_modified_stack.tif"), 
+                   here("data", "derived_data", 
+                        "norway_corine_change_modified_stack.tif"), 
                    overwrite = TRUE)
 terra::writeRaster(norway_corine_status_modified, 
-                   here("data", "derived_data","norway_corine_status_modified_stack.tif"), 
+                   here("data", "derived_data",
+                        "norway_corine_status_modified_stack.tif"), 
                    overwrite = TRUE)
 
-# END OF SCRIPT ----
+# END OF SCRIPT ----------------------------------------------------------------
