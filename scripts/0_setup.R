@@ -38,4 +38,15 @@ download_files <- function(urls, filenames, dir = here("data", "raw_data")) {
   }
 }
 
-# 3. 
+# 3. FUNCTION TI READ RASTERS --------------------------------------------------
+
+read_rasters <- function(filenames, dir = here("data/raw_data")) {
+  rasters <- lapply(filenames, function(x) {
+    file_path <- file.path(dir, x)
+    if (!file.exists(file_path)) {
+      stop(paste("File does not exist:", file_path))
+    }
+    rast(file_path)
+  })
+  return(do.call(c, rasters))
+}
