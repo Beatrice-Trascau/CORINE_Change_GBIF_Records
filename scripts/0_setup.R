@@ -1,7 +1,8 @@
 ##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
 # 0_setup
-# This script contains code which loads/installs necessary packages
+# This script contains code which loads/installs necessary packages and defines
+# functions used in the analysis
 ##----------------------------------------------------------------------------##
 
 # Function to load/install packages needed for analysis
@@ -23,7 +24,7 @@ package_vec <- c("here", "terra", "sf", "geodata", "mapview",
 sapply(package_vec, install.load.package)
 
 
-# Function to only dowload files that are not already in the folders
+# Function to only download files that are not already in the folders
 conditional_download <- function(url, target) {
   if (!file.exists(target)) {
     download.file(url=url, destfile=target)
