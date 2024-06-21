@@ -1,117 +1,71 @@
 ##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
-# 1.2_corine_change_layer_exploration
+# 1.2_CLC_change_exploration
 # This script contains code which explores the CORINE land cover CHANGE layers, 
 # calculates land cover changes between 2000-2006, 2006-2012, 2012-2018 and 
 # 2000-2018 and visualises the changes for each period
 ##----------------------------------------------------------------------------##
 
-# 0. PACKAGES ----
-library(here)
-library(terra)
-library(mapview)
-library(tidyverse)
-library(dplyr)
-library(ggplot2)
-library(ggalluvial)
-library(networkD3)
-library(gt)
-library(cowplot)
-
-# 1. DEFINE FUNCTIONS ----------------------------------------------------------
-
-## 1.1. Function to download file if it does not exist -------------------------
-download_file <- function(url, destfile) {
-  if (!file.exists(destfile)) {
-    download.file(url, destfile)
-  }
-}
-
-## 1.2. Function to prepare data for Sankey plot -------------------------------
-
-# Create a dataframe of change with source and target cover class
-prepare_sankey_data <- function(change_layer, class_meaning, source_year, target_year) {
-  change_df <- as.data.frame(freq(change_layer)) |>
-    mutate(source_year = source_year,
-           target_year = target_year,
-           difference = value) |>
-    select(-layer)
-  
-  # Create meaning df
-  class_meaning_filtered <- class_meaning |>
-    filter(difference %in% change_df$value) |>
-    rename(value = difference)
-  
-  # Merge Sankey df and class_meaning_df
-  change_meaning <- merge(change_df, class_meaning_filtered, by = "value")
-  
-  # Add source_year to source_names to easily distinguish between the years
-  sankey_data <- change_meaning |>
-    unite(source, c(source_year, source_name), sep = ".", remove = FALSE) |>
-    unite(target, c(target_year, target_name), sep = ".", remove = FALSE) |>
-    filter(value != 0) |>
-    select(count, source, target) |>
-    relocate(source, target, count) |>
-    mutate(target = paste(target, " ", sep = ""))
-  
-  return(sankey_data)
-}
-
-## 1.3. Function to create barplot ---------------------------------------------
-create_bar_plot <- function(gain_loss_data, filename, title) {
-  scaling_factor <- 10
-  gain_loss_data$scaled_count <- ifelse(abs(gain_loss_data$count) > 90,
-                                        gain_loss_data$count / scaling_factor,
-                                        gain_loss_data$count)
-  
-  ggplot(gain_loss_data, aes(x = focus, y = scaled_count, fill = transition)) +
-    geom_bar(stat="identity", position="stack") +
-    scale_y_continuous(
-      name = bquote("Area changes"~("km"^2)),
-      sec.axis = sec_axis(~ . * scaling_factor, name = bquote("Area changes"~("km"^2)))
-    ) +
-    xlab("Land Cover Classes") +
-    scale_fill_manual(values = c("dodgerblue2", "#E31A1C","green4",
-                                 "#6A3D9A", "#FF7F00",
-                                 "gold1","maroon"),
-                      name = "Land Cover Classes",
-                      labels = c("Agriculture & Vegetation", "Complex Agriculture",
-                                 "Forests", "Moors, Heathland & Grassland",
-                                 "Sparse Vegetation", "Transitional Woodland Shrub",
-                                 "Urban Fabric")) +
-    scale_x_discrete(labels = c("Agriculture & Vegetation", "Complex Agriculture",
-                                "Forests", "Moors, Heathland & Grassland",
-                                "Sparse Vegetation", "Transitional Woodland Shrub",
-                                "Urban Fabric")) +
-    ggtitle(title) +
-    theme_classic() +
-    theme(axis.text.x = element_text(angle = 30, hjust = 1))
-    #ggsave(here("figures", filename), width = 10, height = 5.37)
-}
-
-# 1. READ IN MODIFIED CORINE CHANGE LAYERS ----
-
-## 1.1. Download layers (if needed) ----
+## 1.1. Download layers (if needed) --------------------------------------------
 
 download_file("https://ntnu.box.com/shared/static/97g9x4839ij4lnlldji2wh8e0e2lm5bf.tif", 
               "data/norway_corine_change_modified_stack.tif")
 
-## 1.2. Read in layers -----
+## 1.2. Read in layers ---------------------------------------------------------
 norway_corine_change_modified_stack <- rast(here("data", 
                                         "norway_corine_change_modified_stack.tif"))
 
-# 2. EXPLORE LAYERS ----
+# 2. EXPLORE LAYERS ------------------------------------------------------------
 
-# This section is a placeholder for when there is time to plot maps of the layers individually
+## 2.1. Convert rasters to dfs -------------------------------------------------
 
-## 2.1. Plot maps of the years ----
+# Read in Norway shapefile (original version)
+norway <- vect(here("data", "raw_data", "raw_norway_shapefile",
+                    "norway.shp"))
 
-# Plot the layer
-mapview(norway_corine_change_modified_stack[[1]])
+# Re-project CORINE to match the shapefile
+norway_corine_wgs84 <- terra::project(norway_corine_change_modified_stack,
+                                      "+proj=longlat +datum=WGS84 +no_defs",
+                                      method = "near")
 
-## 2.2. Extract number of pixels where change is detected ----
-freq(norway_corine_change_modified_stack[[1]]) #197 443 pixels with change
-# the Land Cover Status Layers (2000 - 2006) had 176 833 pixels with change
+
+# Convert the 1st (2000), 3rd (2006), and 5th (2012) layers to dataframe
+for (i in c(1, 3, 5)) {
+  var_name <- paste0("norway_corine", 2000 + (i - 1) * 3)
+  assign(var_name, as.data.frame(norway_corine_wgs84[[i]], xy = TRUE))
+}
+
+## 2.2. Plot map for 2000-2006 -------------------------------------------------
+change_2000.2006 <- ggplot()+
+  geom_sf(data = norway_sf, fill = "lightgrey", color = "black")+
+  geom_point(data = norway_corine2000,
+             aes(x = x, y = y), color = "#800080", size = 1)+
+  coord_sf(ylim = c(58, 72)) +
+  labs(x = "Longitude", y = "Latitude") +
+  annotation_north_arrow(location = "br", which_north = "true",
+                         pad_y = unit(0.8, "cm"),
+                         style = north_arrow_fancy_orienteering) +
+  annotation_scale(location = "br", width_hint = 0.35) +
+  
+  theme_classic() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid = element_blank(),
+    axis.line = element_blank(),
+    legend.position = "bottom", 
+    legend.title = element_blank(),
+    legend.text = element_text(size = 14))
+
+## 2.2. Plot map for 2006-2012 and 2012-2018 -----------------------------------
+# This was done separately from the 2000-2006 period because I wanted the first
+# map to have a North arrow and scale but did not want them in the others
+
+
+
 
 # 3. LAND COVER TRANSITIONS ----------------------------------------------------
 
