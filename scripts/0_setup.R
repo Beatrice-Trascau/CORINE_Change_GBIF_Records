@@ -21,7 +21,7 @@ package_vec <- c("here", "terra", "sf", "geodata", "mapview",
                  "networkD3", "gt", "cowplot", "data.table",
                  "tidyterra", "patchwork", "styler", "scales",
                  "plotly", "lme4", "DHARMa", "glmmTMB", 
-                 "tidyterra") # specify packages
+                 "tidyterra", "ggspatial") # specify packages
 
 # Execute the function
 sapply(package_vec, install_load_package)
