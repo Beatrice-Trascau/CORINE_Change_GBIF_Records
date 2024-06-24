@@ -23,6 +23,9 @@ norway_corine_change_modified_stack <- rast(here("data",
 norway <- vect(here("data", "raw_data", "raw_norway_shapefile",
                     "norway.shp"))
 
+# Convert Norway shapefile to sf object
+norway_sf <- st_as_sf(norway)
+
 # Re-project CORINE to match the shapefile
 norway_corine_wgs84 <- terra::project(norway_corine_change_modified_stack,
                                       "+proj=longlat +datum=WGS84 +no_defs",
@@ -64,8 +67,51 @@ change_2000.2006 <- ggplot()+
 # This was done separately from the 2000-2006 period because I wanted the first
 # map to have a North arrow and scale but did not want them in the others
 
+# Define variable names
+years <- c(2006, 2012)
+data_vars <- c("norway_corine2006", "norway_corine2012")
+plot_vars <- c("change_2006.2012", "change_2012.2018")
 
+# Create empty list to store plots: 
+plots <- list()
 
+# Loop through years to create plots
+for (i in c(1,2)) {
+  plots[[plot_vars[i]]] <- ggplot() +
+    geom_sf(data = norway_sf, fill = "lightgrey", color = "black") +
+    geom_point(data = get(data_vars[i]),
+               aes(x = x, y = y), color = "#800080", size = 1) +
+    coord_sf(ylim = c(58, 72)) +
+    labs(x = "Longitude", y = "Latitude") +
+    theme_classic() +
+    theme(
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      axis.text.x = element_blank(),
+      axis.text.y = element_blank(),
+      axis.ticks = element_blank(),
+      panel.grid = element_blank(),
+      axis.line = element_blank(),
+      legend.position = "bottom",
+      legend.title = element_blank(),
+      legend.text = element_text(size = 14)
+    )
+}
+
+# Arrange in a single grid
+all_years_changes <- plot_grid(change_2000.2006, change_2006.2012, change_2012.2018, 
+                               labels = c("a)", "b)", "c)" ), 
+                               label_size = 12,
+                               ncol = 3, nrow = 1,
+                               label_y = 0.7)
+
+# Save to file as .png
+ggsave(here("figures", "cover_change_all_periods_Figure2.png"),
+       width=17, height=13)
+
+# Save to file as .svg
+ggsave(here("figures", "cover_change_all_periods_Figure2.svg"),
+       width=17, height=13)
 
 # 3. LAND COVER TRANSITIONS ----------------------------------------------------
 
