@@ -125,3 +125,146 @@ ggsave(here("figures", "cover_change_all_periods_Figure1.svg"),
 
 # 3. FIGURE 2 - BARPLOTS COUNTING THE TYPE OF TRANSITIONS FOR ALL YEARS --------
 
+## 3.1. Calculate differences in land cover between periods --------------------
+# Using (own) function that loops through all 3 different periods
+
+# Create list of raster indices and the corresponding years
+corine_years <- list(
+  c(1, 2, "2000", "2006"),
+  c(3, 4, "2006", "2012"),
+  c(5, 6, "2012", "2018"))
+
+# Create empty list to store dfs
+corine_dfs <- list()
+
+# Apply function to each period
+for (i in seq_along(corine_years)) {
+  indices <- corine_years[[i]]
+  df <- process_corine_change(norway_corine_change_modified_stack, 
+                              indices[1], indices[2], indices[3], indices[4])
+  corine_dfs[[i]] <- df
+}
+
+# Combine all dfs into a single one
+combined_corine_df <- bind_rows(corine_dfs)
+
+## 3.2. Get source and target land cover values for transitions ----------------
+
+# Create df to map numerical values to land cover change categories
+corine_class_meaning <- data.frame(source_number = c(rep(1,7), rep(80,7), 
+                                                     rep(103,7),rep(250,7), 
+                                                     rep(380,7), rep(590,7),
+                                                     rep(711,7)),
+                                   source_name = c(rep("Urban Fabric",7), 
+                                                   rep("Complex Agriculture",7),
+                                                   rep("Agriculture & Vegetation",7), 
+                                                   rep("Forests",7),
+                                                   rep("Moors, Heath & Grass",7), 
+                                                   rep("Transitional Woodland Shrub",7),
+                                                   rep("Sparse Vegetation",7)),
+                                   target_number = c(rep(c(1,80,103,250,380,590,711), 7)),
+                                   target_name = c(rep(c("Urban Fabric", "Complex Agriculture", 
+                                                         "Agriculture & Vegetation",
+                                                         "Forests", "Moors, Heath & Grass", 
+                                                         "Transitional Woodland Shrub",
+                                                         "Sparse Vegetation"), 7))) |>
+  mutate(difference = source_number - target_number)
+
+# Subset score meaning df to only contain the "differences" found in the layers
+norway_corine_class_meaning <- corine_class_meaning |>
+  filter(difference %in% all_years$value) |>
+  # change column names
+  rename(value = difference)
+
+# Merge norway_corine_class_meaning df and combined_corine_df into one
+corine_change_meaning <- merge(all_years,
+                               norway_corine_class_meaning,
+                               by = "value")
+
+## 3.3. Add loss and gain to the df --------------------------------------------
+
+# Create dataframe of "transition to" values
+# this dataframe will have the "focus" cover class in the "source" column and 
+# the cover class it transitions to in the "target" column the values will be 
+# negative because for every source class, this is the area "lost" that is 
+# converted to the "target" cover class
+loss_all_years <- corine_change_meaning |>
+  filter(value != 0) |>
+  mutate(count = count * (-0.01),
+         focus = source_name,
+         transition = target_name) |>
+  select (focus, transition, count)
+
+# Create dataframe of "transitions from" values
+# this dataframe will have "focus" cover class in the "target" column and the 
+# cover class it transitions from in the "target" column the values will be 
+# positive because for every source class, this is the area "gained" that is 
+#converted from the "source" cover class
+gain_all_years <- corine_change_meaning |>
+  filter(value != 0) |>
+  mutate(count = count * 0.01,
+         focus = target_name,
+         transition = source_name) |>
+  select (focus, transition, count)
+
+# Merge the gain and loss dataframes into a single df
+gain_loss_all_years <- rbind(loss_all_years, gain_all_years)
+
+## 3.5. Plot land cover transitions --------------------------------------------
+
+# Set scaling factor
+scaling_factor <- 10
+
+# Create new column in df to scale down the large values
+gain_loss_all_years$scaled_count <- ifelse(abs(gain_loss_all_years$count) > 90,
+                                           gain_loss_all_years$count/scaling_factor,
+                                           gain_loss_all_years$count)
+
+
+# Create plot
+cover_transitions <- ggplot(gain_loss_all_years, aes(x = focus, y = scaled_count, 
+                                                     fill = transition)) +
+  geom_bar(stat="identity", position="stack") +
+  scale_y_continuous(
+    name = bquote("Area changes"~("km"^2)),
+    sec.axis = sec_axis(~ . * scaling_factor, name = bquote("Area changes"~("km"^2)))
+  ) +
+  xlab("Land Cover Classes") +
+  scale_fill_manual(values = c("dodgerblue2", "#E31A1C","green4",
+                               "#6A3D9A", "#FF7F00",
+                               "gold1","maroon"),
+                    name = "Land Cover Classes",
+                    labels = c("Agriculture & Vegetation", "Complex Agriculture",
+                               "Forests", "Moors, Heathland & Grassland",
+                               "Sparse Vegetation", "Transitional Woodland Shrub",
+                               "Urban Fabric")) +
+  scale_x_discrete(
+    limits = c("Agriculture & Vegetation", "Complex Agriculture",
+               "Moors, Heath & Grass", "Sparse Vegetation",
+               "Urban Fabric", "Forests",
+               "Transitional Woodland Shrub"),
+    labels = c("Agriculture & Vegetation", "Complex Agriculture",
+               "Moors, Heathland & Grassland", "Sparse Vegetation",
+               "Urban Fabric", "Forests", "Transitional Woodland Shrub")) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 5.5, linetype = "dashed") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 30,
+                                   hjust = 1),
+        legend.position = "bottom")
+
+# Add intensification/extensification category based on the score
+# the categorisation was decided a priori - see Appendix Table 3
+gain_loss_all_years <- gain_loss_all_years |>
+  mutate(change_type = case_when(
+    change_type %in% c(79, 102, 249, 379, 589, 710,
+                       23, 147, 170, 608, 631, -102,
+                       -79, 487, 510, 277, 300, -340,
+                       -331, -461, -130) ~ "Intensification",
+    change_type %in% c(-249, -379, -589, -170, -300, -510,
+                       -147, -277, -487, 130, -210, 461, 331,
+                       121, 340, -23, -710, -121, -608) ~ "Extensification",
+    change_type == 0 ~ "No_change"),
+    source = as.factor(source),
+    target = as.factor(target),
+    land_cover = as.factor(land_cover))  
