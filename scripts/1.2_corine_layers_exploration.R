@@ -6,6 +6,8 @@
 # 2000-2018 and visualises the changes for each period
 ##----------------------------------------------------------------------------##
 
+# 1. READ IN DATA --------------------------------------------------------------
+
 ## 1.1. Download layers (if needed) --------------------------------------------
 
 download_file("https://ntnu.box.com/shared/static/97g9x4839ij4lnlldji2wh8e0e2lm5bf.tif", 
@@ -31,17 +33,24 @@ norway_corine_wgs84 <- terra::project(norway_corine_change_modified_stack,
                                       "+proj=longlat +datum=WGS84 +no_defs",
                                       method = "near")
 
+# Define dataframe names
+df_names <- c("change_2000.2006_2000", "change_2000.2006_2006", 
+              "change_2006.2012_2006", "change_2006.2012_2012",
+              "change_2012.2018_2012", "change_2012.2018_2018")
 
-# Convert the 1st (2000), 3rd (2006), and 5th (2012) layers to dataframe
-for (i in c(1, 3, 5)) {
-  var_name <- paste0("norway_corine", 2000 + (i - 1) * 3)
-  assign(var_name, as.data.frame(norway_corine_wgs84[[i]], xy = TRUE))
+# Convert raster layers to dfs
+for (i in c(1:6)) {
+  # convert to df
+  df <- as.data.frame(norway_corine_wgs84[[i]], xy = TRUE) |>
+    mutate(index = dplyr::row_number())
+  # assign correct name
+  assign(df_names[i], df)
 }
 
 ## 2.2. Plot map for 2000-2006 -------------------------------------------------
 change_2000.2006 <- ggplot()+
   geom_sf(data = norway_sf, fill = "lightgrey", color = "black")+
-  geom_point(data = norway_corine2000,
+  geom_point(data = change_2000.2006_2000,
              aes(x = x, y = y), color = "#800080", size = 1)+
   coord_sf(ylim = c(58, 72)) +
   labs(x = "Longitude", y = "Latitude") +
@@ -69,7 +78,7 @@ change_2000.2006 <- ggplot()+
 
 # Define variable names
 years <- c(2006, 2012)
-data_vars <- c("norway_corine2006", "norway_corine2012")
+data_vars <- c("change_2006.2012_2006", "change_2012.2018_2012")
 plot_vars <- c("change_2006.2012", "change_2012.2018")
 
 # Create empty list to store plots: 
@@ -112,3 +121,44 @@ ggsave(here("figures", "cover_change_all_periods_Figure1.png"),
 # Save to file as .svg
 ggsave(here("figures", "cover_change_all_periods_Figure1.svg"),
        width=17, height=13)
+
+
+# 3. FIGURE 2 - BARPLOTS COUNTING THE TYPE OF TRANSITIONS FOR ALL YEARS --------
+
+## 3.1. Calculate transitions for 2000-2006 period
+
+# Use (own) function to join land cover change dfs
+
+# 1st period of change: 2000-2006
+period1 <- process_period(change_2000.2006_2000, change_2000.2006_2006, 
+                          "U2006_CHA0006_00_V2020_20u1", 
+                          "U2006_CHA0006_06_V2020_20u1")
+
+# 2nd period of change: 2006-2012
+period2 <- process_period(change_2006.2012_2006, change_2006.2012_2012, 
+                          "U2012_CHA0612_06_V2020_20u1", 
+                          "U2012_CHA0612_12_V2020_20u1")
+
+# 3rd period of change: 2012 -2018
+period3 <- process_period(change_2012.2018_2012, change_2012.2018_2018, 
+                          "U2018_CHA1218_12_V2020_20u1", 
+                          "U2018_CHA1218_18_V2020_20u1")
+
+# Combine all periods in a single df
+all_periods <- bind_rows(period1, period2, period3)
+
+# get the number of transitions
+transition_counts <- all_periods |>
+  group_by(source, target) |>
+  summarise(transition_count = n()) |>
+  ungroup()
+
+# calculate the gains and losses for each df
+gain_loss_df <- transition_counts %>%
+  filter(source != target) %>%
+  mutate(
+    gain = ifelse(source == "1", transition_count, 0),
+    loss = ifelse(source == "1", -transition_count, 0)
+  ) %>%
+  pivot_longer(cols = c(gain, loss), names_to = "change", values_to = "count") %>%
+  filter(count != 0)
