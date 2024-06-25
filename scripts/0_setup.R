@@ -77,4 +77,17 @@ modify_class_values <- function(raster_stack, class_modifications) {
   return(modified_stack)
 }
 
+# 6. FUNCTION TO JOIN COMMON ROWS BETWEEN LAND COVER CHANGE DFS ----------------
+
+# This function is used in script 1.2_corine_layers_exploration.R to perform an
+# inner join on a common row index for the two dataframes corresponding to a
+# period of land cover change (i.e. 2000 & 2006, 2006 & 2012, 2012 & 2018)
+
+process_period <- function(df1, df2, source_col, target_col) {
+  inner_join(df1, df2, by = "index") %>%
+    select(!!source_col, !!target_col) %>%
+    rename(source = !!source_col,
+           target = !!target_col)
+}
+
 # END OF SCRIPT ----------------------------------------------------------------
