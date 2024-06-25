@@ -178,3 +178,62 @@ gain_loss_list <- lapply(land_cover_types, function(land_cover) {
 
 # Combine list in a signle df
 gain_loss_df <- bind_rows(gain_loss_list)
+
+## 3.4. Categorise transitions as intensification or extensification -----------
+
+# Add column that calculates the difference between source and target cover type
+gain_loss_df <- gain_loss_df |>
+  mutate(change_type = source - target)
+
+# Add intensification/extensification category based on the score
+# the categorisation was decided a priori - see Appendix Table 3
+gain_loss_df <- gain_loss_df |>
+    mutate(change_type = case_when(
+      change_type %in% c(79, 102, 249, 379, 589, 710,
+                        23, 147, 170, 608, 631, -102,
+                        -79, 487, 510, 277, 300, -340,
+                        -331, -461, -130) ~ "Intensification",
+      change_type %in% c(-249, -379, -589, -170, -300, -510,
+                        -147, -277, -487, 130, -210, 461, 331,
+                        121, 340, -23, -710, -121, -608) ~ "Extensification",
+      change_type == 0 ~ "No_change"),
+      source = as.factor(source),
+      target = as.factor(target),
+      land_cover = as.factor(land_cover))  
+  
+## 3.5. Plot gains and losses for each land cover category ---------------------
+
+# Set scaling factor
+scaling_factor <- 10
+
+# Create new column in df to scale down the large values
+gain_loss_df$scaled_count <- ifelse(abs(gain_loss_df$count) > 1000,
+                                    gain_loss_df$count/scaling_factor,
+                                    gain_loss_df$count)
+
+# Plot land cover transitions
+transitions_plot <- ggplot(gain_loss_df, aes(x = land_cover, y = scaled_count,
+                                                    fill = target))+
+  geom_bar(stat="identity", position="stack")+
+  scale_y_continuous(
+    name = bquote("Area changes"~("km"^2)),
+    sec.axis = sec_axis(~ . * scaling_factor, name = bquote("Area changes"~("km"^2)))
+  )+
+  xlab("Land Cover Classes")+
+  scale_fill_manual(values = c("dodgerblue2", "#E31A1C","green4",
+                               "#6A3D9A", "#FF7F00",
+                               "gold1","maroon"),
+                    name = "Land Cover Classes",
+                    labels = c("Agriculture & Vegetation", "Complex Agriculture",
+                               "Forests", "Moors, Heathland & Grassland",
+                               "Sparse Vegetation", "Transitional Woodland",
+                               "Urban Fabric"))+
+  scale_x_discrete(labels = c("Agriculture & Vegetation", "Complex Agriculture",
+                              "Forests", "Moors, Heathland & Grassland",
+                              "Sparse Vegetation", "Transitional Woodland",
+                              "Urban Fabric"))+
+  ggtitle("Land Cover Transitions")+
+  geom_hline(yintercept = 0)+
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 30,
+                                   hjust = 1))
