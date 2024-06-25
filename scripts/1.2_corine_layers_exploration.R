@@ -125,8 +125,7 @@ ggsave(here("figures", "cover_change_all_periods_Figure1.svg"),
 
 # 3. FIGURE 2 - BARPLOTS COUNTING THE TYPE OF TRANSITIONS FOR ALL YEARS --------
 
-## 3.1. Calculate transitions for 2000-2006 period
-
+## 3.1. Extract land cover before and after change for each period -------------
 # Use (own) function to join land cover change dfs
 
 # 1st period of change: 2000-2006
@@ -147,18 +146,35 @@ period3 <- process_period(change_2012.2018_2012, change_2012.2018_2018,
 # Combine all periods in a single df
 all_periods <- bind_rows(period1, period2, period3)
 
-# get the number of transitions
-transition_counts <- all_periods |>
+## 3.2. Calculate the amount of pixels undergoing each transition type ---------
+transitions <- all_periods |>
   group_by(source, target) |>
   summarise(transition_count = n()) |>
   ungroup()
 
-# calculate the gains and losses for each df
-gain_loss_df <- transition_counts %>%
-  filter(source != target) %>%
-  mutate(
-    gain = ifelse(source == "1", transition_count, 0),
-    loss = ifelse(source == "1", -transition_count, 0)
-  ) %>%
-  pivot_longer(cols = c(gain, loss), names_to = "change", values_to = "count") %>%
-  filter(count != 0)
+## 3.3 Calculate the gains and losses for each land cover type -----------------
+
+# Define land cover types
+land_cover_types <- unique(transitions$source)
+
+# Calculate gains and losses for each land cover type
+gain_loss_list <- lapply(land_cover_types, function(land_cover) {
+  # filter rows where the source land cover is different from the target one
+  transition_counts |>
+    filter(source != target) |>
+    # create gain and loss columns
+    mutate(
+      # gain if the target land cover matches the current land_cover type
+      gain = ifelse(target == land_cover, transition_count, 0),
+      # loss if the source land cover matches the current land_cover type
+      loss = ifelse(source == land_cover, -transition_count, 0)) |>
+    # conver the gain and loss columns to long format
+    pivot_longer(cols = c(gain, loss), names_to = "change", values_to = "count") |>
+    # filter out rows with 0 counts
+    filter(count != 0) |>
+    # add land cover column 
+    mutate(land_cover = land_cover)
+})
+
+# Combine list in a signle df
+gain_loss_df <- bind_rows(gain_loss_list)
