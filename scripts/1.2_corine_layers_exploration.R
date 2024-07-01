@@ -308,7 +308,7 @@ intens_extens_transitions <- ggplot(intens_extens_gain_loss_all_years, aes(x = f
   xlab("Land Cover Classes")+
   scale_fill_manual(values = c("lightgreen", "sienna"),
                     name = "Transition Type",
-                    labels = c("Nature Gain", "Nature Loss"))+ 
+                    labels = c("Extensification", "Intensification"))+ 
   scale_x_discrete(
     limits = c("Agriculture & Vegetation", "Complex Agriculture",
                "Moors, Heath & Grass", "Sparse Vegetation",
