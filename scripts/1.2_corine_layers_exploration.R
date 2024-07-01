@@ -360,7 +360,7 @@ nodes <- data.frame(name = unique(c(corine_change_meaning$source_label,
 # Create links df
 links <- corine_change_meaning %>%
   mutate(source = match(source_label, nodes$name) - 1,
-         target = match(target_label, nodes$name) - 1) %>%
+         target = match(target_label, nodes$name) - 1) |>
   select(source, target, value = count)
 
 # Definecolor mapping for each node including the year
@@ -415,10 +415,19 @@ sankey_plot <- sankeyNetwork(Links = links, Nodes = nodes, Source = "source", Ta
                              colourScale = color_scale)
 
 # Create function to remove the year part from labels and keep colours consitent
-remove_year_from_labels <- function(sankey) {
-  htmlwidgets::onRender(sankey, '
+customize_sankey <- function(sankey, label_text) {
+  htmlwidgets::onRender(sankey, sprintf('
     function(el, x) {
       var svg = d3.select(el).select("svg");
+
+      // Add custom label
+      svg.append("text")
+        .attr("x", 10)
+        .attr("y", 20)
+        .attr("text-anchor", "start")
+        .style("font-size", "20px")
+        .style("font-weight", "bold")
+        .text("%s");
 
       // Remove year from the node labels
       svg.selectAll(".node text").each(function(d) {
@@ -427,11 +436,11 @@ remove_year_from_labels <- function(sankey) {
         d3.select(this).text(cover);
       });
     }
-  ')
+  ', label_text))
 }
 
 # Apply function to remove the year part from the node labels
-sankey_plot_with_labels <- remove_year_from_labels(sankey_plot)
+sankey_plot_with_custom_label <- customize_sankey(sankey_plot, "a)")
 
 # Display the Sankey plot with adjusted labels
 sankey_plot_with_labels
@@ -478,3 +487,5 @@ sankey_plot_with_labels_forestless <- remove_year_from_labels(sankey_plot_forest
 
 # Display the Sankey plot with adjusted labels
 sankey_plot_with_labels_forestless
+
+## 4.3. Combine the two sankeys into a single figure ---------------------------
