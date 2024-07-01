@@ -251,20 +251,82 @@ cover_transitions <- ggplot(gain_loss_all_years, aes(x = focus, y = scaled_count
   theme_classic()+
   theme(axis.text.x = element_text(angle = 30,
                                    hjust = 1),
-        legend.position = "bottom")
+        legend.position = "bottom") +
+  guides(fill = guide_legend(ncol = 2))
+
+## 3.6. Plot intensification and extensification transitions -------------------
+# Create new column with Intensification/Extensification based on "difference"
+# values. Check CORINE_Land_Cover_Transition_Classes_and_Scores.pdf in 
+# T:\vm\inh\zoologi\Bruker\Beatrice\Chapter 1 for details
 
 # Add intensification/extensification category based on the score
 # the categorisation was decided a priori - see Appendix Table 3
-gain_loss_all_years <- gain_loss_all_years |>
-  mutate(change_type = case_when(
-    change_type %in% c(79, 102, 249, 379, 589, 710,
+intens_extens_all_years <- corine_change_meaning |>
+  mutate(transition_meaning = case_when(
+    difference %in% c(79, 102, 249, 379, 589, 710,
                        23, 147, 170, 608, 631, -102,
                        -79, 487, 510, 277, 300, -340,
                        -331, -461, -130) ~ "Intensification",
-    change_type %in% c(-249, -379, -589, -170, -300, -510,
+    difference %in% c(-249, -379, -589, -170, -300, -510,
                        -147, -277, -487, 130, -210, 461, 331,
                        121, 340, -23, -710, -121, -608) ~ "Extensification",
-    change_type == 0 ~ "No_change"),
-    source = as.factor(source),
-    target = as.factor(target),
-    land_cover = as.factor(land_cover))  
+    difference == 0 ~ "No_change"))  
+
+# Create df of "transition to" values - see above for definition
+intens_extens_loss_all_years <- intens_extens_all_years |>
+  filter(value != 0) |>
+  mutate(count = count * (-0.01),
+         focus = source_name,
+         transition = target_name) |>
+  select(focus, transition, count, transition_meaning)
+
+# Create df of "transition from" values - see above for definition
+intens_extens_gain_all_years <- intens_extens_all_years |>
+  filter(value != 0) |>
+  mutate(count = count * 0.01,
+         focus = target_name,
+         transition = source_name) |>
+  select (focus, transition, count, transition_meaning)
+
+# Merge gain and loss dfs into a single df
+intens_extens_gain_loss_all_years <- rbind(intens_extens_loss_all_years,
+                                           intens_extens_gain_all_years)
+
+# Create new column in df to scale down large values
+intens_extens_gain_loss_all_years$scaled_count <- ifelse(abs(intens_extens_gain_loss_all_years$count) > 90,
+                                                         intens_extens_gain_loss_all_years$count/scaling_factor,
+                                                         intens_extens_gain_loss_all_years$count)
+
+# Plot figure of transitions into intensification and extensification
+intens_extens_transitions <- ggplot(intens_extens_gain_loss_all_years, aes(x = focus, y = scaled_count,
+                                              fill = transition_meaning))+
+  geom_bar(stat="identity", position="stack")+
+  scale_y_continuous(
+    name = bquote("Area changes"~("km"^2)),
+    sec.axis = sec_axis(~ . * scaling_factor, name = bquote("Area changes"~("km"^2)))
+  )+
+  xlab("Land Cover Classes")+
+  scale_fill_manual(values = c("lightgreen", "sienna"),
+                    name = "Transition Type",
+                    labels = c("Nature Gain", "Nature Loss"))+ 
+  scale_x_discrete(
+    limits = c("Agriculture & Vegetation", "Complex Agriculture",
+               "Moors, Heath & Grass", "Sparse Vegetation",
+               "Urban Fabric", "Forests",
+               "Transitional Woodland Shrub"),
+    labels = c("Agriculture & Vegetation", "Complex Agriculture",
+               "Moors, Heathland & Grassland", "Sparse Vegetation",
+               "Urban Fabric", "Forests", "Transitional Woodland Shrub")) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 5.5, linetype = "dashed") +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 30,
+                                   hjust = 1),
+        legend.position = "bottom") +
+  guides(fill = guide_legend(ncol = 2))
+
+## 3.5. Combine plots from 3.3. and 3.4. ---------------------------------------
+plot_grid(cover_transitions, intens_extens_transitions,
+          labels = c("a)", "b)"),
+          ncol = 2,
+          align = "h")
