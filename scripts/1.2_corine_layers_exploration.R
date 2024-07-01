@@ -231,7 +231,7 @@ cover_transitions <- ggplot(gain_loss_all_years, aes(x = focus, y = scaled_count
   ) +
   xlab("Land Cover Classes") +
   scale_fill_manual(values = c("dodgerblue2", "#E31A1C","green4",
-                               "#6A3D9A", "#FF7F00",
+                               "#000000", "#FF7F00",
                                "gold1","maroon"),
                     name = "Land Cover Classes",
                     labels = c("Agriculture & Vegetation", "Complex Agriculture",
@@ -326,7 +326,155 @@ intens_extens_transitions <- ggplot(intens_extens_gain_loss_all_years, aes(x = f
   guides(fill = guide_legend(ncol = 2))
 
 ## 3.5. Combine plots from 3.3. and 3.4. ---------------------------------------
+
+# Create figure with 2 panels
 plot_grid(cover_transitions, intens_extens_transitions,
           labels = c("a)", "b)"),
           ncol = 2,
           align = "h")
+
+# Save to file as .png
+ggsave(here("figures", "cover_transitions_all_periods_Figure2.png"),
+       width=17, height=13)
+
+# Save to file as .svg
+ggsave(here("figures", "cover_transitions_all_periods_Figure2.svg"),
+       width=17, height=13)
+
+
+# 4. SANKEY PLOT OF TRANSITIONS FOR ALL YEARS ----------------------------------
+
+## 4.1. Sankey with all types of transitions -----------------------------------
+
+# Replace spaces with "_" in land cover names
+corine_change_meaning <- corine_change_meaning %>%
+  mutate(source_name = gsub(" ", "_", source_name),
+         target_name = gsub(" ", "_", target_name),
+         source_label = paste(source_year, source_name, sep = "_"),
+         target_label = paste(target_year, target_name, sep = "_"))
+
+# Create nodes df
+nodes <- data.frame(name = unique(c(corine_change_meaning$source_label, 
+                                    corine_change_meaning$target_label)))
+
+# Create links df
+links <- corine_change_meaning %>%
+  mutate(source = match(source_label, nodes$name) - 1,
+         target = match(target_label, nodes$name) - 1) %>%
+  select(source, target, value = count)
+
+# Definecolor mapping for each node including the year
+# this colour scheme is trying to match the one from Figure 2 as closely
+# as possible
+color_mapping <- c(
+  "2000_Agriculture_&_Vegetation" = "#1E90FF",  # dodgerblue2
+  "2006_Agriculture_&_Vegetation" = "#1E90FF", 
+  "2012_Agriculture_&_Vegetation" = "#1E90FF", 
+  "2018_Agriculture_&_Vegetation" = "#1E90FF",
+  "2000_Complex_Agriculture" = "#E31A1C",
+  "2006_Complex_Agriculture" = "#E31A1C",
+  "2012_Complex_Agriculture" = "#E31A1C",
+  "2018_Complex_Agriculture" = "#E31A1C",
+  "2000_Forests" = "#228B22",  # green4
+  "2006_Forests" = "#228B22",
+  "2012_Forests" = "#228B22",
+  "2018_Forests" = "#228B22",
+  "2000_Moors,_Heathland_&_Grassland" = "#000000",
+  "2006_Moors,_Heathland_&_Grassland" = "#000000",
+  "2012_Moors,_Heathland_&_Grassland" = "#000000",
+  "2018_Moors,_Heathland_&_Grassland" = "#000000",
+  "2000_Sparse_Vegetation" = "#FF7F00",
+  "2006_Sparse_Vegetation" = "#FF7F00",
+  "2012_Sparse_Vegetation" = "#FF7F00",
+  "2018_Sparse_Vegetation" = "#FF7F00",
+  "2000_Transitional_Woodland_Shrub" = "#FFD700",  # gold1
+  "2006_Transitional_Woodland_Shrub" = "#FFD700",
+  "2012_Transitional_Woodland_Shrub" = "#FFD700",
+  "2018_Transitional_Woodland_Shrub" = "#FFD700",
+  "2000_Urban_Fabric" = "#800000",  # maroon
+  "2006_Urban_Fabric" = "#800000",
+  "2012_Urban_Fabric" = "#800000",
+  "2018_Urban_Fabric" = "#800000"
+)
+
+# Assign colors to nodes based on mapping
+node_colors <- sapply(nodes$name, function(name) {
+  color_mapping[name]
+})
+
+# Create color scale function for node colors
+color_scale <- paste0('d3.scaleOrdinal().domain(["',
+                      paste(nodes$name, collapse = '", "'),
+                      '"]).range(["',
+                      paste(node_colors, collapse = '", "'),
+                      '"])')
+
+# Create Sankey plot and save it as an object
+sankey_plot <- sankeyNetwork(Links = links, Nodes = nodes, Source = "source", Target = "target",
+                             Value = "value", NodeID = "name", fontSize = 12, nodeWidth = 30,
+                             colourScale = color_scale)
+
+# Create function to remove the year part from labels and keep colours consitent
+remove_year_from_labels <- function(sankey) {
+  htmlwidgets::onRender(sankey, '
+    function(el, x) {
+      var svg = d3.select(el).select("svg");
+
+      // Remove year from the node labels
+      svg.selectAll(".node text").each(function(d) {
+        var parts = d.name.split("_");
+        var cover = parts.slice(1).join(" ").replace(/_/g, " ");
+        d3.select(this).text(cover);
+      });
+    }
+  ')
+}
+
+# Apply function to remove the year part from the node labels
+sankey_plot_with_labels <- remove_year_from_labels(sankey_plot)
+
+# Display the Sankey plot with adjusted labels
+sankey_plot_with_labels
+
+## 4.2. Sankey without forest <-> transitional woodland shrub transitions ------
+
+# Filter out forest <-> transitional woodland shrub transitions
+corine_filtered <- corine_change_meaning %>%
+  filter(!(source_name == "Forests" & target_name == "Transitional_Woodland_Shrub") &
+           !(source_name == "Transitional_Woodland_Shrub" & target_name == "Forests"))
+
+# Create nodes df
+nodes_forestless <- data.frame(name = unique(c(corine_filtered$source_label, 
+                                               corine_filtered$target_label)))
+
+# Create links df
+links_forestless <- corine_filtered %>%
+  mutate(source = match(source_label, nodes$name) - 1,
+         target = match(target_label, nodes$name) - 1) %>%
+  select(source, target, value = count)
+
+# Assign colors to nodes based on mapping
+node_colors_forestless <- sapply(nodes_forestless$name, function(name) {
+  color_mapping[name]
+})
+
+# Create color scale function for node colors
+color_scale_forestless <- paste0('d3.scaleOrdinal().domain(["',
+                      paste(nodes_forestless$name, collapse = '", "'),
+                      '"]).range(["',
+                      paste(node_colors_forestless, collapse = '", "'),
+                      '"])')
+
+# Create Sankey plot and save it as an object
+sankey_plot_forestless <- sankeyNetwork(Links = links_forestless, 
+                                        Nodes = nodes_forestless, 
+                                        Source = "source", Target = "target",
+                                        Value = "value", NodeID = "name", 
+                                        fontSize = 12, nodeWidth = 30,
+                                        colourScale = color_scale)
+
+# Apply the function to remove the year part from the node labels
+sankey_plot_with_labels_forestless <- remove_year_from_labels(sankey_plot_forestless)
+
+# Display the Sankey plot with adjusted labels
+sankey_plot_with_labels_forestless
