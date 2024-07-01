@@ -22,7 +22,7 @@ package_vec <- c("here", "terra", "sf", "geodata", "mapview",
                  "tidyterra", "patchwork", "styler", "scales",
                  "plotly", "lme4", "DHARMa", "glmmTMB", 
                  "tidyterra", "ggspatial", "htmlwidgets",
-                 "htmltools", "patchwork", "webshot") # specify packages
+                 "htmltools", "patchwork", "webshot2") # specify packages
 
 # Execute the function
 sapply(package_vec, install_load_package)
