@@ -39,7 +39,7 @@ download_files <- function(urls, filenames, dir = here("data", "raw_data")) {
   }
 }
 
-# 3. FUNCTION TI READ RASTERS --------------------------------------------------
+# 3. FUNCTION TO READ RASTERS --------------------------------------------------
 
 read_rasters <- function(filenames, dir = here("data/raw_data")) {
   rasters <- lapply(filenames, function(x) {
