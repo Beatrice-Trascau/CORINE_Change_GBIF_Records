@@ -352,7 +352,7 @@ corine_change_meaning_sankey <- corine_change_meaning |>
          target_name = gsub(" ", "_", target_name),
          source_label = paste(source_year, source_name, sep = "_"),
          target_label = paste(target_year, target_name, sep = "_")) |>
-  filter(source_name != target_name)
+  filter(value != 0)
 
 # Create nodes df
 nodes <- data.frame(name = unique(c(corine_change_meaning_sankey$source_label, 
