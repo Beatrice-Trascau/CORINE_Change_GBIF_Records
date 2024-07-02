@@ -94,4 +94,31 @@ process_corine_change <- function(stack, index1, index2, source_year, target_yea
     select(-layer)
 }
 
+# 7. FUNCTION TO REMOVE YEAR FROM SANKEY LABELS AND ADD A HEADER ---------------
+
+# Create function to remove the year part from labels and keep colours consitent
+customize_sankey <- function(sankey, label_text) {
+  htmlwidgets::onRender(sankey, sprintf('
+    function(el, x) {
+      var svg = d3.select(el).select("svg");
+
+      // Add custom label
+      svg.append("text")
+        .attr("x", 10)
+        .attr("y", 20)
+        .attr("text-anchor", "start")
+        .style("font-size", "20px")
+        .style("font-weight", "bold")
+        .text("%s");
+
+      // Remove year from the node labels
+      svg.selectAll(".node text").each(function(d) {
+        var parts = d.name.split("_");
+        var cover = parts.slice(1).join(" ").replace(/_/g, " ");
+        d3.select(this).text(cover);
+      });
+    }
+  ', label_text))
+}
+
 # END OF SCRIPT ----------------------------------------------------------------
