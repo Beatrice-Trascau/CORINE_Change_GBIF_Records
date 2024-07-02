@@ -351,7 +351,8 @@ corine_change_meaning <- corine_change_meaning |>
   mutate(source_name = gsub(" ", "_", source_name),
          target_name = gsub(" ", "_", target_name),
          source_label = paste(source_year, source_name, sep = "_"),
-         target_label = paste(target_year, target_name, sep = "_"))
+         target_label = paste(target_year, target_name, sep = "_")) |>
+  filter(source_name != target_name)
 
 # Create nodes df
 nodes <- data.frame(name = unique(c(corine_change_meaning$source_label, 
@@ -413,31 +414,6 @@ color_scale <- paste0('d3.scaleOrdinal().domain(["',
 sankey_plot <- sankeyNetwork(Links = links, Nodes = nodes, Source = "source", Target = "target",
                              Value = "value", NodeID = "name", fontSize = 12, nodeWidth = 30,
                              colourScale = color_scale)
-
-# Create function to remove the year part from labels and keep colours consitent
-customize_sankey <- function(sankey, label_text) {
-  htmlwidgets::onRender(sankey, sprintf('
-    function(el, x) {
-      var svg = d3.select(el).select("svg");
-
-      // Add custom label
-      svg.append("text")
-        .attr("x", 10)
-        .attr("y", 20)
-        .attr("text-anchor", "start")
-        .style("font-size", "20px")
-        .style("font-weight", "bold")
-        .text("%s");
-
-      // Remove year from the node labels
-      svg.selectAll(".node text").each(function(d) {
-        var parts = d.name.split("_");
-        var cover = parts.slice(1).join(" ").replace(/_/g, " ");
-        d3.select(this).text(cover);
-      });
-    }
-  ', label_text))
-}
 
 # Apply function to remove the year part from the node labels
 sankey_plot_with_custom_label <- customize_sankey(sankey_plot, "a)")
