@@ -172,12 +172,12 @@ corine_class_meaning <- data.frame(source_number = c(rep(1,7), rep(80,7),
 
 # Subset score meaning df to only contain the "differences" found in the layers
 norway_corine_class_meaning <- corine_class_meaning |>
-  filter(difference %in% all_years$value) |>
+  filter(difference %in% combined_corine_df$value) |>
   # change column names
   rename(value = difference)
 
 # Merge norway_corine_class_meaning df and combined_corine_df into one
-corine_change_meaning <- merge(all_years,
+corine_change_meaning <- merge(combined_corine_df,
                                norway_corine_class_meaning,
                                by = "value")
 
@@ -347,7 +347,7 @@ ggsave(here("figures", "cover_transitions_all_periods_Figure2.svg"),
 ## 4.1. Sankey with all types of transitions -----------------------------------
 
 # Replace spaces with "_" in land cover names
-corine_change_meaning <- corine_change_meaning %>%
+corine_change_meaning <- corine_change_meaning |>
   mutate(source_name = gsub(" ", "_", source_name),
          target_name = gsub(" ", "_", target_name),
          source_label = paste(source_year, source_name, sep = "_"),
@@ -358,7 +358,7 @@ nodes <- data.frame(name = unique(c(corine_change_meaning$source_label,
                                     corine_change_meaning$target_label)))
 
 # Create links df
-links <- corine_change_meaning %>%
+links <- corine_change_meaning |>
   mutate(source = match(source_label, nodes$name) - 1,
          target = match(target_label, nodes$name) - 1) |>
   select(source, target, value = count)
@@ -443,7 +443,12 @@ customize_sankey <- function(sankey, label_text) {
 sankey_plot_with_custom_label <- customize_sankey(sankey_plot, "a)")
 
 # Display the Sankey plot with adjusted labels
-sankey_plot_with_labels
+sankey_plot_with_custom_label
+
+# Save to file
+saveWidget(sankey_plot_with_custom_label, 
+           here("figures", "cover_transitions_Sankey_Figure3a.html"),
+           selfcontained = TRUE)
 
 ## 4.2. Sankey without forest <-> transitional woodland shrub transitions ------
 
@@ -482,10 +487,15 @@ sankey_plot_forestless <- sankeyNetwork(Links = links_forestless,
                                         fontSize = 12, nodeWidth = 30,
                                         colourScale = color_scale)
 
-# Apply the function to remove the year part from the node labels
-sankey_plot_with_labels_forestless <- remove_year_from_labels(sankey_plot_forestless)
+# Apply function to remove the year part from the node labels
+sankey_plot_forestless_with_custom_label <- customize_sankey(sankey_plot_forestless, 
+                                                             "b)")
 
 # Display the Sankey plot with adjusted labels
-sankey_plot_with_labels_forestless
+sankey_plot_forestless_with_custom_label
 
+# Save to file
+saveWidget(sankey_plot_forestless_with_custom_label, 
+           here("figures", "cover_transitions_Sankey_Figure3b.html"),
+           selfcontained = TRUE)
 ## 4.3. Combine the two sankeys into a single figure ---------------------------
