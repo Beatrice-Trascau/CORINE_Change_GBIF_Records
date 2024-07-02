@@ -474,4 +474,5 @@ sankey_plot_forestless_with_custom_label
 saveWidget(sankey_plot_forestless_with_custom_label, 
            here("figures", "cover_transitions_Sankey_Figure3b.html"),
            selfcontained = TRUE)
+
 ## 4.3. Combine the two sankeys into a single figure ---------------------------
