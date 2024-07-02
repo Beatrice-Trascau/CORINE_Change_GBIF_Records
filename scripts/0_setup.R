@@ -81,6 +81,9 @@ modify_class_values <- function(raster_stack, class_modifications) {
 # 6. FUNCTION TO CALCULATE FREQUENCY OF LAND COVER CHANGES BETWEEN LAYERS ------
 
 process_corine_change <- function(stack, index1, index2, source_year, target_year) {
+  index1 <- as.numeric(index1)
+  index2 <- as.numeric(index2)
+  
   diff_raster <- stack[[index1]] - stack[[index2]]
   freq_df <- as.data.frame(freq(diff_raster))
   
