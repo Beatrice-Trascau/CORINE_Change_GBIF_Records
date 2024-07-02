@@ -263,14 +263,14 @@ cover_transitions <- ggplot(gain_loss_all_years, aes(x = focus, y = scaled_count
 # the categorisation was decided a priori - see Appendix Table 3
 intens_extens_all_years <- corine_change_meaning |>
   mutate(transition_meaning = case_when(
-    difference %in% c(79, 102, 249, 379, 589, 710,
+    value %in% c(79, 102, 249, 379, 589, 710,
                        23, 147, 170, 608, 631, -102,
                        -79, 487, 510, 277, 300, -340,
                        -331, -461, -130) ~ "Intensification",
-    difference %in% c(-249, -379, -589, -170, -300, -510,
+    value %in% c(-249, -379, -589, -170, -300, -510,
                        -147, -277, -487, 130, -210, 461, 331,
                        121, 340, -23, -710, -121, -608) ~ "Extensification",
-    difference == 0 ~ "No_change"))  
+    value == 0 ~ "No_change"))  
 
 # Create df of "transition to" values - see above for definition
 intens_extens_loss_all_years <- intens_extens_all_years |>
@@ -308,7 +308,7 @@ intens_extens_transitions <- ggplot(intens_extens_gain_loss_all_years, aes(x = f
   xlab("Land Cover Classes")+
   scale_fill_manual(values = c("lightgreen", "sienna"),
                     name = "Transition Type",
-                    labels = c("Extensification", "Intensification"))+ 
+                    labels = c("Extensification", "Intensification"))+
   scale_x_discrete(
     limits = c("Agriculture & Vegetation", "Complex Agriculture",
                "Moors, Heath & Grass", "Sparse Vegetation",
@@ -335,11 +335,11 @@ plot_grid(cover_transitions, intens_extens_transitions,
 
 # Save to file as .png
 ggsave(here("figures", "cover_transitions_all_periods_Figure2.png"),
-       width=17, height=13)
+       width=20, height=13)
 
 # Save to file as .svg
 ggsave(here("figures", "cover_transitions_all_periods_Figure2.svg"),
-       width=17, height=13)
+       width=20, height=13)
 
 
 # 4. SANKEY PLOT OF TRANSITIONS FOR ALL YEARS ----------------------------------
@@ -347,7 +347,7 @@ ggsave(here("figures", "cover_transitions_all_periods_Figure2.svg"),
 ## 4.1. Sankey with all types of transitions -----------------------------------
 
 # Replace spaces with "_" in land cover names
-corine_change_meaning <- corine_change_meaning |>
+corine_change_meaning_sankey <- corine_change_meaning |>
   mutate(source_name = gsub(" ", "_", source_name),
          target_name = gsub(" ", "_", target_name),
          source_label = paste(source_year, source_name, sep = "_"),
@@ -355,11 +355,11 @@ corine_change_meaning <- corine_change_meaning |>
   filter(source_name != target_name)
 
 # Create nodes df
-nodes <- data.frame(name = unique(c(corine_change_meaning$source_label, 
-                                    corine_change_meaning$target_label)))
+nodes <- data.frame(name = unique(c(corine_change_meaning_sankey$source_label, 
+                                    corine_change_meaning_sankey$target_label)))
 
 # Create links df
-links <- corine_change_meaning |>
+links <- corine_change_meaning_sankey |>
   mutate(source = match(source_label, nodes$name) - 1,
          target = match(target_label, nodes$name) - 1) |>
   select(source, target, value = count)
@@ -429,7 +429,7 @@ saveWidget(sankey_plot_with_custom_label,
 ## 4.2. Sankey without forest <-> transitional woodland shrub transitions ------
 
 # Filter out forest <-> transitional woodland shrub transitions
-corine_filtered <- corine_change_meaning %>%
+corine_filtered <- corine_change_meaning_sankey %>%
   filter(!(source_name == "Forests" & target_name == "Transitional_Woodland_Shrub") &
            !(source_name == "Transitional_Woodland_Shrub" & target_name == "Forests"))
 
@@ -438,9 +438,9 @@ nodes_forestless <- data.frame(name = unique(c(corine_filtered$source_label,
                                                corine_filtered$target_label)))
 
 # Create links df
-links_forestless <- corine_filtered %>%
-  mutate(source = match(source_label, nodes$name) - 1,
-         target = match(target_label, nodes$name) - 1) %>%
+links_forestless <- corine_filtered |>
+  mutate(source = match(source_label, nodes_forestless$name) - 1,
+         target = match(target_label, nodes_forestless$name) - 1) |>
   select(source, target, value = count)
 
 # Assign colors to nodes based on mapping
