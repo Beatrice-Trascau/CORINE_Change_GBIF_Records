@@ -379,34 +379,34 @@ links <- corine_change_meaning_sankey |>
 # this colour scheme is trying to match the one from Figure 2 as closely
 # as possible
 color_mapping <- c(
-  "2000_Agriculture_&_Vegetation" = "#1E90FF",  # dodgerblue2
-  "2006_Agriculture_&_Vegetation" = "#1E90FF", 
-  "2012_Agriculture_&_Vegetation" = "#1E90FF", 
-  "2018_Agriculture_&_Vegetation" = "#1E90FF",
-  "2000_Complex_Agriculture" = "#E31A1C",
-  "2006_Complex_Agriculture" = "#E31A1C",
-  "2012_Complex_Agriculture" = "#E31A1C",
-  "2018_Complex_Agriculture" = "#E31A1C",
-  "2000_Forests" = "#228B22",  # green4
-  "2006_Forests" = "#228B22",
-  "2012_Forests" = "#228B22",
-  "2018_Forests" = "#228B22",
+  "2000_Agriculture_&_Vegetation" = "#0072B2", 
+  "2006_Agriculture_&_Vegetation" = "#0072B2", 
+  "2012_Agriculture_&_Vegetation" = "#0072B2", 
+  "2018_Agriculture_&_Vegetation" = "#0072B2",
+  "2000_Complex_Agriculture" = "#F564E3",
+  "2006_Complex_Agriculture" = "#F564E3",
+  "2012_Complex_Agriculture" = "#F564E3",
+  "2018_Complex_Agriculture" = "#F564E3",
+  "2000_Forests" = "#009E73",
+  "2006_Forests" = "#009E73",
+  "2012_Forests" = "#009E73",
+  "2018_Forests" = "#009E73",
   "2000_Moors,_Heathland_&_Grassland" = "#000000",
   "2006_Moors,_Heathland_&_Grassland" = "#000000",
   "2012_Moors,_Heathland_&_Grassland" = "#000000",
   "2018_Moors,_Heathland_&_Grassland" = "#000000",
-  "2000_Sparse_Vegetation" = "#FF7F00",
-  "2006_Sparse_Vegetation" = "#FF7F00",
-  "2012_Sparse_Vegetation" = "#FF7F00",
-  "2018_Sparse_Vegetation" = "#FF7F00",
-  "2000_Transitional_Woodland_Shrub" = "#FFD700",  # gold1
-  "2006_Transitional_Woodland_Shrub" = "#FFD700",
-  "2012_Transitional_Woodland_Shrub" = "#FFD700",
-  "2018_Transitional_Woodland_Shrub" = "#FFD700",
-  "2000_Urban_Fabric" = "#800000",  # maroon
-  "2006_Urban_Fabric" = "#800000",
-  "2012_Urban_Fabric" = "#800000",
-  "2018_Urban_Fabric" = "#800000"
+  "2000_Sparse_Vegetation" = "#E69F00",
+  "2006_Sparse_Vegetation" = "#E69F00",
+  "2012_Sparse_Vegetation" = "#E69F00",
+  "2018_Sparse_Vegetation" = "#E69F00",
+  "2000_Transitional_Woodland_Shrub" = "#F0E442",
+  "2006_Transitional_Woodland_Shrub" = "#F0E442",
+  "2012_Transitional_Woodland_Shrub" = "#F0E442",
+  "2018_Transitional_Woodland_Shrub" = "#F0E442",
+  "2000_Urban_Fabric" = "#83506C",
+  "2006_Urban_Fabric" = "#83506C",
+  "2012_Urban_Fabric" = "#83506C",
+  "2018_Urban_Fabric" = "#83506C"
 )
 
 # Assign colors to nodes based on mapping
@@ -495,4 +495,49 @@ saveWidget(sankey_plot_forestless_with_custom_label,
            here("figures", "cover_transitions_Sankey_Figure3b.html"),
            selfcontained = TRUE)
 
-## 4.3. Combine the two sankeys into a single figure ---------------------------
+## 4.3. Replicate Sankey with all classes with ggalluvial  ---------------------
+
+# Replace spaces with _
+corine_change_meaning_alluvial <- corine_change_meaning |>
+  mutate(source_name = gsub(" ", "_", source_name),
+         target_name = gsub(" ", "_", target_name))
+
+# Re-format data to comply with alluvial data
+alluvial_data <- corine_change_meaning_sankey |>
+  # create unique identifier for each transition
+  mutate(alluvium_id = paste(source_name, target_name, 
+                             source_year, target_year, sep = "_")) |>
+  # convert to long format
+  pivot_longer(cols = c(source_year, target_year), 
+               names_to = "year_type", values_to = "year") |>
+  # create cover_type column
+  mutate(cover_type = ifelse(year_type == "source_year",
+                             source_name, target_name)) |>
+  # sort the data by alluviumn_id and year to ensure that transitions are
+  # ordered correctly for the plotting
+  arrange(alluvium_id, year) |>
+  # keep only neccessary columns
+  select(alluvium_id, year, cover_type, count)
+
+# Define color mapping
+color_mapping <- c(
+  "Agriculture_&_Vegetation" = "#0072B2", 
+  "Complex_Agriculture" = "#F564E3",
+  "Forests" = "#009E73",
+  "Moors,_Heathland_&_Grassland" = "#000000",
+  "Sparse_Vegetation" = "#E69F00",
+  "Transitional_Woodland_Shrub" = "#F0E442",
+  "Urban_Fabric" = "#83506C"
+)
+
+# Plot Sankey with all classes with ggalluvial
+alluvial_all_classes <- ggplot(alluvial_data,
+       aes(x = as.factor(year), stratum = cover_type, alluvium = alluvium_id,
+           y = count, fill = cover_type, label = cover_type)) +
+  geom_flow(stat = "alluvium", lode.guidance = "frontback", color = "darkgray") +
+  geom_stratum() +
+  scale_fill_manual(values = color_mapping) +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  labs(x = "Year", y = "Count of Land Converted") +
+  guides(fill = guide_legend(title = "Land Cover Type"))
