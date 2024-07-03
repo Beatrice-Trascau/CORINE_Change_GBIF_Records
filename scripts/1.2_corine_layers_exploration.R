@@ -503,7 +503,7 @@ corine_change_meaning_alluvial <- corine_change_meaning |>
          target_name = gsub(" ", "_", target_name))
 
 # Re-format data to comply with alluvial data
-alluvial_data <- corine_change_meaning_sankey |>
+alluvial_data <- corine_change_meaning_alluvial |>
   # create unique identifier for each transition
   mutate(alluvium_id = paste(source_name, target_name, 
                              source_year, target_year, sep = "_")) |>
@@ -519,25 +519,94 @@ alluvial_data <- corine_change_meaning_sankey |>
   # keep only neccessary columns
   select(alluvium_id, year, cover_type, count)
 
-# Define color mapping
-color_mapping <- c(
-  "Agriculture_&_Vegetation" = "#0072B2", 
-  "Complex_Agriculture" = "#F564E3",
-  "Forests" = "#009E73",
-  "Moors,_Heathland_&_Grassland" = "#000000",
-  "Sparse_Vegetation" = "#E69F00",
-  "Transitional_Woodland_Shrub" = "#F0E442",
-  "Urban_Fabric" = "#83506C"
-)
-
 # Plot Sankey with all classes with ggalluvial
 alluvial_all_classes <- ggplot(alluvial_data,
        aes(x = as.factor(year), stratum = cover_type, alluvium = alluvium_id,
            y = count, fill = cover_type, label = cover_type)) +
   geom_flow(stat = "alluvium", lode.guidance = "frontback", color = "darkgray") +
   geom_stratum() +
-  scale_fill_manual(values = color_mapping) +
-  theme_minimal() +
-  theme(legend.position = "bottom") +
-  labs(x = "Year", y = "Count of Land Converted") +
-  guides(fill = guide_legend(title = "Land Cover Type"))
+  scale_fill_manual(values = c("#0072B2", "#F564E3","#009E73",
+                               "#000000", "#E69F00",
+                               "#F0E442","#83506c"),
+                    name = "Land Cover Classes",
+                    labels = c("Agriculture & Vegetation", "Complex Agriculture",
+                               "Forests", "Moors, Heathland & Grassland",
+                               "Sparse Vegetation", "Transitional Woodland Shrub",
+                               "Urban Fabric")) +
+  theme_classic() +
+  theme(legend.position = "none",
+        axis.text.y = element_blank(),
+        axis.title = element_blank(),
+        axis.ticks = element_blank(),
+        axis.line = element_blank())
+
+# Save to file as .png
+ggsave(here("figures", "cover_transitions_alluvials_Figure4a.png"),
+       width=20, height=13)
+
+## 4.4. Replicate Sankey without forest <-> transitional with ggalluvial -------
+
+# Replace spaces with _
+corine_change_meaning_alluvial_forestless <- corine_change_meaning |>
+  # filter out forest <-> transitional woodland shrub transitions
+  filter(!(source_name == "Forests" & target_name == "Transitional Woodland Shrub") &
+           !(source_name == "Transitional Woodland Shrub" & target_name == "Forests")) |>
+  mutate(source_name = gsub(" ", "_", source_name),
+         target_name = gsub(" ", "_", target_name))
+
+# Re-format data to comply with alluvial data
+alluvial_data_forestless <- corine_change_meaning_alluvial_forestless |>
+  # create unique identifier for each transition
+  mutate(alluvium_id = paste(source_name, target_name, 
+                             source_year, target_year, sep = "_")) |>
+  # convert to long format
+  pivot_longer(cols = c(source_year, target_year), 
+               names_to = "year_type", values_to = "year") |>
+  # create cover_type column
+  mutate(cover_type = ifelse(year_type == "source_year",
+                             source_name, target_name)) |>
+  # sort the data by alluviumn_id and year to ensure that transitions are
+  # ordered correctly for the plotting
+  arrange(alluvium_id, year) |>
+  # keep only neccessary columns
+  select(alluvium_id, year, cover_type, count)
+
+
+# Plot Sankey without forest <-> transitional woodland transitions with ggalluvial
+alluvial_forestless <- ggplot(alluvial_data_forestless,
+                               aes(x = as.factor(year), stratum = cover_type, alluvium = alluvium_id,
+                                   y = count, fill = cover_type, label = cover_type)) +
+  geom_flow(stat = "alluvium", lode.guidance = "frontback", color = "darkgray") +
+  geom_stratum() +
+  scale_fill_manual(values = c("#0072B2", "#F564E3","#009E73",
+                               "#000000", "#E69F00",
+                               "#F0E442","#83506c"),
+                    name = "Land Cover Classes",
+                    labels = c("Agriculture & Vegetation", "Complex Agriculture",
+                               "Forests", "Moors, Heathland & Grassland",
+                               "Sparse Vegetation", "Transitional Woodland Shrub",
+                               "Urban Fabric")) +
+  theme_classic() +
+  theme(legend.position = "bottom",
+        axis.text.y = element_blank(),
+        axis.title = element_blank(),
+        axis.ticks = element_blank(),
+        axis.line = element_blank())
+
+# Save to file as .png
+ggsave(here("figures", "cover_transitions_alluvials_Figure4b.png"),
+       width=20, height=13)
+
+## 4.5. Combine plots from 4.3. and 4.4. ---------------------------------------
+
+# Create figure with 2 panels
+combined_plot <- plot_grid(alluvial_all_classes, alluvial_forestless, 
+                           ncol = 1, labels = c("a)", "b)"))
+
+# Save to file as .png
+ggsave(here("figures", "cover_transitions_alluvials_Figure4.png"),
+       width=20, height=13)
+
+# Save to file as .svg
+ggsave(here("figures", "cover_transitions_alluvials_Figure4.svg"),
+       width=20, height=13)
