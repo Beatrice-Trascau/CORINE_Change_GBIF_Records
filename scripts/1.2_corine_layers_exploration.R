@@ -108,7 +108,8 @@ for (i in c(1,2)) {
 }
 
 # Arrange in a single grid
-all_years_changes <- plot_grid(change_2000.2006, change_2006.2012, change_2012.2018, 
+all_years_changes <- plot_grid(change_2000.2006, change_2006.2012, 
+                               change_2012.2018, 
                                labels = c("a)", "b)", "c)" ), 
                                label_size = 12,
                                ncol = 3, nrow = 1,
@@ -302,7 +303,8 @@ intens_extens_gain_loss_all_years$scaled_count <- ifelse(abs(intens_extens_gain_
                                                          intens_extens_gain_loss_all_years$count)
 
 # Plot figure of transitions into intensification and extensification
-intens_extens_transitions <- ggplot(intens_extens_gain_loss_all_years, aes(x = focus, y = scaled_count,
+intens_extens_transitions <- ggplot(intens_extens_gain_loss_all_years, 
+                                    aes(x = focus, y = scaled_count,
                                               fill = transition_meaning))+
   geom_bar(stat="identity", position="stack")+
   scale_y_continuous(
@@ -574,9 +576,12 @@ alluvial_data_forestless <- corine_change_meaning_alluvial_forestless |>
 
 # Plot Sankey without forest <-> transitional woodland transitions with ggalluvial
 alluvial_forestless <- ggplot(alluvial_data_forestless,
-                               aes(x = as.factor(year), stratum = cover_type, alluvium = alluvium_id,
-                                   y = count, fill = cover_type, label = cover_type)) +
-  geom_flow(stat = "alluvium", lode.guidance = "frontback", color = "darkgray") +
+                               aes(x = as.factor(year), stratum = cover_type, 
+                                   alluvium = alluvium_id,
+                                   y = count, fill = cover_type, 
+                                   label = cover_type)) +
+  geom_flow(stat = "alluvium", lode.guidance = "frontback", 
+            color = "darkgray") +
   geom_stratum() +
   scale_fill_manual(values = c("#0072B2", "#F564E3","#009E73",
                                "#000000", "#E69F00",
@@ -610,3 +615,5 @@ ggsave(here("figures", "cover_transitions_alluvials_Figure4.png"),
 # Save to file as .svg
 ggsave(here("figures", "cover_transitions_alluvials_Figure4.svg"),
        width=20, height=13)
+
+# END OF SCRIPT ----------------------------------------------------------------
