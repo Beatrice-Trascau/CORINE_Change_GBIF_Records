@@ -146,7 +146,11 @@ for (i in seq_along(corine_years)) {
 }
 
 # Combine all dfs into a single one
-combined_corine_df <- bind_rows(corine_dfs)
+combined_corine_df <- bind_rows(corine_dfs) |>
+  # remove the rows where value  = 0 <- no change
+  # no change here is the result of changes within the aggregated classes
+  # but these are discarded for the purposes of our analysis
+  filter(value != 0)
 
 ## 3.2. Get source and target land cover values for transitions ----------------
 
