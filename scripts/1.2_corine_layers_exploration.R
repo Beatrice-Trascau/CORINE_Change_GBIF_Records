@@ -234,9 +234,9 @@ cover_transitions <- ggplot(gain_loss_all_years, aes(x = focus, y = scaled_count
     sec.axis = sec_axis(~ . * scaling_factor, name = bquote("Area changes"~("km"^2)))
   ) +
   xlab("Land Cover Classes") +
-  scale_fill_manual(values = c("dodgerblue2", "#E31A1C","green4",
-                               "#000000", "#FF7F00",
-                               "gold1","maroon"),
+  scale_fill_manual(values = c("#0072B2", "#F564E3","#009E73",
+                               "#000000", "#E69F00",
+                               "#F0E442","#83506c"),
                     name = "Land Cover Classes",
                     labels = c("Agriculture & Vegetation", "Complex Agriculture",
                                "Forests", "Moors, Heathland & Grassland",
