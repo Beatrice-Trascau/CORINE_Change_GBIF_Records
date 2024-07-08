@@ -27,7 +27,7 @@ download_key <- occ_download(
 occ_download_wait(download_key)
 
 # Download key: 
-# Download link:
+# Download link: DOI: 10.15468/dl.xp6v9x
 
 # 3. IMPORT GBIF DOWNLOAD AND SAVE ---------------------------------------------
 
