@@ -7,11 +7,11 @@
 
 # 1. CONNECT TO GBIF -----------------------------------------------------------
 
-# Setting username, password and email in my .Renviron. 
-usethis::edit_r_environ()
-# GBIF_USER="my username"
-# GBIF_PWD="my password"
-# GBIF_EMAIL="my email"
+# Setting username, password and email 
+Sys.setenv(GBIF_USER = "my_username") # change with your details
+Sys.setenv(GBIF_PWD = "my_password")
+Sys.setenv(GBIF_EMAIL = "my_email")
+
 
 # 2. CREATE DOWNLOAD REQUEST ---------------------------------------------------
 
@@ -27,7 +27,7 @@ download_key <- occ_download(
 occ_download_wait(download_key)
 
 # Download key: 
-# Download link: DOI: 10.15468/dl.xp6v9x
+# Download link:
 
 # 3. IMPORT GBIF DOWNLOAD AND SAVE ---------------------------------------------
 
