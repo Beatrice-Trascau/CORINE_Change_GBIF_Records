@@ -26,8 +26,8 @@ download_key <- occ_download(
 # Check progress
 occ_download_wait(download_key)
 
-# Download key: 
-# Download link:
+# Download key: 0016426-240626123714530
+# Download link: https://api.gbif.org/v1/occurrence/download/request/0016426-240626123714530.zip
 
 # 3. IMPORT GBIF DOWNLOAD AND SAVE ---------------------------------------------
 
@@ -37,3 +37,5 @@ occurrence <- occ_download_get(download_key) %>%
 
 # Save to file
 save(occurrence, file = here::here("data","raw_data","occurrence.txt"))
+
+# END OF SCRIPT ----------------------------------------------------------------
