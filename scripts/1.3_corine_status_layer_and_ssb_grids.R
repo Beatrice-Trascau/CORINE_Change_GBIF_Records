@@ -28,7 +28,7 @@ ssb_grids <- vect(here("data", "raw_data",
                        "SSB050KM", "ssb50km.shp"))
 
 # Cleaned occurrence records
-clean_occ <- fread(here("data", "derived_data", 
+occurrences_norway <- fread(here("data", "derived_data", 
                         "cleaned_occurrences_july24.txt"))
 
 # Download shapefile of municipalities
@@ -60,7 +60,8 @@ norway_municipalities_wgs84 <- project(norway_municipalities,
 
 # Check that projections match
 if (crs(norway_ssb_grids, proj = TRUE) ==  crs(corine_status_wgs84[[1]], proj = TRUE) 
-    && crs(corine_status_wgs84[[1]], proj = TRUE) == crs(norway_municipalities_wgs84, proj = TRUE)){
+    && crs(corine_status_wgs84[[1]], proj = TRUE) == 
+    crs(norway_municipalities_wgs84, proj = TRUE)){
   print ("Projections correct")
 } else {
   print ("Projections NOT correct")
@@ -69,7 +70,7 @@ if (crs(norway_ssb_grids, proj = TRUE) ==  crs(corine_status_wgs84[[1]], proj = 
 # Check values for reprojected CORINE layer
 levels(as.factor(as.data.frame(corine_status_wgs84[[1]])$U2006_CLC2000_V2020_20u1))
 
-## 2.2. Convert occurrences to spatial object ----
+## 2.2. Convert occurrences to spatial object ----------------------------------
 
 # Convert occurrences to spatial dataframe 
 occurrences_sp <- st_as_sf(occurrences_norway, 
