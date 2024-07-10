@@ -87,7 +87,7 @@ occurrenes_SSB <- terra::intersect(occurrences_vect, norway_ssb_grids)
 occurrences_municipalities <- terra::intersect(occurrenes_SSB,
                                                norway_municipalities_wgs84)
 
-## 2.4. Create layer with a unique cell ID for each CORINE cell ----------------
+## 2.5. Create layer with a unique cell ID for each CORINE cell ----------------
 
 #Create an empty raster with the same details as the first CORINE STATUS layer
 ID_raster <- corine_status_wgs84[[1]]
@@ -102,7 +102,7 @@ ID_raster <- ID_raster |>
 # Combine the ID raster with the CORINE STATUS raster
 corine_ID <- c(corine_status_wgs84, ID_raster)
 
-## 2.5. Extract land cover cell values for each occurrence record --------------
+## 2.6. Extract land cover cell values for each occurrence record --------------
 
 # Extract raster values for occurrences into dataframe
 corine_status_occurrences_df <- terra::extract(corine_ID, occurrences_municipalities,
@@ -111,7 +111,7 @@ corine_status_occurrences_df <- terra::extract(corine_ID, occurrences_municipali
 save(occurrence_SSB_df, file = here::here("data", "derived_data",
                                           "CORINE_Status_SSB_municipalities_occ_df.rda"))
 
-## 2.6. Add extracted values to the occurrences --------------------------------
+## 2.7. Add extracted values to the occurrences --------------------------------
 
 # Convert SpatVector to dataframe
 occurrence_municipalities_df <- as.data.frame(occurrences_municipalities)
@@ -133,3 +133,5 @@ colnames(occurrence_municipalities_df)
 # Save to file
 save(occurrence_municipalities_df, file = here::here("data", "derived_data",
                                           "occurrences_SSB_municipalities_land_cover.rda"))
+
+# END OF SCRIPT ----------------------------------------------------------------
