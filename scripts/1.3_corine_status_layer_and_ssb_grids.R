@@ -1,44 +1,35 @@
 ##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
-# 1.2_corine_change_layer_and_ssb_grids
-# This script contains code which combines the CORINE land cover STATUS layers
-# with the ssb administrative grids for future analyses and GBIF occurrences
+# 3.1_CORINE_status_GBIF_SSB_combine
+# This script contains code which combines the CORINE land cover status layers
+# with the SSB administrative grids and GBIF occurrences for future analyses
 ##----------------------------------------------------------------------------##
-
-# 0. PACKAGES ----
-library(here)
-library(terra)
-library(sf)
-library(data.table)
-library(tidyverse)
-library(tidyterra)
-library(dplyr)
-library(ggplot2)
 
 # 1. LOAD DATA -----------------------------------------------------------------
 
-# Add download link from box
-# norway_corine_status_modified_stack <- ("https://ntnu.box.com/shared/static/z1751qp8epnqkmjs8mex9vdl29tjjr5i.tif")
-# ruter500m_Norge <- ("https://ntnu.box.com/shared/static/p8896x2epq4bcmfhorsb5qn2m8mxo5ko.zip")
-# occurrences <- ("https://ntnu.box.com/shared/static/cgjbsfs24m31uov6ir4vkkmw6cs7ga36.txt")
+## 1.1. Download data (if needed) ----------------------------------------------
 
-# Download files
-# download.file(norway_corine_status_modified_stack, here("data", 
-# "norway_corine_status_modified_stack.tif"))
+# CORINE Status Layers
+download_file("https://ntnu.box.com/shared/static/97g9x4839ij4lnlldji2wh8e0e2lm5bf.tif", 
+              "data/derived_data/norway_corine_change_modified_stack.tif")
 
-# download.file(ruter500m_Norge, here("data", "raw_data",
-# "ruter500m_Norge.zip"))
+# SSB Grid
+download_file("https://ntnu.box.com/shared/static/pjb2qr9aptugu7awlqmomx2o9d40sdhp.zip", 
+              "data/raw_data/norway_corine_change_modified_stack.tif")
 
-# download.file(cleaned_occurrences, here("data","cleaned_occurrences.txt"))
+## 1.2. Read in data -----------------------------------------------------------
 
-# Read in the data
-norway_corine_status_modified_stack <- rast(here("data", 
+# CORINE Status Layers
+norway_corine_status_modified_stack <- rast(here("data", "derived_data",
                                                  "norway_corine_status_modified_stack.tif"))
 
+# SSB Grid
 ssb_grids <- vect(here("data", "raw_data",
                        "SSB050KM", "ssb50km.shp"))
 
-occurrences_norway <- fread(here("data", "cleaned_occurrences.txt"))
+# Cleaned occurrence records
+clean_occ <- fread(here("data", "derived_data", 
+                        "cleaned_occurrences_july24.txt"))
 
 # Download shapefile of municipalities
 norway_municipalities <- geodata::gadm(country = "NOR", level = 2, 
