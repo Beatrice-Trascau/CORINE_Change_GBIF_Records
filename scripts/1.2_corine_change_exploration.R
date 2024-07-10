@@ -14,7 +14,7 @@ download_file("https://ntnu.box.com/shared/static/97g9x4839ij4lnlldji2wh8e0e2lm5
               "data/norway_corine_change_modified_stack.tif")
 
 ## 1.2. Read in layers ---------------------------------------------------------
-norway_corine_change_modified_stack <- rast(here("data", 
+norway_corine_change_modified_stack <- rast(here("data", "derived_data",
                                         "norway_corine_change_modified_stack.tif"))
 
 # 2. FIGURE 1  - MAPS OF LAND COVER CHANGES FOR EACH PERIOD --------------------
