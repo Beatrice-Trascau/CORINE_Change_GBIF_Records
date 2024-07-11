@@ -5,37 +5,17 @@
 # which are (not)changing in each SSB ID
 ##----------------------------------------------------------------------------##
 
-# 0. PACKAGES ----
-library(here)
-library(terra)
-library(sf)
-library(data.table)
-library(tidyverse)
-library(dplyr)
-library(ggplot2)
+# 1. LOAD DATA -----------------------------------------------------------------
 
-# 1. LOAD DATA ----
-
-# Add download link from box
-# norway_corine_status_modified_stack <- ("https://ntnu.box.com/shared/static/z1751qp8epnqkmjs8mex9vdl29tjjr5i.tif")
-# ruter500m_Norge <- ("https://ntnu.box.com/shared/static/p8896x2epq4bcmfhorsb5qn2m8mxo5ko.zip")
-# Download files
-# download.file(norway_corine_status_modified_stack, here("data", 
-# "norway_corine_status_modified_stack.tif"))
-
-# download.file(ruter500m_Norge, here("data", "raw_data",
-# "ruter500m_Norge.zip"))
-
-# download.file(cleaned_occurrences, here("data","cleaned_occurrences.txt"))
-
-# Read in the data
-norway_corine_status_modified_stack <- rast(here("data", 
+# CORINE stack
+norway_corine_status_modified_stack <- rast(here("data", "derived_data",
                                                  "norway_corine_status_modified_stack.tif"))
 
+# SSB grid
 ssb_grid <- vect(here("data", "raw_data",
-                       "SSB010KM", "Ruter_10km_Norge.shp"))
+                       "SSB050KM", "ssb50km.shp"))
 
-# 2. PLOT THE NUMBER OF PIXELS CHANGING/NOT CHANGING IN EACH SSB ID: 2000-2006 ----
+# 2. PLOT  NUMBER OF PIXELS CHANGING/NOT CHANGING IN EACH SSB ID: 2000-2006 ----
 
 # CORINE Layers for 2000 and 2006
 corine_2000 <- norway_corine_status_modified_stack[[1]]
@@ -47,11 +27,21 @@ corine_2018 <- norway_corine_status_modified_stack[[4]]
 crs(corine_2000, proj = TRUE) #"+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs"
 crs(ssb_grid, proj = TRUE) #"+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs"
 
-# Re-project layers to match the SSB grid
-corine_2000 <- terra::project(corine_2000, "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs")
-corine_2006 <- terra::project(corine_2006, "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs")
-corine_2012 <- terra::project(corine_2012, "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs")
-corine_2018 <- terra::project(corine_2018, "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs")
+# List of variable names as strings
+corine_vars <- c("corine_2000", "corine_2006", "corine_2012", "corine_2018")
+
+# Loop to re-project layers to match the SSB grid
+for (var in corine_vars) {
+  # Retrieve the variable by name
+  corine_layer <- get(var)
+  
+  # Reproject
+  projected_layer <- terra::project(corine_layer, 
+                                    "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs")
+  
+  # Assign the projected layer back to the original variable name
+  assign(var, projected_layer)
+}
 
 # Calculate difference in land cover change between 2000 and 2006
 change_raster <- corine_2000 != corine_2006
@@ -79,11 +69,18 @@ ssb_grid$classification <- ifelse(ssb_grid$changing > ssb_grid$not_changing,
 
 # Change to ggplot suitable format
 ssb_grid_centroids <- centroids(ssb_grid)  # Calculate centroids
+
+# Convert to dataframe
 ssb_grid_df <- as.data.frame(ssb_grid_centroids, xy = TRUE)
+
+# Select only needed columns
 ssb_grid_df <- ssb_grid_df %>%
   select(SSBid, CENTROID_X, CENTROID_Y, changing, not_changing, classification)
 
+# Convert to dataframe
 ssb_grid_df <- as.data.frame(ssb_grid, xy=TRUE)
+
+# Select only needed columns
 ssb_grid_df <- ssb_grid_df %>%
   select(SSBid, CENTROID_X, CENTROID_Y, classification)
 
@@ -110,9 +107,10 @@ interactive_ssb_grid_2000.2006 <- ggplotly(ssb_grid_2000.2006)
 
 # Save interactive plot as html file
 htmlwidgets::saveWidget(interactive_ssb_grid_2000.2006, 
-                        here("figures","number_of_changing_pixels_ssb_grid_ map_2000.2006.html"))
+                        here("figures", "additional_figures",
+                             "number_of_changing_pixels_ssb_grid_ map_2000.2006.html"))
 
-# 3. PLOT THE NUMBER OF PIXELS CHANGING/NOT CHANGING IN EACH SSB ID: 2006-2012 ----
+# 3. PLOT THE NUMBER OF PIXELS CHANGING/NOT CHANGING IN EACH SSB ID ------------
 
 # Calculate difference in land cover change between 2000 and 2006
 change_raster_2012.2018 <- corine_2012 != corine_2018
@@ -146,8 +144,10 @@ ssb_grid_df <- ssb_grid_df %>%
 
 # Plot map
 ssb_grid_2012.2018 <- ggplot(ssb_grid_df) +
-  geom_tile(aes(x = CENTROID_X, y = CENTROID_Y, fill = classification), color = "white", size = 0.1) +
-  scale_fill_manual(values = c("Changing" = "#800080", "Not Changing" = "#FFD700")) +
+  geom_tile(aes(x = CENTROID_X, y = CENTROID_Y, fill = classification), 
+            color = "white", size = 0.1) +
+  scale_fill_manual(values = c("Changing" = "#800080", 
+                               "Not Changing" = "#FFD700")) +
   theme_classic() +
   labs(fill = "Change Classification")+
   theme(
@@ -168,3 +168,5 @@ interactive_ssb_grid_2012.2006 <- ggplotly(ssb_grid_2000.2006)
 # Save interactive plot as html file
 htmlwidgets::saveWidget(interactive_ssb_grid_2000.2006, 
                         here("figures","number_of_changing_pixels_ssb_grid_ map_2000.2006.html"))
+
+# END OF SCRIPT ----------------------------------------------------------------
