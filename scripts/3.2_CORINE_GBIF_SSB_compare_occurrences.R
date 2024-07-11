@@ -8,7 +8,8 @@
 # 1. LOAD DATA -----------------------------------------------------------------
 
 # Occurrences
-load(here("data","derived_data", "occurrences_SSB_municipalities_land_cover.rda"))
+load(here("data","derived_data", 
+          "occurrences_SSB_municipalities_land_cover.rda"))
 
 # CORINE status layers
 norway_corine_status_modified_stack <- rast(here("data", "derived_data",
