@@ -61,7 +61,7 @@ time_periods <- list(
 for (period in time_periods) {
   cat("\nProcessing period:", period$label, "\n")
   
-  # Before change
+  # Create df of occurrences before land cover change
   occ_df_start <- occ_SSB_land_cover |>
     select(V1, gbifID, year, species, !!sym(period$start_col), !!sym(period$end_col), 
            SSBID, cell_ID) |>
@@ -69,6 +69,7 @@ for (period in time_periods) {
     filter(year %in% period$start_years) |>
     mutate(cover_change = if_else(.data[[period$start_col]] == .data[[period$end_col]], "N", "Y"))
   
+  # Calculate species richness for each cell_ID
   occ_df_start_richness <- occ_df_start |>
     group_by(cell_ID) |>
     summarise(
@@ -78,32 +79,40 @@ for (period in time_periods) {
       cover_change = first(cover_change),
       SSBID = first(SSBID))
   
+  # Identify SSB IDs that have pixels with both cover change Y and N
   ssb_ids_with_both_start <- occ_df_start_richness |>
     group_by(SSBID) |>
     filter(all(c("Y", "N") %in% cover_change)) |>
     ungroup()
   
+  # Count unique cell IDs for each SSB ID
   ssbid_counts_start <- ssb_ids_with_both_start |>
     group_by(SSBID) |>
     summarise(unique_corine_count = n_distinct(cell_ID)) |>
     ungroup()
   
+  # Select top 5 SSB IDs with most unique cell IDS
   top_ssbids_start <- ssbid_counts_start |>
     arrange(desc(unique_corine_count)) |>
     slice_head(n = 5)
   
+  # Filter df to only include the top SSB IDs
   filtered_occ_df_start_richness <- occ_df_start_richness |>
     filter(SSBID %in% top_ssbids_start$SSBID)
   
-  filtered_occ_df_start_richness$land_cover_start <- factor(filtered_occ_df_start_richness$land_cover_start,
-                                                            levels = names(land_cover_mapping),
-                                                            labels = land_cover_mapping)
+  # Change land cover values based on mapping defined above
+  filtered_occ_df_start_richness$land_cover_start <- 
+    factor(filtered_occ_df_start_richness$land_cover_start,
+           levels = names(land_cover_mapping),
+           labels = land_cover_mapping)
   
+  # Subset df based on unique combinations of land cover and SSB ID
   filtered_occ_start <- filtered_occ_df_start_richness |>
     group_by(land_cover_start, SSBID) |>
     filter(n() > 1) |>
     ungroup()
   
+  # Plot comparisons in species richness for each combination
   ggplot(filtered_occ_start, 
          aes(x = cover_change, y = .data[[period$start_label]], fill = cover_change)) +
     geom_violin(trim = FALSE) +
@@ -112,6 +121,7 @@ for (period in time_periods) {
     theme_minimal() +
     ggtitle(paste("Before Change", period$label)) -> p1
   
+  # Save the plot
   ggsave(here("figures", "additional_figures", paste0("violin_plots_before_", period$label, ".png")), plot = p1)
   
   # After change
@@ -122,6 +132,7 @@ for (period in time_periods) {
     filter(year %in% period$end_years) |>
     mutate(cover_change = if_else(.data[[period$start_col]] == .data[[period$end_col]], "N", "Y"))
   
+  # Calculate species richness for each cell ID for the end period
   occ_df_end_richness <- occ_df_end |>
     group_by(cell_ID) |>
     summarise(
@@ -131,32 +142,40 @@ for (period in time_periods) {
       cover_change = first(cover_change),
       SSBID = first(SSBID))
   
+  # Identify SSB IDs that have both cover change Y and N
   ssb_ids_with_both_end <- occ_df_end_richness |>
     group_by(SSBID) |>
     filter(all(c("Y", "N") %in% cover_change)) |>
     ungroup()
   
+  # Count unique cell IDs for each SSB ID
   ssbid_counts_end <- ssb_ids_with_both_end |>
     group_by(SSBID) |>
     summarise(unique_corine_count = n_distinct(cell_ID)) |>
     ungroup()
   
+  # Identify top 5 SSB IDs with the most unique cell IDs
   top_ssbids_end <- ssbid_counts_end |>
     arrange(desc(unique_corine_count)) |>
     slice_head(n = 5)
   
+  # Filter the data frame to include only the top SSB IDs
   filtered_occ_df_end_richness <- occ_df_end_richness |>
     filter(SSBID %in% top_ssbids_end$SSBID)
   
-  filtered_occ_df_end_richness$land_cover_start <- factor(filtered_occ_df_end_richness$land_cover_start,
-                                                          levels = names(land_cover_mapping),
-                                                          labels = land_cover_mapping)
+  # Change land cover values based on the mapping defined above
+  filtered_occ_df_end_richness$land_cover_start <- 
+    factor(filtered_occ_df_end_richness$land_cover_start,
+           levels = names(land_cover_mapping),
+           labels = land_cover_mapping)
   
+  # Subset data based on unique combinations of land cover and SSB ID
   filtered_occ_end <- filtered_occ_df_end_richness |>
     group_by(land_cover_start, SSBID) |>
     filter(n() > 1) |>
     ungroup()
   
+  # Plot comparisons for each combination
   ggplot(filtered_occ_end, 
          aes(x = cover_change, y = .data[[period$end_label]], fill = cover_change)) +
     geom_violin(trim = FALSE) +
@@ -165,6 +184,7 @@ for (period in time_periods) {
     theme_minimal() +
     ggtitle(paste("After Change", period$label)) -> p2
   
+  # Save plot to file
   ggsave(here("figures", "additional_figures", paste0("violin_plots_after_", period$label, ".png")), plot = p2)
 }
 
