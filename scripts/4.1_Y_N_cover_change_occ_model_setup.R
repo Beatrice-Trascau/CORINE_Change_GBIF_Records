@@ -1,6 +1,6 @@
 ##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
-# 3.1_Y_N_cover_change_occ_model_setup
+# 4.1_Y_N_cover_change_occ_model_setup
 # This script contains code which runs the simple models looking at the effect 
 # of land cover change (Y/N) on the number of occurrences in a pixel
 ##----------------------------------------------------------------------------##
@@ -12,7 +12,7 @@ load(here("data","derived_data",
           "occurrences_SSB_municipalities_land_cover.rda"))
 
 # Rename df (to make it easier to work with)
-occ_SSB_land_cover <- occurrences_SSB_municipalities_land_cover
+occ_SSB_land_cover <- occurrence_municipalities_df
 
 # 2. CALCULATE NUMBER OF RECORDS FOR EACH PERIOD -------------------------------
 
