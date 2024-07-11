@@ -20,7 +20,7 @@ package_vec <- c("here", "terra", "sf", "geodata", "mapview",
                  "tidyverse", "dplyr", "ggplot2", "ggalluvial",
                  "networkD3", "gt", "cowplot", "data.table",
                  "tidyterra", "patchwork", "styler", "scales",
-                 "plotly", "lme4", "DHARMa", "glmmTMB", 
+                 "plotly", "lme4", "DHARMa", "glmmTMB", "mgcv",
                  "tidyterra", "ggspatial", "htmlwidgets",
                  "htmltools", "patchwork", "webshot2",
                  "rgbif", "CoordinateCleaner") # specify packages
