@@ -21,7 +21,39 @@ occ_SSB_land_cover <- occ_SSB_land_cover |>
   rename(land_cover2000 = U2006_CLC2000_V2020_20u1,
          land_cover2006 = U2012_CLC2006_V2020_20u1,
          land_cover2012 = U2018_CLC2012_V2020_20u1,
-         land_cover2018 = U2018_CLC2018_V2020_20u1)
+         land_cover2018 = U2018_CLC2018_V2020_20u1) |>
+  mutate(land_cover2000 = case_when(land_cover2000 == 1 ~ "urban",
+                                    land_cover2000 == 80 ~ "complex_agri",
+                                    land_cover2000 == 103 ~ "agri_sig_veg",
+                                    land_cover2000 == 250 ~ "forests",
+                                    land_cover2000 == 380 ~ "moors_heath_grass",
+                                    land_cover2000 == 590 ~ "woodland_shrub",
+                                    land_cover2000 == 711 ~ "sparse_veg",
+                                    is.na(land_cover2000) ~ "other"),
+         land_cover2006 = case_when(land_cover2006 == 1 ~ "urban",
+                                    land_cover2006 == 80 ~ "complex_agri",
+                                    land_cover2006 == 103 ~ "agri_sig_veg",
+                                    land_cover2006 == 250 ~ "forests",
+                                    land_cover2006 == 380 ~ "moors_heath_grass",
+                                    land_cover2006 == 590 ~ "woodland_shrub",
+                                    land_cover2006 == 711 ~ "sparse_veg",
+                                    is.na(land_cover2006) ~ "other"),
+         land_cover2012 = case_when(land_cover2012 == 1 ~ "urban",
+                                    land_cover2012 == 80 ~ "complex_agri",
+                                    land_cover2012 == 103 ~ "agri_sig_veg",
+                                    land_cover2012 == 250 ~ "forests",
+                                    land_cover2012 == 380 ~ "moors_heath_grass",
+                                    land_cover2012 == 590 ~ "woodland_shrub",
+                                    land_cover2012 == 711 ~ "sparse_veg",
+                                    is.na(land_cover2012) ~ "other"),
+         land_cover2018 = case_when(land_cover2018 == 1 ~ "urban",
+                                    land_cover2018 == 80 ~ "complex_agri",
+                                    land_cover2018 == 103 ~ "agri_sig_veg",
+                                    land_cover2018 == 250 ~ "forests",
+                                    land_cover2018 == 380 ~ "moors_heath_grass",
+                                    land_cover2018 == 590 ~ "woodland_shrub",
+                                    land_cover2018 == 711 ~ "sparse_veg",
+                                    is.na(land_cover2018) ~ "other"))
 
 ## 2.1. First period of change: 2000-2006 --------------------------------------
 
@@ -193,7 +225,8 @@ occ_df_before_after <- full_join(occ_cover_change_types_after_records_for_model,
 # Replace NA with 0 for occurrences_before and occurrences_after
 occ_cover_change_types_before_after_for_model <- occ_df_before_after |>
   mutate(ocurrences_after = ifelse(is.na(ocurrences_after), 0, ocurrences_after),
-         ocurrences_before = ifelse(is.na(ocurrences_before), 0, ocurrences_before))
+         ocurrences_before = ifelse(is.na(ocurrences_before), 0, ocurrences_before),
+         cover_change = as.factor(cover_change))
 
 # Write df to file 
 save(occ_cover_change_types_before_after_for_model, 
@@ -203,12 +236,17 @@ save(occ_cover_change_types_before_after_for_model,
 
 # 3. MODEL 1: OCC ~ COVER CHANGE -----------------------------------------------
 
+# Create subset of data
+occ_subset <- occ_cover_change_types_before_after_for_model |> 
+  sample_frac(0.5)
+
+
 ## 3.1. N binomial with glmmTMB, nbiom1, SSB ID --------------------------------
 
 # Model 3.1
 model3.1_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
                                          family = nbinom1, 
-                                         data = occ_cover_change_types_before_after_for_model)
+                                         data = occ_subset)
 # Save output to file
 save(model3.1_SSB, file = here::here("data", "models", "model3.1_SSB.RData"))
 
