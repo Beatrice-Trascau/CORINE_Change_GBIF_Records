@@ -28,13 +28,6 @@ occ_SSB_land_cover <- occ_SSB_land_cover |>
 
 ### 2.1.1. Before land cover change --------------------------------------------
 
-# Change column names for easier df manipulation
-occ_SSB_land_cover <- occ_SSB_land_cover |>
-  rename(land_cover2000 = U2006_CLC2000_V2020_20u1,
-         land_cover2006 = U2012_CLC2006_V2020_20u1,
-         land_cover2012 = U2018_CLC2012_V2020_20u1,
-         land_cover2018 = U2018_CLC2018_V2020_20u1)
-
 # Prepare data for the period 2006-2009
 occ_df_before_2000.2006 <- occ_SSB_land_cover |>
   select(V1, gbifID, year, species, land_cover2000, land_cover2006, 
