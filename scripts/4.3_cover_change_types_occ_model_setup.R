@@ -65,7 +65,7 @@ occ_df_before_2000.2006 <- occ_SSB_land_cover |>
          SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2000) & !is.na(land_cover2006)) |>
   filter(year >= 1997 & year <= 2000) |>
-  mutate(cover_change = land_cover2000 - land_cover2006)
+  unite("cover_change", land_cover2000:land_cover2006, remove= FALSE)
 
 # Calculate number of records for the period 2006-2009
 occ_df_before_2000.2006_records <- occ_df_before_2000.2006 |>
@@ -88,7 +88,7 @@ occ_df_after_2000.2006 <- occ_SSB_land_cover |>
          SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2000) & !is.na(land_cover2006)) |>
   filter(year >= 2006 & year <= 2009) |>
-  mutate(cover_change = land_cover2000 - land_cover2006)
+  unite("cover_change", land_cover2000:land_cover2006, remove= FALSE)
 
 # Calculate number of records for the period 2006-2009
 occ_df_after_2000.2006_records <- occ_df_after_2000.2006 |>
@@ -113,7 +113,7 @@ occ_df_before_2006.2012 <- occ_SSB_land_cover |>
          SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2006) & !is.na(land_cover2012)) |>
   filter(year >= 2003 & year <= 2006) |>
-  mutate(cover_change = land_cover2006 - land_cover2012)
+  unite("cover_change", land_cover2006:land_cover2012, remove= FALSE)
 
 # Calculate number of records for the period 2003-2006
 occ_df_before_2006.2012_records <- occ_df_before_2006.2012 |>
@@ -136,7 +136,7 @@ occ_df_after_2006.2012 <- occ_SSB_land_cover |>
          SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2006) & !is.na(land_cover2012)) |>
   filter(year >= 2012 & year <= 2015) |>
-  mutate(cover_change = land_cover2006 - land_cover2012)
+  unite("cover_change", land_cover2006:land_cover2012, remove= FALSE)
 
 # Calculate number of records for the period 2012-2015
 occ_df_after_2006.2012_records <- occ_df_after_2006.2012 |>
@@ -161,7 +161,7 @@ occ_df_before_2012.2018 <- occ_SSB_land_cover |>
          SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2012) & !is.na(land_cover2018)) |>
   filter(year >= 2009 & year <= 2012) |>
-  mutate(cover_change = land_cover2012 - land_cover2018)
+  unite("cover_change", land_cover2012:land_cover2018, remove= FALSE)
 
 # Calculate number of records for the period 1997-2000
 occ_df_before_2012.2018_records <- occ_df_before_2012.2018 |>
@@ -184,7 +184,7 @@ occ_df_after_2012.2018 <- occ_SSB_land_cover |>
          SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2012) & !is.na(land_cover2018)) |>
   filter(year >= 2015 & year <= 2018) |>
-  mutate(cover_change = land_cover2012 - land_cover2018)
+  unite("cover_change", land_cover2012:land_cover2018, remove= FALSE)
 
 # Calculate number of records for the period 1997-2000
 occ_df_after_2012.2018_records <- occ_df_after_2012.2018 |>
@@ -238,7 +238,7 @@ save(occ_cover_change_types_before_after_for_model,
 
 # Create subset of data
 occ_subset <- occ_cover_change_types_before_after_for_model |> 
-  sample_frac(0.5)
+  sample_frac(0.1)
 
 
 ## 3.1. N binomial with glmmTMB, nbiom1, SSB ID --------------------------------
@@ -255,7 +255,7 @@ save(model3.1_SSB, file = here::here("data", "models", "model3.1_SSB.RData"))
 # Model 3.2
 model3.2_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|municipality),
                                          family = nbinom1, 
-                                         data = occ_cover_change_types_before_after_for_model)
+                                         data = occ_subset)
 # Save output to file
 save(model3.2_municipality, file = here::here("data", "models", 
                                                       "model3.2_municipality.RData"))
@@ -265,7 +265,7 @@ save(model3.2_municipality, file = here::here("data", "models",
 # Model 3.3
 model3.3_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
                                          family = nbinom2, 
-                                         data = occ_cover_change_types_before_after_for_model)
+                                         data = occ_subset)
 
 # Save output to file
 save(model3.3_SSB, file = here::here("data", "models", "model3.3_SSB.RData"))
@@ -275,7 +275,7 @@ save(model3.3_SSB, file = here::here("data", "models", "model3.3_SSB.RData"))
 # Model 3.6
 model3.4_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|municipality),
                                          family = nbinom2, 
-                                         data = occ_cover_change_types_before_after_for_model)
+                                         data = occ_subset)
 
 # Save output to file
 save(model3.4_municipality, file = here::here("data", "models", 
@@ -288,7 +288,7 @@ save(model3.4_municipality, file = here::here("data", "models",
 # Run model
 model3.5_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(ocurrences_before) + (1 | SSBID),
                     family = nbinom2,
-                    data = occ_cover_change_types_before_after_for_model)
+                    data = occ_subset)
 
 # Save model output to file to save time next time
 save(model3.5_SSB, file = here::here("data", "models", "model3.5_SSB.RData"))
@@ -298,7 +298,7 @@ save(model3.5_SSB, file = here::here("data", "models", "model3.5_SSB.RData"))
 # Run model
 model3.6_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(ocurrences_before) + (1 | municipality),
                         family = nbinom2,
-                        data = occ_cover_change_types_before_after_for_model)
+                        data = occ_subset)
 
 # Save model output to file to save time next time
 save(model3.6_municipality, file = here::here("data", "models", 
