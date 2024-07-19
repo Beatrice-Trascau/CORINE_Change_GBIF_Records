@@ -44,7 +44,8 @@ occ_df_before_2000.2006_records <- occ_df_before_2000.2006 |>
     land_cover2006 = first(land_cover2006),
     cover_change = first(cover_change),
     SSBID = first(SSBID),
-    NAME_2 = first(NAME_2)) |>
+    NAME_2 = first(NAME_2),
+    gbifID = first(gbifID)) |>
   mutate(time_period = "2000-2006") |>
   select(-c(land_cover2000, land_cover2006))
 
@@ -67,7 +68,8 @@ occ_df_after_2000.2006_records <- occ_df_after_2000.2006 |>
     land_cover2006 = first(land_cover2006),
     cover_change = first(cover_change),
     SSBID = first(SSBID),
-    NAME_2 = first(NAME_2)) |>
+    NAME_2 = first(NAME_2),
+    gbifID = first(gbifID)) |>
   mutate(time_period = "2000-2006") |>
   select(-c(land_cover2000, land_cover2006))
 
@@ -92,7 +94,8 @@ occ_df_before_2006.2012_records <- occ_df_before_2006.2012 |>
     land_cover2012 = first(land_cover2012),
     cover_change = first(cover_change),
     SSBID = first(SSBID),
-    NAME_2 = first(NAME_2)) |>
+    NAME_2 = first(NAME_2),
+    gbifID = first(gbifID)) |>
   mutate(time_period = "2006-2012") |>
   select(-c(land_cover2006, land_cover2012))
 
@@ -115,7 +118,8 @@ occ_df_after_2006.2012_records <- occ_df_after_2006.2012 |>
     land_cover2012 = first(land_cover2012),
     cover_change = first(cover_change),
     SSBID = first(SSBID),
-    NAME_2 = first(NAME_2)) |>
+    NAME_2 = first(NAME_2),
+    gbifID = first(gbifID)) |>
   mutate(time_period = "2006-2012") |>
   select(-c(land_cover2006, land_cover2012))
 
@@ -140,7 +144,8 @@ occ_df_before_2012.2018_records <- occ_df_before_2012.2018 |>
     land_cover2018 = first(land_cover2018),
     cover_change = first(cover_change),
     SSBID = first(SSBID),
-    NAME_2 = first(NAME_2)) |>
+    NAME_2 = first(NAME_2),
+    gbifID = first(gbifID)) |>
   mutate(time_period = "2012-2018") |>
   select(-c(land_cover2012, land_cover2018))
 
@@ -163,7 +168,8 @@ occ_df_after_2012.2018_records <- occ_df_after_2012.2018 |>
     land_cover2018 = first(land_cover2018),
     cover_change = first(cover_change),
     SSBID = first(SSBID),
-    NAME_2 = first(NAME_2)) |>
+    NAME_2 = first(NAME_2),
+    gbifID = first(gbifID)) |>
   mutate(time_period = "2012-2018") |>
   select(-c(land_cover2012, land_cover2018))
 
@@ -193,7 +199,8 @@ occ_df_before_after <- full_join(occ_y_n_cover_change_after_records_for_model,
 # Replace NA with 0 for occurrences_before and occurrences_after
 occ_y_n_cover_change_before_after_for_modell <- occ_df_before_after |>
   mutate(ocurrences_after = ifelse(is.na(ocurrences_after), 0, ocurrences_after),
-         ocurrences_before = ifelse(is.na(ocurrences_before), 0, ocurrences_before))
+         ocurrences_before = ifelse(is.na(ocurrences_before), 0, ocurrences_before),
+         SSBID = as.factor(SSBID))
 
 # Write dataframe to file
 save(occ_y_n_cover_change_before_after_for_modell, 
@@ -250,7 +257,7 @@ save(model1.4_municipality, file = here::here("data", "models",
 ## 4.1. N binomial glmmTMB, nbinom2, SSBID on data subset ----------------------
 
 # Run negative binomial model
-model1.5_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(ocurrences_before) + (1 | SSBID),
+model1.5_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(log(ocurrences_before)+0.0001) + (1 | SSBID),
                        family = nbinom2,
                        data = occ_y_n_cover_change_before_after_for_modell)
 
@@ -260,12 +267,24 @@ save(model1.5_SSB, file = here::here("data", "models", "model1.5_SSB.RData"))
 ## 4.2. N binomial glmmTMB, nbinom2, by Municipality  --------------------------
 
 # Run negative binomial model
-model1.6_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(ocurrences_before) + (1 | SSBID),
+model1.6_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(log(ocurrences_before)+0.0001) + (1 | SSBID),
                         family = nbinom2,
                         data = occ_y_n_cover_change_before_after_for_modell)
 
 # Save model output to file to save time next time
 save(model1.6_municipality, file = here::here("data", "models", 
                                               "model1.6_municipality.RData"))
+
+# 5. ADDITIONAL MODELS ---------------------------------------------------------
+
+## 5.1. Add zero inflation -----------------------------------------------------
+
+# Run negative binomial model
+model1.7_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
+                        family = nbinom1(link = "log"),
+                        data = occ_y_n_cover_change_after_records_for_model)
+
+# Save model output to file to save time next time
+save(model1.7_SSB, file = here::here("data", "models", "model1.7_SSB.RData"))
 
 # END OF SCRIPT ----------------------------------------------------------------
