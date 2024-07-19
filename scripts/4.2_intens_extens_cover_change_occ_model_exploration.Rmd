@@ -48,7 +48,7 @@ load(here::here("data", "derived_data",
                 "occ_intens_extens_before_after_for_model.rda"))
 
 # Check data structure
-glimpse(occ_intens_extens_before_after_records_for_model)
+glimpse(occ_intens_extens_before_after_for_model)
 
 ```
 
@@ -57,18 +57,20 @@ glimpse(occ_intens_extens_before_after_records_for_model)
 ```{r check outliers}
 
 # Barplot of number of occurrences
-ggplot(occ_intens_extens_before_after_records_for_model , 
+ggplot(occ_intens_extens_before_after_for_model , 
        aes(x = cover_change, y = ocurrences_after, fill = time_period))+
   geom_boxplot()+
   theme_classic()
 ```
+
+Most records are found in the pixels that undergo no changes. Relationships between time period and the number of occurrences after a land cover change appears to be non-linear.
 
 ## Check Normality
 
 ```{r check normality}
 
 # Plot histogram of number of records by time period
-occ_intens_extens_before_after_records_for_model |>
+occ_intens_extens_before_after_for_model |>
   filter(ocurrences_after < 100) |>
   ggplot(aes(x = ocurrences_after)) +
   geom_histogram(binwidth = 2, position = "dodge", 
