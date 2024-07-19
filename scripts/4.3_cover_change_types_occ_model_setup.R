@@ -286,7 +286,7 @@ save(model3.4_municipality, file = here::here("data", "models",
 ## 4.1. N binomial glmmTMB, nbinom 2, SSBID on data subset ---------------------
 
 # Run model
-model3.5_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(ocurrences_before) + (1 | SSBID),
+model3.5_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(log(ocurrences_before)+0.0001) + (1 | SSBID),
                     family = nbinom2,
                     data = occ_subset)
 
@@ -296,7 +296,7 @@ save(model3.5_SSB, file = here::here("data", "models", "model3.5_SSB.RData"))
 ## 4.2. N binomial glmmTMB, nbinom 2, Municipality on data subset ---------------------
 
 # Run model
-model3.6_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(ocurrences_before) + (1 | municipality),
+model3.6_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(log(ocurrences_before)+0.0001) + (1 | municipality),
                         family = nbinom2,
                         data = occ_subset)
 
