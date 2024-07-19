@@ -154,6 +154,26 @@ testZeroInflation(model1.1_SSB_simulation)
 
 Simulated residuals significantly zero inflated.
 
+## Further Validation
+
+```{r}
+# Extract residuals and fitted values
+residuals <- residuals(model1.1_SSB)
+fitted <- fitted(model1.1_SSB)
+
+# Residuals vs. Fitted Values
+plot(fitted, residuals, 
+     main = "Residuals vs. Fitted Values",
+     xlab = "Fitted Values", 
+     ylab = "Residuals")
+abline(h = 0, col = "red")
+```
+
+```{r}
+qqnorm(residuals, main = "Q-Q Plot of Residuals")
+qqline(residuals, col = "red")
+```
+
 # Model 1.2.
 
 ## Model Validation
