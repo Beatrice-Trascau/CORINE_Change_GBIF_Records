@@ -39,7 +39,7 @@ occ_df_before_2000.2006 <- occ_SSB_land_cover |>
     cover_change %in% c(79, 102, 249, 379, 589, 710,
                         23, 147, 170, 608, 631, -102,
                         -79, 487, 510, 277, 300, -340,
-                        -331, -461) ~ "Intensification",
+                        -331, -461, -130) ~ "Intensification",
     cover_change %in% c(-249, -379, -589, -170, -300, -510,
                         -147, -277, -487, 130, -210, 461, 331,
                         121, 340, -23, -710, -121, -608) ~ "Extensification",
@@ -69,14 +69,13 @@ occ_df_after_2000.2006 <- occ_SSB_land_cover |>
   mutate(cover_change = land_cover2000 - land_cover2006) |>
   mutate(cover_change = case_when(
     cover_change %in% c(79, 102, 249, 379, 589, 710,
-                                           23, 147, 170, 608, 631, -102,
-                                           -79, 487, 510, 277, 300, -340,
-                                           -331, -461) ~ "Intensification",
+                         23, 147, 170, 608, 631, -102,
+                         -79, 487, 510, 277, 300, -340,
+                         -331, -461, -130) ~ "Intensification",
     cover_change %in% c(-249, -379, -589, -170, -300, -510,
-                                           -147, -277, -487, 130, -210, 461, 331,
-                                           121, 340, -23, -710, -121, -608) ~ "Extensification",
-    cover_change == 0 ~ "No_change"
-  ))
+                        -147, -277, -487, 130, -210, 461, 331,
+                        121, 340, -23, -710, -121, -608) ~ "Extensification",
+    cover_change == 0 ~ "No_change"))
 
 # Calculate number of records for the period 2006-2009
 occ_df_after_2000.2006_records <- occ_df_after_2000.2006 |>
@@ -106,7 +105,7 @@ occ_df_before_2006.2012 <- occ_SSB_land_cover |>
     cover_change %in% c(79, 102, 249, 379, 589, 710,
                         23, 147, 170, 608, 631, -102,
                         -79, 487, 510, 277, 300, -340,
-                        -331, -461) ~ "Intensification",
+                        -331, -461, -130) ~ "Intensification",
     cover_change %in% c(-249, -379, -589, -170, -300, -510,
                         -147, -277, -487, 130, -210, 461, 331,
                         121, 340, -23, -710, -121, -608) ~ "Extensification",
@@ -136,14 +135,13 @@ occ_df_after_2006.2012 <- occ_SSB_land_cover |>
   mutate(cover_change = land_cover2006 - land_cover2012) |>
   mutate(cover_change = case_when(
     cover_change %in% c(79, 102, 249, 379, 589, 710,
-                                           23, 147, 170, 608, 631, -102,
-                                           -79, 487, 510, 277, 300, -340,
-                                           -331, -461) ~ "Intensification",
+                        23, 147, 170, 608, 631, -102,
+                        -79, 487, 510, 277, 300, -340,
+                        -331, -461, -130) ~ "Intensification",
     cover_change %in% c(-249, -379, -589, -170, -300, -510,
-                                           -147, -277, -487, 130, -210, 461, 331,
-                                           121, 340, -23, -710, -121, -608) ~ "Extensification",
-    cover_change == 0 ~ "No_change"
-  ))
+                        -147, -277, -487, 130, -210, 461, 331,
+                        121, 340, -23, -710, -121, -608) ~ "Extensification",
+    cover_change == 0 ~ "No_change"))
 
 # Calculate number of records for the period 2012-2015
 occ_df_after_2006.2012_records <- occ_df_after_2006.2012 |>
@@ -173,7 +171,7 @@ occ_df_before_2012.2018 <- occ_SSB_land_cover |>
     cover_change %in% c(79, 102, 249, 379, 589, 710,
                         23, 147, 170, 608, 631, -102,
                         -79, 487, 510, 277, 300, -340,
-                        -331, -461) ~ "Intensification",
+                        -331, -461, -130) ~ "Intensification",
     cover_change %in% c(-249, -379, -589, -170, -300, -510,
                         -147, -277, -487, 130, -210, 461, 331,
                         121, 340, -23, -710, -121, -608) ~ "Extensification",
@@ -203,14 +201,13 @@ occ_df_after_2012.2018 <- occ_SSB_land_cover |>
   mutate(cover_change = land_cover2012 - land_cover2018) |>
   mutate(cover_change = case_when(
     cover_change %in% c(79, 102, 249, 379, 589, 710,
-                                           23, 147, 170, 608, 631, -102,
-                                           -79, 487, 510, 277, 300, -340,
-                                           -331, -461) ~ "Intensification",
+                        23, 147, 170, 608, 631, -102,
+                        -79, 487, 510, 277, 300, -340,
+                        -331, -461, -130) ~ "Intensification",
     cover_change %in% c(-249, -379, -589, -170, -300, -510,
-                                           -147, -277, -487, 130, -210, 461, 331,
-                                           121, 340, -23, -710, -121, -608) ~ "Extensification",
-    cover_change == 0 ~ "No_change"
-  ))
+                        -147, -277, -487, 130, -210, 461, 331,
+                        121, 340, -23, -710, -121, -608) ~ "Extensification",
+    cover_change == 0 ~ "No_change"))
 
 # Calculate number of records for the period 1997-2000
 occ_df_after_2012.2018_records <- occ_df_after_2012.2018 |>
