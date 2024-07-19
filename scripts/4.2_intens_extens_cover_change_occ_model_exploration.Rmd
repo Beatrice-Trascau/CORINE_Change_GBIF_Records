@@ -11,24 +11,24 @@ This markdown outlines the process of modelling the number of species occurrence
 
 The defined model was:
 
--   occurrences_after \~ cover_change (intens/extens/no change) \* time_period + (1\|SSBID) (model1.1, model1.3)
+-   occurrences_after \~ cover_change (intens/extens/no change) \* time_period + (1\|SSBID) (model2.1, model2.3)
 
--   occurrences_after \~ cover_change (intens/extens/no change) \* time_period + (1\|municipality) (model1.2, model1.4)
+-   occurrences_after \~ cover_change (intens/extens/no change) \* time_period + (1\|municipality) (model2.2, model2.4)
 
--   occurrences_after \~ cover_change (intens/extens/no change) \* time_period \* occurrences_before + offset(occurrences_before) + (1\|SSBID) (model1.5)
+-   occurrences_after \~ cover_change (intens/extens/no change) \* time_period \* occurrences_before + offset(occurrences_before) + (1\|SSBID) (model2.5)
 
--   occurrences_after \~ cover_change (intens/extens/no change) \* time_period \* occurrences_before + offset(occurrences_before) + (1\|municipality) (model1.6)
+-   occurrences_after \~ cover_change (intens/extens/no change) \* time_period \* occurrences_before + offset(occurrences_before) + (1\|municipality) (model2.6)
 
 The models variants ran as part of this are as follows:
 
 | Model Number | Function | Family  | Link | SSBID/Municipality | Offset? |
 |--------------|----------|---------|------|--------------------|---------|
-| 3.1.         | glmmTMB  | nbinom1 | log  | SSBID              | N       |
-| 3.2.         | glmmTMB  | nbinom1 | log  | Municipality       | N       |
-| 3.3.         | glmmTMB  | nbinom2 | log  | SSBID              | N       |
-| 3.4.         | glmmTMB  | nbinom2 | log  | Municipality       | N       |
-| 3.5.         | glmmTMB  | nbinom2 | log  | SSBID              | Y       |
-| 3.6.         | glmmTMB  | nbinom2 | log  | Municipality       | Y       |
+| 2.1.         | glmmTMB  | nbinom1 | log  | SSBID              | N       |
+| 2.2.         | glmmTMB  | nbinom1 | log  | Municipality       | N       |
+| 2.3.         | glmmTMB  | nbinom2 | log  | SSBID              | N       |
+| 2.4.         | glmmTMB  | nbinom2 | log  | Municipality       | N       |
+| 2.5.         | glmmTMB  | nbinom2 | log  | SSBID              | Y       |
+| 2.6.         | glmmTMB  | nbinom2 | log  | Municipality       | Y       |
 
 ```{r library load, include = FALSE}
 library(here)
