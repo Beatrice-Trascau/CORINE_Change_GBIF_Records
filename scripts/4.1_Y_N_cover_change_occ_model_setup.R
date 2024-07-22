@@ -212,52 +212,51 @@ save(occ_y_n_cover_change_before_after_for_modell,
 ## 3.1. Negative binomial with glmmTMB, family nbinom 1, by SSB ID -------------
 
 # Run negative binomial model
-model1.1_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
-                           family = nbinom1, 
-                           data = occ_y_n_cover_change_after_records_for_model)
+# model1.1_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
+#                            family = nbinom1, 
+#                            data = occ_y_n_cover_change_after_records_for_model)
 
 # Save model output to file to save time next time
-save(model1.1_SSB, file = here::here("data", "models", 
-                                        "model1.1_SSB.RData"))
+# save(model1.1_SSB, file = here::here("data", "models", "model1.1_SSB.RData"))
 
 ## 3.2. Negative binomial with glmmTMB, family nbinom 1, by Municipality -------
 
 # Run negative binomial model
-model1.2_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|municipality),
-                                    family = nbinom1, 
-                                    data = occ_y_n_cover_change_after_records_for_model)
+# model1.2_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|municipality),
+#                                     family = nbinom1, 
+#                                     data = occ_y_n_cover_change_after_records_for_model)
 
 # Save model output to file to save time next time
-save(model1.2_municipality, file = here::here("data", "models", 
-                                                 "model1.2_municipality.RData"))
+# save(model1.2_municipality, file = here::here("data", "models", 
+#                                                  "model1.2_municipality.RData"))
 
 ## 3.3. Negative binomial with glmmTMB, family nbinom 2, by SSB ID -------------
 
 # Run negative binomial model
-model1.3_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
-                           family = nbinom2, 
-                           data = occ_y_n_cover_change_after_records_for_model)
+# model1.3_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
+#                            family = nbinom2, 
+#                            data = occ_y_n_cover_change_after_records_for_model)
 
 # Save model output to file to save time next time
-save(model1.3_SSB, file = here::here("data", "models", "model1.3_SSB.RData"))
+# save(model1.3_SSB, file = here::here("data", "models", "model1.3_SSB.RData"))
 
 ## 3.4. Negative binomial with glmmTMB, family nbinom 2, by Municipality -------
 
 # Run negative binomial model
-model1.4_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|municipality),
-                                    family = nbinom2, 
-                                    data = occ_y_n_cover_change_after_records_for_model)
+# model1.4_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|municipality),
+#                                     family = nbinom2, 
+#                                     data = occ_y_n_cover_change_after_records_for_model)
 
 # Save model output to file to save time next time
-save(model1.4_municipality, file = here::here("data", "models", 
-                                                 "model1.4_municipality.RData"))
+# save(model1.4_municipality, file = here::here("data", "models", 
+#                                                  "model1.4_municipality.RData"))
 
 # 4. MODEL 1: OCC ~ COVER CHANGE + OFFSET --------------------------------------
 
 ## 4.1. N binomial glmmTMB, nbinom2, SSBID on data subset ----------------------
 
 # Run negative binomial model
-model1.5_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(log(ocurrences_before)+0.0001) + (1 | SSBID),
+model1.5_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(log(ocurrences_before + 0.0001)) + (1 | SSBID),
                        family = nbinom2,
                        data = occ_y_n_cover_change_before_after_for_modell)
 
@@ -267,7 +266,7 @@ save(model1.5_SSB, file = here::here("data", "models", "model1.5_SSB.RData"))
 ## 4.2. N binomial glmmTMB, nbinom2, by Municipality  --------------------------
 
 # Run negative binomial model
-model1.6_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(log(ocurrences_before)+0.0001) + (1 | SSBID),
+model1.6_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(log(ocurrences_before + 0.0001)) + (1 | municipality),
                         family = nbinom2,
                         data = occ_y_n_cover_change_before_after_for_modell)
 
@@ -280,11 +279,11 @@ save(model1.6_municipality, file = here::here("data", "models",
 ## 5.1. Add zero inflation -----------------------------------------------------
 
 # Run negative binomial model
-model1.7_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
-                        family = nbinom1(link = "log"),
-                        data = occ_y_n_cover_change_after_records_for_model)
+# model1.7_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
+#                         family = nbinom1(link = "log"),
+#                         data = occ_y_n_cover_change_after_records_for_model)
 
 # Save model output to file to save time next time
-save(model1.7_SSB, file = here::here("data", "models", "model1.7_SSB.RData"))
+# save(model1.7_SSB, file = here::here("data", "models", "model1.7_SSB.RData"))
 
 # END OF SCRIPT ----------------------------------------------------------------
