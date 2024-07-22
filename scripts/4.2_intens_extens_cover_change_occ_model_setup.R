@@ -19,7 +19,6 @@ package_vec <- c("here", "terra", "sf", "geodata", "mapview",
 # Execute the function
 sapply(package_vec, install_load_package)
 
-
 ##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
 # 4.2_intens_extens_cover_change_occ_model_setup
