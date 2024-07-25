@@ -1,24 +1,3 @@
-# Define function
-install_load_package <- function(x) {
-  if (!require(x, character.only = TRUE)) {
-    install.packages(x, repos = "http://cran.us.r-project.org")
-  }
-  require(x, character.only = TRUE)
-}
-
-# Define list of packages
-package_vec <- c("here", "terra", "sf", "geodata", "mapview",
-                 "tidyverse", "dplyr", "ggplot2", "ggalluvial",
-                 "networkD3", "gt", "cowplot", "data.table",
-                 "tidyterra", "patchwork", "styler", "scales",
-                 "plotly", "lme4", "DHARMa", "glmmTMB", "mgcv",
-                 "tidyterra", "ggspatial", "htmlwidgets",
-                 "htmltools", "patchwork", "webshot2",
-                 "rgbif", "CoordinateCleaner") # specify packages
-
-# Execute the function
-sapply(package_vec, install_load_package)
-
 ##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
 # 4.2_intens_extens_cover_change_occ_model_setup
