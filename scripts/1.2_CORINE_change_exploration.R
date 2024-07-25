@@ -280,9 +280,11 @@ cover_transitions <- ggplot(gain_loss_all_years, aes(x = focus, y = scaled_count
   geom_hline(yintercept = 0) +
   geom_vline(xintercept = 5.5, linetype = "dashed") +
   theme_classic()+
-  theme(axis.text.x = element_text(angle = 30,
-                                   hjust = 1),
-        legend.position = "bottom") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1,
+                                   size = 11, color = "black"),
+        axis.text.y = element_text(size = 11, colour = "black"),
+        legend.position = "bottom",
+        legend.text = element_text(size = 11, colour = "black")) +
   guides(fill = guide_legend(ncol = 2))
 
 ## 3.6. Plot intensification and extensification transitions -------------------
@@ -352,9 +354,12 @@ intens_extens_transitions <- ggplot(intens_extens_gain_loss_all_years,
   geom_hline(yintercept = 0) +
   geom_vline(xintercept = 5.5, linetype = "dashed") +
   theme_classic()+
-  theme(axis.text.x = element_text(angle = 30,
-                                   hjust = 1),
-        legend.position = "bottom") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1,
+                                   size = 11, colour = "black"),
+        axis.text.y = element_text(size = 11, colour = "black"),
+        legend.position = "bottom",
+        legend.text = element_text(size = 11, colour = "black"),
+        legend.spacing = unit(4, "cm")) +
   guides(fill = guide_legend(ncol = 2))
 
 ## 3.5. Combine plots from 3.3. and 3.4. ---------------------------------------
@@ -367,11 +372,11 @@ plot_grid(cover_transitions, intens_extens_transitions,
 
 # Save to file as .png
 ggsave(here("figures", "cover_transitions_all_periods_Figure2.png"),
-       width=20, height=13)
+       width=18, height=9)
 
 # Save to file as .svg
 ggsave(here("figures", "cover_transitions_all_periods_Figure2.svg"),
-       width=20, height=13)
+       width = 18, height=9)
 
 
 # 4. SANKEY PLOT OF TRANSITIONS FOR ALL YEARS ----------------------------------
