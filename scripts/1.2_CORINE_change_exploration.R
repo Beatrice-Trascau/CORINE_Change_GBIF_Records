@@ -17,6 +17,32 @@ download_file("https://ntnu.box.com/shared/static/97g9x4839ij4lnlldji2wh8e0e2lm5
 norway_corine_change_modified_stack <- rast(here("data", "derived_data",
                                         "norway_corine_change_modified_stack.tif"))
 
+## 1.3. Calculate the amount of land changing in each period -------------------
+
+# Create vector to store the %
+change_percentages <- numeric(nlyr(norway_corine_change_modified_stack))
+
+# Loop the calculation of the 
+for(i in 1:nlyr(norway_corine_change_modified_stack)){
+  # Get the current raster
+  raster <- norway_corine_change_modified_stack[[i]]
+  
+  # Extract total number of cells
+  total_cells <- ncell(raster)
+  
+  # Get the number of non-NA cells
+  non_na_cells <- global(!is.na(raster), sum)[1]
+  
+  # Calculate % on non-NA cells
+  change_percentage <- (non_na_cells * 100) / total_cells
+  
+  # Store result in bector
+  change_percentages[i] <- change_percentage
+}
+
+# Get the change % for each layer
+change_percentages
+
 # 2. FIGURE 1  - MAPS OF LAND COVER CHANGES FOR EACH PERIOD --------------------
 
 ## 2.1. Prepare data -----------------------------------------------------------
