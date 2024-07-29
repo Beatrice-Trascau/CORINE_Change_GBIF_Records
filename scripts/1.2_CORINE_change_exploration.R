@@ -255,7 +255,7 @@ gain_loss_all_years$scaled_count <- ifelse(abs(gain_loss_all_years$count) > 90,
 # Create plot
 cover_transitions <- ggplot(gain_loss_all_years, aes(x = focus, y = scaled_count, 
                                                      fill = transition)) +
-  geom_bar(stat="identity", position="stack") +
+  geom_bar(stat="identity", position="stack", color = NA) +
   scale_y_continuous(
     name = bquote("Area changes"~("km"^2)),
     sec.axis = sec_axis(~ . * scaling_factor, name = bquote("Area changes"~("km"^2)))
@@ -284,7 +284,8 @@ cover_transitions <- ggplot(gain_loss_all_years, aes(x = focus, y = scaled_count
                                    size = 11, color = "black"),
         axis.text.y = element_text(size = 11, colour = "black"),
         legend.position = "bottom",
-        legend.text = element_text(size = 11, colour = "black")) +
+        legend.text = element_text(size = 11, colour = "black"),
+        legend.key.spacing.x = unit(10, "pt")) +
   guides(fill = guide_legend(ncol = 2))
 
 ## 3.6. Plot intensification and extensification transitions -------------------
@@ -334,7 +335,7 @@ intens_extens_gain_loss_all_years$scaled_count <- ifelse(abs(intens_extens_gain_
 intens_extens_transitions <- ggplot(intens_extens_gain_loss_all_years, 
                                     aes(x = focus, y = scaled_count,
                                               fill = transition_meaning))+
-  geom_bar(stat="identity", position="stack")+
+  geom_bar(stat="identity", position="stack", color = NA)+
   scale_y_continuous(
     name = bquote("Area changes"~("km"^2)),
     sec.axis = sec_axis(~ . * scaling_factor, name = bquote("Area changes"~("km"^2)))
@@ -359,7 +360,7 @@ intens_extens_transitions <- ggplot(intens_extens_gain_loss_all_years,
         axis.text.y = element_text(size = 11, colour = "black"),
         legend.position = "bottom",
         legend.text = element_text(size = 11, colour = "black"),
-        legend.spacing = unit(4, "cm")) +
+        legend.key.spacing.x = unit(10, "pt")) +
   guides(fill = guide_legend(ncol = 2))
 
 ## 3.5. Combine plots from 3.3. and 3.4. ---------------------------------------
@@ -372,7 +373,7 @@ plot_grid(cover_transitions, intens_extens_transitions,
 
 # Save to file as .png
 ggsave(here("figures", "cover_transitions_all_periods_Figure2.png"),
-       width=18, height=9)
+       width=16, height=8)
 
 # Save to file as .svg
 ggsave(here("figures", "cover_transitions_all_periods_Figure2.svg"),
