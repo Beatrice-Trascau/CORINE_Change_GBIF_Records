@@ -284,8 +284,8 @@ cover_transitions <- ggplot(gain_loss_all_years, aes(x = focus, y = scaled_count
                                    size = 11, color = "black"),
         axis.text.y = element_text(size = 11, colour = "black"),
         legend.position = "bottom",
-        legend.text = element_text(size = 11, colour = "black"),
-        legend.key.spacing.x = unit(10, "pt")) +
+        legend.text = element_text(size = 11, colour = "black",
+                                   margin = margin(l = 2))) +
   guides(fill = guide_legend(ncol = 2))
 
 ## 3.6. Plot intensification and extensification transitions -------------------
@@ -359,25 +359,25 @@ intens_extens_transitions <- ggplot(intens_extens_gain_loss_all_years,
                                    size = 11, colour = "black"),
         axis.text.y = element_text(size = 11, colour = "black"),
         legend.position = "bottom",
-        legend.text = element_text(size = 11, colour = "black"),
-        legend.key.spacing.x = unit(10, "pt")) +
+        legend.text = element_text(size = 11, colour = "black",
+                                   margin = margin(l = 2))) +
   guides(fill = guide_legend(ncol = 2))
 
 ## 3.5. Combine plots from 3.3. and 3.4. ---------------------------------------
 
 # Create figure with 2 panels
-plot_grid(cover_transitions, intens_extens_transitions,
+combined_barplot <- plot_grid(cover_transitions, intens_extens_transitions,
           labels = c("a)", "b)"),
           ncol = 2,
           align = "h")
 
 # Save to file as .png
 ggsave(here("figures", "cover_transitions_all_periods_Figure2.png"),
-       width=16, height=8)
+       width=20, height=13)
 
 # Save to file as .svg
-ggsave(here("figures", "cover_transitions_all_periods_Figure2.svg"),
-       width = 18, height=9)
+ggsave(here("figures", "cover_transitions_all_periods_Figure2.pdf"),
+       width = 20, height=13)
 
 
 # 4. SANKEY PLOT OF TRANSITIONS FOR ALL YEARS ----------------------------------
@@ -558,7 +558,7 @@ alluvial_all_classes <- ggplot(alluvial_data,
        aes(x = as.factor(year), stratum = cover_type, alluvium = alluvium_id,
            y = count, fill = cover_type, label = cover_type)) +
   geom_flow(stat = "alluvium", lode.guidance = "frontback", color = "darkgray") +
-  geom_stratum() +
+  geom_stratum(color = NA) +
   scale_fill_manual(values = c("#0072B2", "#F564E3","#009E73",
                                "#000000", "#E69F00",
                                "#F0E442","#83506c"),
@@ -569,7 +569,7 @@ alluvial_all_classes <- ggplot(alluvial_data,
                                "Urban Fabric")) +
   theme_classic() +
   theme(legend.position = "none",
-        axis.text.y = element_blank(),
+        axis.text = element_blank(),
         axis.title = element_blank(),
         axis.ticks = element_blank(),
         axis.line = element_blank())
@@ -614,7 +614,7 @@ alluvial_forestless <- ggplot(alluvial_data_forestless,
                                    label = cover_type)) +
   geom_flow(stat = "alluvium", lode.guidance = "frontback", 
             color = "darkgray") +
-  geom_stratum() +
+  geom_stratum(color = NA) +
   scale_fill_manual(values = c("#0072B2", "#F564E3","#009E73",
                                "#000000", "#E69F00",
                                "#F0E442","#83506c"),
@@ -626,6 +626,7 @@ alluvial_forestless <- ggplot(alluvial_data_forestless,
   theme_classic() +
   theme(legend.position = "bottom",
         axis.text.y = element_blank(),
+        axis.text.x = element_text(size = 11, colour = "black"),
         axis.title = element_blank(),
         axis.ticks = element_blank(),
         axis.line = element_blank())
@@ -645,7 +646,7 @@ ggsave(here("figures", "cover_transitions_alluvials_Figure4.png"),
        width=20, height=13)
 
 # Save to file as .svg
-ggsave(here("figures", "cover_transitions_alluvials_Figure4.svg"),
+ggsave(here("figures", "cover_transitions_alluvials_Figure4.pdf"),
        width=20, height=13)
 
 # END OF SCRIPT ----------------------------------------------------------------
