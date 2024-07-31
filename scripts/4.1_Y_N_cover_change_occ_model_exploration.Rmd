@@ -10,6 +10,7 @@ library(here)
 library(dplyr)
 library(DHARMa)
 library(ggplot2)
+library(knitr)
 ```
 
 # Introduction
@@ -109,6 +110,24 @@ summary(model1.1_SSB)
 ```
 
 Model output suggests a significant difference in the number of occurrence records between pixels in 2000-2006 and those in 2006-2012 but no significant effect of land cover change an no significant interaction between time period and land cover change (Y). AIC and BIC values still large. . Dispersion parameter = 26.6.
+
+#### Table of Output
+
+```{r model 1.1 output table}
+
+# Get model summary
+model1.1_SSB_summary <- summary(model1.1_SSB)
+
+# Convert summary coefficients to df
+model1.1_coeff_df <- as.data.frame(model1.1_SSB_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+model1.1_coeff_df[] <- lapply(model1.1_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(model1.1_coeff_df)
+```
 
 ### Check Residuals
 
@@ -381,6 +400,24 @@ summary(model1.5_SSB)
 ```
 
 Significant effect of time, land cover change, occurrences before land cover change. No significant interaction between cover change, time period 2006-2012 and occurrences before.
+
+#### Table of Output
+
+```{r model 1.5 output table}
+
+# Get model summary
+model1.5_SSB_summary <- summary(model1.5_SSB)
+
+# Convert summary coefficients to df
+model1.5_coeff_df <- as.data.frame(model1.5_SSB_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+model1.5_coeff_df[] <- lapply(model1.5_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(model1.5_coeff_df)
+```
 
 ### Check Residuals
 
