@@ -105,7 +105,7 @@ occ_intens_extens_before_after_records_for_model |>
 
 ```
 
-# Model 3.1.
+# Model 2.1.
 
 ```{r model 2.1. convergence check}
 # Load model from file
@@ -113,6 +113,24 @@ load(here::here("data", "models", "model2.1_SSB.RData"))
 
 # Get summary of the model
 summary(model2.1_SSB)
+```
+
+#### Table of Output
+
+```{r model 2.1 output table}
+
+# Get model summary
+model2.1_SSB_summary <- summary(model2.1_SSB)
+
+# Convert summary coefficients to df
+model2.1_coeff_df <- as.data.frame(model2.1_SSB_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+model2.1_coeff_df[] <- lapply(model2.1_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(model2.1_coeff_df)
 ```
 
 ## Check Residuals
@@ -130,7 +148,7 @@ ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
   theme_classic()
 ```
 
-# Model 3.2.
+# Model 2.2.
 
 ```{r model 2.2. convergence check}
 # Load model from file
@@ -155,7 +173,7 @@ ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
   theme_classic()
 ```
 
-# Model 3.3.
+# Model 2.3.
 
 ```{r model 2.3. convergence check}
 # Load model from file
@@ -180,7 +198,7 @@ ggplot(plot_data, aes(x = Fitted, y = Residuals)) +
   theme_classic()
 ```
 
-# Model 3.4.
+# Model 2.4.
 
 ```{r model 2.4. convergence check}
 # Load model from file
@@ -213,6 +231,24 @@ load(here::here("data", "models", "model2.5_SSB.RData"))
 
 # Get summary of the model
 summary(model2.5_SSB)
+```
+
+#### Table of Output
+
+```{r model 2.5 output table}
+
+# Get model summary
+model2.5_SSB_summary <- summary(model2.5_SSB)
+
+# Convert summary coefficients to df
+model2.5_coeff_df <- as.data.frame(model2.5_SSB_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+model2.5_coeff_df[] <- lapply(model2.5_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(model2.5_coeff_df)
 ```
 
 ## Check Residuals

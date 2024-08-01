@@ -110,6 +110,24 @@ No significant effect of time and no significant effect of most cover changes. S
 
 Statistics could not be computed for some of the categories is NA. Presumably because the model had to drop some of the categories in order to be able to compute.
 
+#### Table of Output
+
+```{r model 3.1 output table}
+
+# Get model summary
+model3.1_SSB_summary <- summary(model3.1_SSB)
+
+# Convert summary coefficients to df
+model3.1_coeff_df <- as.data.frame(model3.1_SSB_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+model3.1_coeff_df[] <- lapply(model3.1_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(model3.1_coeff_df)
+```
+
 ## Check Residuals
 
 ```{r model 3.1. check residuals}
@@ -337,6 +355,24 @@ Significant effects of:
 -   Time period 2012-2018 and Occurrences before
 
 -   Moors, Heathland and Grassland -\> Moors, Heathland and Grassland in 2006-2012 & occurrences before, 2012-2018 & occurrences before
+
+#### Table of Output
+
+```{r model 3.5 output table}
+
+# Get model summary
+model3.5_SSB_summary <- summary(model3.5_SSB)
+
+# Convert summary coefficients to df
+model3.5_coeff_df <- as.data.frame(model3.5_SSB_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+model3.5_coeff_df[] <- lapply(model3.5_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(model3.5_coeff_df)
+```
 
 ## Check Residuals
 
