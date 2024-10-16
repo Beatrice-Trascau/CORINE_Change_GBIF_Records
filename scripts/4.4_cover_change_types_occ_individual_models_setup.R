@@ -41,25 +41,25 @@ occ_cover_types <- occ_cover_types |>
 ## 2.1. Urban cover (1) --------------------------------------------------------
 
 # Filter out other land cover change
-occ_urban <- occ_cover_types |>
-  filter(lc_change_from == "urban")
+# occ_urban <- occ_cover_types |>
+#   filter(lc_change_from == "urban")
 
 # Relevel cover_change to have 'urban_urban' as the reference
-occ_urban$cover_change <- relevel(occ_urban$cover_change, ref = "urban_urban")
+#occ_urban$cover_change <- relevel(occ_urban$cover_change, ref = "urban_urban")
 
 # Create 10% subset of data
-set.seed(64687)
-occ_urban_subset <- occ_urban |> 
-  sample_frac(0.1)
+# set.seed(64687)
+# occ_urban_subset <- occ_urban |> 
+#   sample_frac(0.1)
 
 # Run model
-model4.1_urban <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + (1 | SSBID),
-                        family = nbinom2,
-                        data = occ_urban)
+# model4.1_urban <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + (1 | SSBID),
+#                         family = nbinom2,
+#                         data = occ_urban)
 
 # Save model output to file to save time next time
-save(model4.1_urban, file = here::here("data", "models", 
-                                       "model4.1_urban.RData"))
+# save(model4.1_urban, file = here::here("data", "models", 
+#                                        "model4.1_urban.RData"))
 
 ## 2.2. Complex agricultural cover (80) ----------------------------------------
 
