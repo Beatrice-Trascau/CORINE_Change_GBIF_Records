@@ -44,16 +44,18 @@ occ_cover_types <- occ_cover_types |>
 occ_urban <- occ_cover_types |>
   filter(lc_change_from == "urban")
 
+# Relevel cover_change to have 'urban_urban' as the reference
+occ_urban$cover_change <- relevel(occ_urban$cover_change, ref = "urban_urban")
+
 # Create 10% subset of data
 set.seed(64687)
-
 occ_urban_subset <- occ_urban |> 
   sample_frac(0.1)
 
 # Run model
 model4.1_urban <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + (1 | SSBID),
                         family = nbinom2,
-                        data = occ_urban_subset)
+                        data = occ_urban)
 
 # Save model output to file to save time next time
 save(model4.1_urban, file = here::here("data", "models", 
@@ -65,9 +67,12 @@ save(model4.1_urban, file = here::here("data", "models",
 occ_complex_agri <- occ_cover_types |>
   filter(lc_change_from == "complex_agri")
 
+# Relevel cover_change to have 'urban_urban' as the reference
+occ_complex_agri$cover_change <- relevel(occ_complex_agri$cover_change, 
+                                         ref = "complex_agri_complex_agri")
+
 # Create 10% subset of data
 set.seed(76468333)
-
 occ_complex_agri_subset <- occ_complex_agri |> 
   sample_frac(0.1)
 
