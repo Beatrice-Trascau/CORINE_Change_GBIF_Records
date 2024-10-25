@@ -1,3 +1,24 @@
+# Define function
+install_load_package <- function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, repos = "http://cran.us.r-project.org")
+  }
+  require(x, character.only = TRUE)
+}
+
+# Define list of packages
+package_vec <- c("here", "terra", "sf", "geodata", "mapview",
+                 "tidyverse", "dplyr", "ggplot2", "ggalluvial",
+                 "networkD3", "gt", "cowplot", "data.table",
+                 "tidyterra", "patchwork", "styler", "scales",
+                 "plotly", "lme4", "DHARMa", "glmmTMB", "mgcv",
+                 "tidyterra", "ggspatial", "htmlwidgets",
+                 "htmltools", "patchwork", "webshot2",
+                 "rgbif", "CoordinateCleaner", "DHARMa") # specify packages
+
+# Execute the function
+sapply(package_vec, install_load_package)
+
 ##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
 # 4.4_cover_change_types_occ_individual_models_setup
@@ -41,45 +62,51 @@ occ_cover_types <- occ_cover_types |>
 ## 2.1. Urban cover (1) --------------------------------------------------------
 
 # Filter out other land cover change
-# occ_urban <- occ_cover_types |>
-#   filter(lc_change_from == "urban")
+occ_urban <- occ_cover_types |>
+   filter(lc_change_from == "urban")
 
 # Relevel cover_change to have 'urban_urban' as the reference
-#occ_urban$cover_change <- relevel(occ_urban$cover_change, ref = "urban_urban")
-
-# Create 10% subset of data
-# set.seed(64687)
-# occ_urban_subset <- occ_urban |> 
-#   sample_frac(0.1)
+occ_urban$cover_change <- relevel(occ_urban$cover_change, ref = "urban_urban")
 
 # Run model
-# model4.1_urban <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + (1 | SSBID),
-#                         family = nbinom2,
-#                         data = occ_urban)
+model4.1_urban <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + (1 | SSBID),
+                         family = nbinom2, data = occ_urban)
 
 # Save model output to file to save time next time
-# save(model4.1_urban, file = here::here("data", "models", 
-#                                        "model4.1_urban.RData"))
+save(model4.1_urban, file = here::here("data", "models", "model4.1_urban.RData"))
 
-## 2.2. Complex agricultural cover (80) ----------------------------------------
+# get a random subset of the data
+set.seed(5343)
+occ_urban_subset <- occ_urban |> 
+  sample_frac(0.1)
 
-# Filter out other land cover change
-occ_complex_agri <- occ_cover_types |>
-  filter(lc_change_from == "complex_agri")
-
-# Relevel cover_change to have 'urban_urban' as the reference
-occ_complex_agri$cover_change <- relevel(occ_complex_agri$cover_change, 
-                                         ref = "complex_agri_complex_agri")
-
-# Run model
-model4.2_complex_agri <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + (1 | SSBID),
-                          family = nbinom2,
-                          data = occ_complex_agri)
+# Run gam
+model5.1_urban <- gam(ocurrences_after ~  cover_change * time_period * ocurrences_before +
+                      s(XCOOR.x,YCOOR.y,bs="gp"), family=tw(), data = occ_urban_subset, 
+                      control = list(nthreads=10, trace=T))
 
 # Save model output to file to save time next time
-save(model4.2_complex_agri, file = here::here("data", "models", 
-                                       "model4.2_complex_agri.RData"))
+save(model4.1_urban, file = here::here("data", "models", "model5.1_urban_gam.RData"))
 
+# ## 2.2. Complex agricultural cover (80) ----------------------------------------
+# 
+# # Filter out other land cover change
+# occ_complex_agri <- occ_cover_types |>
+#   filter(lc_change_from == "complex_agri")
+# 
+# # Relevel cover_change to have 'urban_urban' as the reference
+# occ_complex_agri$cover_change <- relevel(occ_complex_agri$cover_change, 
+#                                          ref = "complex_agri_complex_agri")
+# 
+# # Run model
+# model4.2_complex_agri <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + (1 | SSBID),
+#                           family = nbinom2,
+#                           data = occ_complex_agri)
+# 
+# # Save model output to file to save time next time
+# save(model4.2_complex_agri, file = here::here("data", "models", 
+#                                        "model4.2_complex_agri.RData"))
+# 
 ## 2.3. Agriculture and significant vegetation (103) ---------------------------
 
 # Filter out other land cover change
@@ -88,94 +115,94 @@ occ_agri_veg <- occ_cover_types |>
 
 # Relevel cover_change to have 'urban_urban' as the reference
 occ_agri_veg$cover_change <- relevel(occ_agri_veg$cover_change, 
-                                         ref = "agri_sig_veg_agri_sig_veg")
-
-
+                                          ref = "agri_sig_veg_agri_sig_veg")
+ 
+ 
 # Run model
 model4.3_agri_veg <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + (1 | SSBID),
-                                 family = nbinom2,
-                                 data = occ_agri_veg)
-
+                                  family = nbinom2,
+                                  data = occ_agri_veg)
+ 
 # Save model output to file to save time next time
 save(model4.3_agri_veg, file = here::here("data", "models", 
-                                              "model4.3_agri_veg.RData"))
-
+                                               "model4.3_agri_veg.RData"))
+ 
 ## 2.4. Forests (250) ----------------------------------------------------------
-
+ 
 # Filter out other land cover change
 occ_forests <- occ_cover_types |>
-  filter(lc_change_from == "forests")
-
+   filter(lc_change_from == "forests")
+ 
 # Relevel cover_change to have 'urban_urban' as the reference
 occ_forests$cover_change <- relevel(occ_forests$cover_change, 
-                                     ref = "forests_forests")
-
-
+                                      ref = "forests_forests")
+ 
+ 
 # Run model
 model4.4_forests <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + (1 | SSBID),
-                             family = nbinom2,
-                             data = occ_forests)
-
+                              family = nbinom2,
+                              data = occ_forests)
+ 
 # Save model output to file to save time next time
 save(model4.4_forests, file = here::here("data", "models", 
-                                          "model4.4_forests.RData"))
+                                         "model4.4_forests.RData"))
 
-## 2.5. Moors, Heathland and Grassland (380) -----------------------------------
-
-# Filter out other land cover change
-occ_moors <- occ_cover_types |>
-  filter(lc_change_from == "moors_heath_grass")
-
-# Relevel cover_change to have 'urban_urban' as the reference
-occ_moors$cover_change <- relevel(occ_moors$cover_change, 
-                                    ref = "moors_heath_grass_moors_heath_grass")
-
-
-# Run model
-model4.5_moors <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + (1 | SSBID),
-                            family = nbinom2,
-                            data = occ_moors)
-
-# Save model output to file to save time next time
-save(model4.5_moors, file = here::here("data", "models", 
-                                         "model4.5_moors.RData"))
-
-## 2.6. Woodland shrub (590) ---------------------------------------------------
-
-# Filter out other land cover change
-occ_woodland <- occ_cover_types |>
-  filter(lc_change_from == "woodland_shrub")
-
-# Relevel cover_change to have 'urban_urban' as the reference
-occ_woodland$cover_change <- relevel(occ_woodland$cover_change, 
-                                  ref = "woodland_shrub_woodland_shrub")
-
-
-# Run model
-model4.6_woodland <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + (1 | SSBID),
-                          family = nbinom2,
-                          data = occ_woodland)
-
-# Save model output to file to save time next time
-save(model4.6_woodland, file = here::here("data", "models", 
-                                       "model4.6_woodland.RData"))
-
-## 2.7. Sparse vegetation (711) ------------------------------------------------
-
-# Filter out other land cover change
-occ_sparse <- occ_cover_types |>
-  filter(lc_change_from == "sparse_veg")
-
-# Relevel cover_change to have 'urban_urban' as the reference
-occ_sparse$cover_change <- relevel(occ_sparse$cover_change, 
-                                     ref = "sparse_veg_sparse_veg")
-
-
-# Run model
-model4.7_sparse <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + (1 | SSBID),
-                             family = nbinom2,
-                             data = occ_sparse)
-
-# Save model output to file to save time next time
-save(model4.7_sparse, file = here::here("data", "models", 
-                                          "model4.7_sparse.RData"))
+# ## 2.5. Moors, Heathland and Grassland (380) -----------------------------------
+# 
+# # Filter out other land cover change
+# occ_moors <- occ_cover_types |>
+#   filter(lc_change_from == "moors_heath_grass")
+# 
+# # Relevel cover_change to have 'urban_urban' as the reference
+# occ_moors$cover_change <- relevel(occ_moors$cover_change, 
+#                                     ref = "moors_heath_grass_moors_heath_grass")
+# 
+# 
+# # Run model
+# model4.5_moors <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + (1 | SSBID),
+#                             family = nbinom2,
+#                             data = occ_moors)
+# 
+# # Save model output to file to save time next time
+# save(model4.5_moors, file = here::here("data", "models", 
+#                                          "model4.5_moors.RData"))
+# 
+# ## 2.6. Woodland shrub (590) ---------------------------------------------------
+# 
+# # Filter out other land cover change
+# occ_woodland <- occ_cover_types |>
+#   filter(lc_change_from == "woodland_shrub")
+# 
+# # Relevel cover_change to have 'urban_urban' as the reference
+# occ_woodland$cover_change <- relevel(occ_woodland$cover_change, 
+#                                   ref = "woodland_shrub_woodland_shrub")
+# 
+# 
+# # Run model
+# model4.6_woodland <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + (1 | SSBID),
+#                           family = nbinom2,
+#                           data = occ_woodland)
+# 
+# # Save model output to file to save time next time
+# save(model4.6_woodland, file = here::here("data", "models", 
+#                                        "model4.6_woodland.RData"))
+# 
+# ## 2.7. Sparse vegetation (711) ------------------------------------------------
+# 
+# # Filter out other land cover change
+# occ_sparse <- occ_cover_types |>
+#   filter(lc_change_from == "sparse_veg")
+# 
+# # Relevel cover_change to have 'urban_urban' as the reference
+# occ_sparse$cover_change <- relevel(occ_sparse$cover_change, 
+#                                      ref = "sparse_veg_sparse_veg")
+# 
+# 
+# # Run model
+# model4.7_sparse <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + (1 | SSBID),
+#                              family = nbinom2,
+#                              data = occ_sparse)
+# 
+# # Save model output to file to save time next time
+# save(model4.7_sparse, file = here::here("data", "models", 
+#                                           "model4.7_sparse.RData"))
