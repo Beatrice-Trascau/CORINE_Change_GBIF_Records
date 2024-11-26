@@ -23,7 +23,7 @@ package_vec <- c("here", "terra", "sf", "geodata", "mapview",
                  "plotly", "lme4", "DHARMa", "glmmTMB", "mgcv",
                  "tidyterra", "ggspatial", "htmlwidgets",
                  "htmltools", "patchwork", "webshot2",
-                 "rgbif", "CoordinateCleaner") # specify packages
+                 "rgbif", "CoordinateCleaner", "DHARMa") # specify packages
 
 # Execute the function
 sapply(package_vec, install_load_package)
@@ -120,6 +120,14 @@ customize_sankey <- function(sankey, label_text) {
       });
     }
   ', label_text))
+}
+
+# 8. FUNCTION TO EXTRACT MODEL SUMMARIES TO DATAFRAME --------------------------
+extract_summary_as_df <- function(model) {
+  model_summary <- summary(model)
+  coefs <- as.data.frame(model_summary$coefficients$cond)  
+  coefs <- coefs |> rownames_to_column(var = "term")  
+  return(coefs)
 }
 
 # END OF SCRIPT ----------------------------------------------------------------
