@@ -84,11 +84,47 @@ effect_no_year_interaction <- effect_no_year_interaction |>
   mutate(Significant = ifelse(`Pr(>|z|)` < p_value_threshold, Estimate, NA)) |>
   filter(!is.na(cover_change))
 
-# Plot heatmap
-a <- ggplot(effect_no_year_interaction, 
+# Split df into time-related and cover-related effects
+time_effect_no_year_interaction <- effect_no_year_interaction |>
+  filter(cover_change %in% c("2006-2012", "2012-2018"))
+
+# Cover-related effect
+cover_effect_no_year_interaction <- effect_no_year_interaction |>
+  filter(!cover_change %in% c("2006-2012", "2012-2018"))
+
+# Manually add rows where initial_cover equals cover_change
+missing_rows <- data.frame(
+  model_id = NA, 
+  term = NA,
+  cover_change = c("Urban Fabric", "Forests", "Complex Agriculture", 
+                   "Transitional Woodland Shrub", "Moors, Heathland & Grassland",
+                   "Sparse Vegetation", "Agriculture & Vegetation"),
+  initial_cover = c("Urban Fabric", "Forests", "Complex Agriculture", 
+                    "Transitional Woodland Shrub", "Moors, Heathland & Grassland", 
+                    "Sparse Vegetation", "Agriculture & Vegetation"),
+  Estimate = NA,  
+  `Std. Error` = NA,
+  `z value` = NA,
+  `Pr(>|z|)` = NA,
+  Significant = NA,
+  time_period = NA)
+
+# Add missing rows to cover df
+cover_effect_no_year_interaction <- cover_effect_no_year_interaction |>
+  bind_rows(missing_rows)
+
+# Create new column to indicate when inital land cover = cover change
+cover_effect_no_year_interaction <- cover_effect_no_year_interaction |>
+  mutate(is_same = ifelse(intial_cover == cover_change, TRUE, FALSE))
+
+# Plot heatmap for cover change effects
+a <- ggplot(cover_effect_no_year_interaction, 
             aes(x = cover_change, y = intial_cover, fill = Significant)) +
   geom_tile(color = "white") +
-  scale_fill_gradientn(colors = c("blue", "white", "red"), na.value = "grey90", name = "Estimate") +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, 
+                       na.value = "grey90", name = "Estimate") +
+  geom_rect(aes(xmin = 0.52, xmax = 1.48, ymin = 0.5, ymax = 1.5),
+            fill = "black", color = "black")+
   scale_x_discrete(position = "top") +  
   theme_classic() +
   theme(
