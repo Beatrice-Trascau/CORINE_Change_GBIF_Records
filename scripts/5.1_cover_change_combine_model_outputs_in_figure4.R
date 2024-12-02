@@ -92,14 +92,14 @@ time_effect_no_year_interaction <- effect_no_year_interaction |>
 cover_effect_no_year_interaction <- effect_no_year_interaction |>
   filter(!cover_change %in% c("2006-2012", "2012-2018"))
 
-# Manually add rows where initial_cover equals cover_change
+# Manually add rows where intial_cover equals cover_change
 missing_rows <- data.frame(
   model_id = NA, 
   term = NA,
   cover_change = c("Urban Fabric", "Forests", "Complex Agriculture", 
                    "Transitional Woodland Shrub", "Moors, Heathland & Grassland",
                    "Sparse Vegetation", "Agriculture & Vegetation"),
-  initial_cover = c("Urban Fabric", "Forests", "Complex Agriculture", 
+  intial_cover = c("Urban Fabric", "Forests", "Complex Agriculture", 
                     "Transitional Woodland Shrub", "Moors, Heathland & Grassland", 
                     "Sparse Vegetation", "Agriculture & Vegetation"),
   Estimate = NA,  
@@ -117,24 +117,93 @@ cover_effect_no_year_interaction <- cover_effect_no_year_interaction |>
 cover_effect_no_year_interaction <- cover_effect_no_year_interaction |>
   mutate(is_same = ifelse(intial_cover == cover_change, TRUE, FALSE))
 
+# Reorder the levels of initial land cover column
+cover_effect_no_year_interaction <- cover_effect_no_year_interaction |>
+  mutate(intial_cover = factor(intial_cover, 
+                                levels = c("Urban Fabric",
+                                           "Transitional Woodland Shrub",
+                                           "Sparse Vegetation",
+                                           "Moors, Heathland & Grassland",
+                                           "Forests",
+                                           "Complex Agriculture",
+                                           "Agriculture & Vegetation")),
+         cover_change = factor(cover_change, 
+                               levels = c("Agriculture & Vegetation", 
+                                          "Complex Agriculture", 
+                                          "Forests", 
+                                          "Moors, Heathland & Grassland", 
+                                          "Sparse Vegetation", 
+                                          "Transitional Woodland Shrub", 
+                                          "Urban Fabric")))
+
+# Define breaks for the time legend
+legend_breaks_cover <- c(min(cover_effect_no_year_interaction$Significant, na.rm = TRUE),
+                         5, 2.5, 0, -2.5,
+                        max(cover_effect_no_year_interaction$Significant, na.rm = TRUE))
+
 # Plot heatmap for cover change effects
 a <- ggplot(cover_effect_no_year_interaction, 
-            aes(x = cover_change, y = intial_cover, fill = Significant)) +
-  geom_tile(color = "white") +
-  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0, 
-                       na.value = "grey90", name = "Estimate") +
-  geom_rect(aes(xmin = 0.52, xmax = 1.48, ymin = 0.5, ymax = 1.5),
-            fill = "black", color = "black")+
+            aes(x = cover_change, y = intial_cover)) +
+  geom_tile(aes(fill = ifelse(is_same, NA, Significant)), color = "black") +
+  geom_tile(data = cover_effect_no_year_interaction %>% filter(is_same), 
+            fill = "black", color = "black") +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", 
+                       midpoint = 0, na.value = "grey90", name = "Estimate",
+                       breaks = legend_breaks_cover, 
+                       labels = scales::label_number()) +
   scale_x_discrete(position = "top") +  
   theme_classic() +
   theme(
     axis.text.x = element_text(angle = 15, hjust = 0, size = 14),
     axis.text.y = element_text(size = 14),
     axis.title.x = element_text(size = 14, face = "bold"),
-    axis.title.y = element_blank(),
+    axis.title.y = element_text(size = 14, face = "bold"),
     axis.line = element_blank(),
     axis.ticks = element_blank()) +
-  labs(x = "Cover Change")
+  labs(x = "Cover Change", y = "Initial Cover")
+
+# Reorder the levels of initial land cover column
+time_effect_no_year_interaction <- time_effect_no_year_interaction |>
+  mutate(intial_cover = factor(intial_cover, 
+                               levels = c("Urban Fabric",
+                                          "Transitional Woodland Shrub",
+                                          "Sparse Vegetation",
+                                          "Moors, Heathland & Grassland",
+                                          "Forests",
+                                          "Complex Agriculture",
+                                          "Agriculture & Vegetation")))
+# Define breaks for the time legend
+legend_breaks_time <- c(min(time_effect_no_year_interaction$Significant, na.rm = TRUE), 
+                   0, -0.4, -0.8,
+                   max(time_effect_no_year_interaction$Significant, na.rm = TRUE))
+
+
+# Plot heatmap for time period effects
+time <- ggplot(time_effect_no_year_interaction, 
+               aes(x = cover_change, y = intial_cover)) +
+  geom_tile(aes(fill = Significant), color = "black", size = 0.5) +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", 
+                       midpoint = 0, na.value = "grey90", name = "Estimate", 
+                       breaks = legend_breaks_time, 
+                       labels = scales::label_number()) +
+  scale_x_discrete(position = "top") +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(hjust = 0, size = 14),
+    axis.text.y = element_text(size = 14),
+    axis.title.x = element_text(size = 14, face = "bold"),
+    axis.title.y = element_text(size = 14, face = "bold"),
+    axis.line = element_blank(),
+    axis.ticks = element_blank()) +
+  labs(x = "Time Period", y = "Initial Cover")
+
+# Combine the two plots
+cover_time_combined_plot <- plot_grid(a, time,
+                           ncol = 1, labels = c("a)", "b)"))
+
+# Save to file as .png
+ggsave(here("figures", "model_outputs_Figure4.png"),
+       width=20, height=13)
 
 # 5. PLOT EFFECTS WITH INTERACTION WITH 2006-2012 ------------------------------
 
