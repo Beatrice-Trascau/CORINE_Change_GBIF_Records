@@ -2753,3 +2753,65 @@ model6.1 <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_b
 save(model6.1, file = here::here("data", "models", "model6.1.RData"))
 
 # END OF SCRIPT ----------------------------------------------------------------
+
+# Code from when I was trialing how to plot the heatmap with the geom_points on top of oit
+# Create a named vector for label mapping
+label_mapping <- c(
+  "Agriculture & Vegetation" = "ASNV",
+  "Complex Agriculture" = "CA",
+  "Forests" = "Forests",
+  "Moors, Heathland & Grassland" = "MHG",
+  "Sparse Vegetation" = "SV",
+  "Transitional Woodland Shrub" = "TWS",
+  "Urban Fabric" = "UF"
+)
+
+# Calculate the overall y-axis limits for consistency across subplots
+y_min <- min(cover_effect_no_year_interaction$Estimate - 
+               cover_effect_no_year_interaction$`Std. Error`, na.rm = TRUE)
+y_max <- max(cover_effect_no_year_interaction$Estimate + 
+               cover_effect_no_year_interaction$`Std. Error`, na.rm = TRUE)
+
+# Update factor levels with new labels
+new_order <- c("ASNV", "CA", "Forests", "MHG", "SV", "TWS", "UF")
+
+# Create base plot with faceting
+a <- ggplot(cover_effect_no_year_interaction, 
+            aes(x = 1, y = Estimate)) +
+  # Create facets for each combination
+  facet_grid(intial_cover ~ cover_change, switch = "y") +
+  # Add horizontal line at y = 0
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  # Add points and error bars for significant estimates
+  geom_pointrange(data = cover_effect_no_year_interaction %>% 
+                    filter(!is.na(Significant) & !is_same),
+                  aes(ymin = Estimate - Std..Error,
+                      ymax = Estimate + Std..Error,
+                      color = Significant),
+                  size = 1) +
+  # Add black background for same initial/cover change
+  geom_rect(data = cover_effect_no_year_interaction %>% filter(is_same),
+            aes(xmin = -Inf, xmax = Inf, 
+                ymin = -Inf, ymax = Inf),
+            fill = "black") +
+  # Custom scale for point colors
+  scale_color_gradient2(low = "blue", mid = "white", high = "red",
+                        midpoint = 0, na.value = "grey90", name = "Estimate",
+                        breaks = legend_breaks_cover,
+                        labels = scales::label_number()) +
+  # Set consistent y-axis limits
+  coord_cartesian(ylim = c(y_min, y_max)) +
+  # Theme customization
+  theme_bw() +
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    panel.grid = element_blank(),
+    strip.text.x = element_text(angle = 15, hjust = 0, size = 14),
+    strip.text.y.left = element_text(size = 14, angle = 0, hjust = 1),
+    strip.background = element_blank(),
+    panel.border = element_rect(color = "black", fill = NA)) +
+  labs(y = "Estimate")
+
+a
