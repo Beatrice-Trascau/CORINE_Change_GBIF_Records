@@ -162,9 +162,23 @@ a <- ggplot(cover_effect_no_year_interaction,
     axis.ticks = element_blank()) +
   labs(x = "Cover Change", y = "Initial Cover")
 
+# Create a label mapping
+label_mapping <- c("Agriculture & Vegetation" = "ASNV",
+                   "Complex Agriculture" = "CA",
+                   "Forests" = "Forests",
+                   "Moors, Heathland & Grassland" = "MHG",
+                   "Sparse Vegetation" = "SV",
+                   "Transitional Woodland Shrub" = "TWS",
+                   "Urban Fabric" = "UF")
+
 # Reorder the levels of initial land cover column
 time_effect_no_year_interaction <- time_effect_no_year_interaction |>
   mutate(intial_cover = factor(label_mapping[as.character(intial_cover)]))
+
+time_effect_no_year_interaction <- time_effect_no_year_interaction1 |>
+  mutate(intial_cover = factor(intial_cover,
+                               levels = c("UF", "TWS", "SV", "MHG",
+                                          "Forests", "CA", "ASNV")))
 
 # Define breaks for the time legend
 legend_breaks_time <- c(min(time_effect_no_year_interaction$Significant, na.rm = TRUE), 
@@ -201,21 +215,13 @@ ggsave(here("figures", "model_outputs_Figure4.5.png"),
 
 # 5. PLOT EFFECTS AS POINTS WITH ERROR BARS ------------------------------------
 
-# Create a label mapping
-label_mapping <- c("Agriculture & Vegetation" = "ASNV",
-  "Complex Agriculture" = "CA",
-  "Forests" = "Forests",
-  "Moors, Heathland & Grassland" = "MHG",
-  "Sparse Vegetation" = "SV",
-  "Transitional Woodland Shrub" = "TWS",
-  "Urban Fabric" = "UF")
-
 # Create a new order for the factors
 new_order <- c("UF", "TWS", "SV", "MHG", "Forests", "CA", "ASNV")
 
 # Change df to fit the plot
 cover_points <- cover_effect_no_year_interaction |>
-  mutate(intial_cover = factor(label_mapping[as.character(intial_cover)], levels = rev(new_order)),
+  mutate(intial_cover = factor(label_mapping[as.character(intial_cover)], 
+                               levels = rev(new_order)),
     cover_change = factor(label_mapping[as.character(cover_change)]),
     plot_type = case_when(
       is_same ~ "same",
