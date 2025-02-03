@@ -96,7 +96,7 @@ norway_corine_status_stack <- crop_mask_to_norway(corine_status_stack,
                                                   norway_corine_projection)
 
 # Save the cropped layers 
-terra::writeRaster(norway_corine_change_stack, 
+terra::writeRaster(norway_corine_change_stack,
                    here("data", "derived_data", "norway_corine_change_stack.tif"))
 terra::writeRaster(norway_corine_status_stack, 
                    here("data", "derived_data", "norway_corine_status_stack.tif"), 
