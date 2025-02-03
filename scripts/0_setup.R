@@ -55,15 +55,8 @@ read_rasters <- function(filenames, dir = here("data/raw_data")) {
 
 # 4. FUNCTION TO CROP AND MASK RASTERS TO NORWAY -------------------------------
 
-modify_class_values <- function(raster_stack, class_modifications) {
-  modified_stack <- raster_stack
-  for (mod in class_modifications) {
-    modified_stack <- app(modified_stack, fun = function(x) {
-      x[x %in% mod$from] <- mod$to
-      return(x)
-    })
-  }
-  return(modified_stack)
+crop_mask_to_norway <- function(raster_stack, norway_shape) {
+  return(crop(raster_stack, norway_shape, mask = TRUE))
 }
 
 # 5. FUNCTION TO MODIFY CLASSES IN RASTERS -------------------------------------
