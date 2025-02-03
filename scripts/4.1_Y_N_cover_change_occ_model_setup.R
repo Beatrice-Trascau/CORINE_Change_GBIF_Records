@@ -286,4 +286,54 @@ save(model1.5_SSB, file = here::here("data", "models", "model1.5_SSB.RData"))
 # Save model output to file to save time next time
 # save(model1.7_SSB, file = here::here("data", "models", "model1.7_SSB.RData"))
 
+# 6. EXPLORATORY FIGURES OF DF USED IN MODELS ----------------------------------
+
+## 6.1. Violin plot with log-transformed values --------------------------------
+
+p1 <- ggplot(occ_y_n_cover_change_before_after_for_modell, 
+             aes(x = time_period, y = ocurrences_after, 
+                 fill = cover_change)) +
+  geom_violin(position = position_dodge(width = 0.7)) +
+  # Add points with transparency (alpha) and slight horizontal jitter
+  geom_jitter(position = position_jitterdodge(
+    jitter.width = 0.2,  # Fix amount of horizontal jitter
+    dodge.width = 0.7),  # Match dodge with violins
+    alpha = 0.2,         # Fix transparency
+    size = 1) +          # Fix point size
+  scale_y_log10() +
+  scale_fill_manual(values = c("N" = "#66c2a5", "Y" = "#fc8d62")) +
+  labs(x = "Time Period",
+       y = "Number of Occurrences (log)",
+       fill = "Cover Change") +
+  theme_classic() +
+  theme(axis.text.x = element_text(hjust = 1))
+
+# Save figure
+ggsave(here("figures", "occurrences_in_Y_N_cover_change_FigureS1.png"),
+       width=17, height=13)
+
+
+## 6.2. Violin plot with original values and log-transformed values ------------
+
+# Violin plot with the original data
+p2 <- ggplot(occ_y_n_cover_change_before_after_for_modell, 
+             aes(x = time_period, y = ocurrences_after, 
+                     fill = cover_change)) +
+  geom_violin(position = position_dodge(width = 0.7)) +
+  scale_fill_manual(values = c("N" = "#66c2a5", "Y" = "#fc8d62")) +
+  coord_cartesian(ylim = c(0, 100)) +  # Set the y-axis limit to 100
+  labs(x = "Time Period",
+       y = "Number of Occurrences",
+       title = "Zoomed to values < 100") +
+  theme_classic() +
+  theme(axis.text.x = element_text(hjust = 1))
+
+# Combine the two plots
+plot_grid(p1, p2, labels = c('a)', 'b)'))
+
+# Save figure
+ggsave(here("figures", "occurrences_in_Y_N_cover_change_FigureS2.png"),
+       width=17, height=13)
+
+
 # END OF SCRIPT ----------------------------------------------------------------
