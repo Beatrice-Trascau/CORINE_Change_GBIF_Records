@@ -75,9 +75,9 @@ for (i in c(1:6)) {
 
 ## 2.2. Plot map for 2000-2006 -------------------------------------------------
 change_2000.2006 <- ggplot()+
-  geom_sf(data = norway_sf, fill = "lightgrey", color = "black")+
+  geom_sf(data = norway_sf, fill = "#F5F5F5", color = "black")+
   geom_point(data = change_2000.2006_2000,
-             aes(x = x, y = y), color = "#800080", size = 1)+
+             aes(x = x, y = y), color = "#800080", size = 1, alpha = 0.05)+
   coord_sf(ylim = c(58, 72)) +
   labs(x = "Longitude", y = "Latitude") +
   annotation_north_arrow(location = "br", which_north = "true",
@@ -113,9 +113,9 @@ plots <- list()
 # Loop through years to create plots
 for (i in c(1,2)) {
   plots[[plot_vars[i]]] <- ggplot() +
-    geom_sf(data = norway_sf, fill = "lightgrey", color = "black") +
+    geom_sf(data = norway_sf, fill = "#F5F5F5", color = "black") +
     geom_point(data = get(data_vars[i]),
-               aes(x = x, y = y), color = "#800080", size = 1) +
+               aes(x = x, y = y), color = "#800080", size = 1, alpha = 0.05) +
     coord_sf(ylim = c(58, 72)) +
     labs(x = "Longitude", y = "Latitude") +
     theme_classic() +
@@ -134,8 +134,8 @@ for (i in c(1,2)) {
 }
 
 # Arrange in a single grid
-all_years_changes <- plot_grid(change_2000.2006, change_2006.2012, 
-                               change_2012.2018, 
+all_years_changes <- plot_grid(change_2000.2006, plots[[1]], 
+                               plots[[2]], 
                                labels = c("a)", "b)", "c)" ), 
                                label_size = 12,
                                ncol = 3, nrow = 1,
