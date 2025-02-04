@@ -22,6 +22,11 @@ freq_table$percentage <- round((freq_table$count / sum(freq_table$count)) * 100,
 # View results
 print(freq_table)
 
+# Create better table
+freq_table |>
+  kable(col.names = c("layer", "clc value", "pixel count", "percentage")) |>
+  kable_styling(bootstrap_options = c("striped", "hover"))
+
 # Save frequency table
 write.csv(freq_table, here("data", "derived_data",
                            "norway_2018_pixel_percentages.csv"), 
