@@ -649,4 +649,20 @@ ggsave(here("figures", "cover_transitions_alluvials_Figure4.png"),
 ggsave(here("figures", "cover_transitions_alluvials_Figure4.pdf"),
        width=20, height=13)
 
+# 5. EXTRACT TABLE WITH AMOUNT OF LAND FOR EACH TRANSITION IN KM2 --------------
+
+# Create table for all the transitions
+transition_quantities <- create_transition_table(corine_change_meaning)
+
+# Check data
+head(transition_table)
+
+# Write to file
+write.csv(transition_quantities, here("data", "derived_data", 
+                                      "land_cover_transitions_quantity_km2.csv"),
+          row.names = FALSE)
+
+write_xlsx(transition_quantities, here("data", "derived_data", 
+                                       "land_cover_transitions_quantity_km2.xlsx"))
+
 # END OF SCRIPT ----------------------------------------------------------------
