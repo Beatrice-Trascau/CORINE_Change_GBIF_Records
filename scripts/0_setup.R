@@ -24,7 +24,7 @@ package_vec <- c("here", "terra", "sf", "geodata", "mapview",
                  "tidyterra", "ggspatial", "htmlwidgets",
                  "htmltools", "patchwork", "webshot2",
                  "rgbif", "CoordinateCleaner", "DHARMa",
-                 "writexl", "bbmle") # specify packages
+                 "writexl", "bbmle", "kableExtra") # specify packages
 
 # Execute the function
 sapply(package_vec, install_load_package)
