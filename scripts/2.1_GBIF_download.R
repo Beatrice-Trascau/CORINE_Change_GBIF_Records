@@ -32,7 +32,7 @@ occ_download_wait(download_key)
 # 3. IMPORT GBIF DOWNLOAD AND SAVE ---------------------------------------------
 
 # Import data
-occurrence <- occ_download_get(download_key) %>%
+occurrence <- occ_download_get(download_key) |>
   occ_download_import()
 
 # Save to file
