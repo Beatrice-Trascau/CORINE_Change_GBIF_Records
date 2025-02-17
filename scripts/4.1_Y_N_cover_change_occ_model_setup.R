@@ -29,7 +29,7 @@ occ_SSB_land_cover <- occ_SSB_land_cover |>
 
 # Prepare data for the period 1997-2000
 occ_df_before_2000.2006 <- occ_SSB_land_cover |>
-  select(V1, gbifID, year, species, land_cover2000, land_cover2006, 
+  select(gbifID, year, species, land_cover2000, land_cover2006, 
          SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2000) & !is.na(land_cover2006)) |>
   filter(year >= 1997 & year <= 2000) |>
@@ -53,7 +53,7 @@ occ_df_before_2000.2006_records <- occ_df_before_2000.2006 |>
 
 # Prepare data for the period 2006-2009
 occ_df_after_2000.2006 <- occ_SSB_land_cover |>
-  select(V1, gbifID, year, species, land_cover2000, land_cover2006, 
+  select(gbifID, year, species, land_cover2000, land_cover2006, 
          SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2000) & !is.na(land_cover2006)) |>
   filter(year >= 2006 & year <= 2009) |>
@@ -79,7 +79,7 @@ occ_df_after_2000.2006_records <- occ_df_after_2000.2006 |>
 
 # Prepare data for the period 2003-2006
 occ_df_before_2006.2012 <- occ_SSB_land_cover |>
-  select(V1, gbifID, year, species, land_cover2006, land_cover2012, 
+  select(gbifID, year, species, land_cover2006, land_cover2012, 
          SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2006) & !is.na(land_cover2012)) |>
   filter(year >= 2003 & year <= 2006) |>
@@ -103,7 +103,7 @@ occ_df_before_2006.2012_records <- occ_df_before_2006.2012 |>
 
 # Prepare data for the period 2012-2015
 occ_df_after_2006.2012 <- occ_SSB_land_cover |>
-  select(V1, gbifID, year, species, land_cover2006, land_cover2012, 
+  select(gbifID, year, species, land_cover2006, land_cover2012, 
          SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2006) & !is.na(land_cover2012)) |>
   filter(year >= 2012 & year <= 2015) |>
@@ -129,7 +129,7 @@ occ_df_after_2006.2012_records <- occ_df_after_2006.2012 |>
 
 # Prepare data for the period 2009-2012
 occ_df_before_2012.2018 <- occ_SSB_land_cover |>
-  select(V1, gbifID, year, species, land_cover2012, land_cover2018, 
+  select(gbifID, year, species, land_cover2012, land_cover2018, 
          SSBID, cell_ID, NAME_2) |>
   filter(!is.na(land_cover2012) & !is.na(land_cover2018)) |>
   filter(year >= 2009 & year <= 2012) |>
@@ -153,9 +153,8 @@ occ_df_before_2012.2018_records <- occ_df_before_2012.2018 |>
 
 # Prepare data for the period 2015-2018
 occ_df_after_2012.2018 <- occ_SSB_land_cover |>
-  select(V1, gbifID, year, species, land_cover2012, land_cover2018, 
+  select(gbifID, year, species, land_cover2012, land_cover2018, 
          SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2012) & !is.na(land_cover2018)) |>
   filter(year >= 2015 & year <= 2018) |>
   mutate(cover_change = if_else(land_cover2012 == land_cover2018, "N", "Y"))
 
@@ -203,124 +202,65 @@ occ_y_n_cover_change_before_after_for_modell <- occ_df_before_after |>
          SSBID = as.factor(SSBID))
 
 # Write dataframe to file
-save(occ_y_n_cover_change_before_after_for_modell, 
+save(occ_y_n_cover_change_before_after_for_modell,
      file = here::here("data", "derived_data",
                        "occ_y_n_cover_change_before_after_for_modell.rda"))
 
-# 3. MODEL 1: OCC ~ COVER CHANGE -----------------------------------------------
+# 3. MODEL 1: OCC ~ COVER CHANGE + OFFSET --------------------------------------
 
-## 3.1. Negative binomial with glmmTMB, family nbinom 1, by SSB ID -------------
+## 3.1. N binomial glmmTMB, nbinom2, SSBID on data subset ----------------------
 
 # Run negative binomial model
-# model1.1_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
-#                            family = nbinom1, 
-#                            data = occ_y_n_cover_change_after_records_for_model)
+YN_model1_SSB_interaction <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.001)) + (1 | SSBID),
+                                     family = nbinom2,
+                                     data = occ_y_n_cover_change_before_after_for_modell)
 
 # Save model output to file to save time next time
-# save(model1.1_SSB, file = here::here("data", "models", "model1.1_SSB.RData"))
+save(YN_model1_SSB_interaction, file = here::here("data", "models", 
+                                                  "YN_model1_SSB_interaction.RData"))
 
-## 3.2. Negative binomial with glmmTMB, family nbinom 1, by Municipality -------
+## 3.2. N binomial glmmTMB, nbinom2, SSBID, no interactio  ---------------------
 
 # Run negative binomial model
-# model1.2_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|municipality),
-#                                     family = nbinom1, 
-#                                     data = occ_y_n_cover_change_after_records_for_model)
+YN_model2_SSB_no_interaction <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.001)) + (1 | SSBID),
+                                        family = nbinom2,
+                                        data = occ_y_n_cover_change_before_after_for_modell)
 
 # Save model output to file to save time next time
-# save(model1.2_municipality, file = here::here("data", "models", 
-#                                                  "model1.2_municipality.RData"))
+save(YN_model2_SSB_no_interaction, file = here::here("data", "models", 
+                                                     "YN_model2_SSB_no_interaction.RData"))
 
-## 3.3. Negative binomial with glmmTMB, family nbinom 2, by SSB ID -------------
+## 3.3. Compare models ---------------------------------------------------------
 
-# Run negative binomial model
-# model1.3_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
-#                            family = nbinom2, 
-#                            data = occ_y_n_cover_change_after_records_for_model)
+# Get AIC table
+AICctab(YN_model1_SSB_interaction, YN_model2_SSB_no_interaction, base = TRUE)
+#deltaAIC = 
 
-# Save model output to file to save time next time
-# save(model1.3_SSB, file = here::here("data", "models", "model1.3_SSB.RData"))
+# 4. CHECK MARGINAL VALUE IMPACT -----------------------------------------------
 
-## 3.4. Negative binomial with glmmTMB, family nbinom 2, by Municipality -------
+## 4.1 Model with 0.1 offset ---------------------------------------------------
 
 # Run negative binomial model
-# model1.4_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|municipality),
-#                                     family = nbinom2, 
-#                                     data = occ_y_n_cover_change_after_records_for_model)
-
-# Save model output to file to save time next time
-# save(model1.4_municipality, file = here::here("data", "models", 
-#                                                  "model1.4_municipality.RData"))
-
-## 3.3. N binomial with glmmTMB, family nbinom 2, SSB ID, no interaction ------- 
-
-# Run negative binomial model
-model1_additional_SSB_no_interaction <- glmmTMB(ocurrences_after ~ cover_change + time_period + (1|SSBID),
+YN_model3_SSB_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
                                                 family = nbinom2,
-                                                data = occ_y_n_cover_change_after_records_for_model)
+                                                data = occ_y_n_cover_change_before_after_for_modell)
 
 # Save model output to file to save time next time
-save(model1_additional_SSB_no_interaction, file = here::here("data", "models", 
-                                                             "model1_additional_SSB_no_interaction.RData"))
+save(YN_model3_SSB_interaction_0.1_offset, file = "YN_model3_SSB_interaction_0.1_offset.RData")
 
-# 4. MODEL 1: OCC ~ COVER CHANGE + OFFSET --------------------------------------
-
-## 4.1. N binomial glmmTMB, nbinom2, SSBID on data subset ----------------------
+## 4.2 Model with 0.01 offset --------------------------------------------------
 
 # Run negative binomial model
-# model1.5_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.0001)) + (1 | SSBID),
-#                        family = nbinom2,
-#                        data = occ_y_n_cover_change_before_after_for_modell)
+YN_model4_SSB_interaction_0.01_offset <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.01)) + (1 | SSBID),
+                                                 family = nbinom2,
+                                                 data = occ_y_n_cover_change_before_after_for_modell)
 
 # Save model output to file to save time next time
-# save(model1.5_SSB, file = here::here("data", "models", "model1.5_SSB.RData"))
+save(YN_model4_SSB_interaction_0.01_offset, file = "YN_model4_SSB_interaction_0.01_offset.RData")
 
-## 4.2. N binomial glmmTMB, nbinom2, by Municipality  --------------------------
+# 5. EXPLORATORY FIGURES OF DF USED IN MODELS ----------------------------------
 
-# Run negative binomial model
-# model1.6_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(log(ocurrences_before + 0.0001)) + (1 | municipality),
-#                         family = nbinom2,
-#                         data = occ_y_n_cover_change_before_after_for_modell)
-
-# Save model output to file to save time next time
-# save(model1.6_municipality, file = here::here("data", "models", 
-#                                               "model1.6_municipality.RData"))
-
-## 4.3. N binomial glmmTMB, nbinom2, SSBID, no interactio  ---------------------
-
-# Run negative binomial model
-model1_additiona_offset_SSB_no_interaction <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.0001)) + (1 | SSBID),
-                                                      family = nbinom2,
-                                                      data = occ_y_n_cover_change_before_after_for_modell)
-
-# Save model output to file to save time next time
-save(model1_additiona_offset_SSB_no_interaction, file = here::here("data", "models", 
-                                                                   "model1_additiona_offset_SSB_no_interaction.RData"))
-
-# 5. ADDITIONAL MODELS ---------------------------------------------------------
-
-## 5.1. Add zero inflation -----------------------------------------------------
-
-# Run negative binomial model
-# model1.7_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
-#                         family = nbinom1(link = "log"),
-#                         data = occ_y_n_cover_change_after_records_for_model)
-
-# Save model output to file to save time next time
-# save(model1.7_SSB, file = here::here("data", "models", "model1.7_SSB.RData"))
-
-# 6. COMPARE MODELS ------------------------------------------------------------
-
-# No offset
-AICtab(model1.3_SSB, model1_additional_SSB_no_interaction, base = TRUE)
-#deltaAIC = AIC(model1.3) - AIC(model1_additional_SSB_no_interaction) = 263439653
-
-# Offset
-AICctab(model1.5_SSB, model1_additiona_offset_SSB_no_interaction, base = TRUE)
-#deltaAIC = AIC(model1_additiona_offset_SSB_no_interaction ) - AIC(model1.5_SSB) = 43388.2
-
-# 6. EXPLORATORY FIGURES OF DF USED IN MODELS ----------------------------------
-
-## 6.1. Violin plot with log-transformed values --------------------------------
+## 5.1. Violin plot with log-transformed values --------------------------------
 
 p1 <- ggplot(occ_y_n_cover_change_before_after_for_modell, 
              aes(x = time_period, y = ocurrences_after, 
@@ -345,12 +285,12 @@ ggsave(here("figures", "occurrences_in_Y_N_cover_change_FigureS1.png"),
        width=17, height=13)
 
 
-## 6.2. Violin plot with original values and log-transformed values ------------
+## 5.2. Violin plot with original values and log-transformed values ------------
 
 # Violin plot with the original data
 p2 <- ggplot(occ_y_n_cover_change_before_after_for_modell, 
              aes(x = time_period, y = ocurrences_after, 
-                     fill = cover_change)) +
+                 fill = cover_change)) +
   geom_violin(position = position_dodge(width = 0.7)) +
   scale_fill_manual(values = c("N" = "#66c2a5", "Y" = "#fc8d62")) +
   coord_cartesian(ylim = c(0, 100)) +  # Set the y-axis limit to 100
@@ -366,6 +306,5 @@ plot_grid(p1, p2, labels = c('a)', 'b)'))
 # Save figure
 ggsave(here("figures", "occurrences_in_Y_N_cover_change_FigureS2.png"),
        width=17, height=13)
-
 
 # END OF SCRIPT ----------------------------------------------------------------
