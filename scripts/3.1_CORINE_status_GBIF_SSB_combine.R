@@ -7,18 +7,6 @@
 
 # 1. LOAD DATA -----------------------------------------------------------------
 
-## 1.1. Download data (if needed) ----------------------------------------------
-
-# CORINE Status Layers
-download_file("https://ntnu.box.com/shared/static/97g9x4839ij4lnlldji2wh8e0e2lm5bf.tif", 
-              "data/derived_data/norway_corine_change_modified_stack.tif")
-
-# SSB Grid
-download_file("https://ntnu.box.com/shared/static/pjb2qr9aptugu7awlqmomx2o9d40sdhp.zip", 
-              "data/raw_data/norway_corine_change_modified_stack.tif")
-
-## 1.2. Read in data -----------------------------------------------------------
-
 # CORINE Status Layers
 norway_corine_status_modified_stack <- rast(here("data", "derived_data",
                                                  "norway_corine_status_modified_stack.tif"))
@@ -131,7 +119,11 @@ occurrence_municipalities_df <- bind_cols(occurrence_municipalities_df,
 colnames(occurrence_municipalities_df)
 
 # Save to file
-save(occurrence_municipalities_df, file = here::here("data", "derived_data",
-                                          "occurrences_SSB_municipalities_land_cover.rda"))
+# save(occurrence_municipalities_df, file = here::here("data", "derived_data",
+#                                           "occurrences_SSB_municipalities_land_cover.rda"))
+
+save(occurrence_municipalities_df, 
+     file = here::here("data", "derived_data",
+                       "occurrences_SSB_municipalities_land_cover_extra_info_Jan2025.rda"))
 
 # END OF SCRIPT ----------------------------------------------------------------
