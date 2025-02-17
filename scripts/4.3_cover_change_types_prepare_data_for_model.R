@@ -1,6 +1,6 @@
 ##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
-# 4.3_cover_change_types_occ_model_simple_setup
+# 4.3_cover_change_types_prepare_data_for_model
 # This script contains code which prepares the cover change types data for
 # modelling
 ##----------------------------------------------------------------------------##
