@@ -92,9 +92,9 @@ occ_df_after_2000.2006 <- occ_SSB_land_cover |>
   mutate(cover_change = land_cover2000 - land_cover2006) |>
   mutate(cover_change = case_when(
     cover_change %in% c(79, 102, 249, 379, 589, 710,
-                         23, 147, 170, 608, 631, -102,
-                         -79, 487, 510, 277, 300, -340,
-                         -331, -461, -130) ~ "Intensification",
+                        23, 147, 170, 608, 631, -102,
+                        -79, 487, 510, 277, 300, -340,
+                        -331, -461, -130) ~ "Intensification",
     cover_change %in% c(-249, -379, -589, -170, -300, -510,
                         -147, -277, -487, 130, -210, 461, 331,
                         121, 340, -23, -710, -121, -608) ~ "Extensification",
@@ -299,18 +299,18 @@ save(occ_intens_extens_before_after_for_model,
 #                                                       "model2.2_municipality.RData"))
 ## 3.3. N binomial with glmmTMB, nbiom2, SSBID ---------------------------------
 
-# Relevel cover_change to have 'urban_urban' as the reference
+# Relevel cover_change to have 'No_change' as the reference
 occ_intens_extens_before_after_for_model$cover_change <- as.factor(occ_intens_extens_before_after_for_model$cover_change)
 occ_intens_extens_before_after_for_model$cover_change <- relevel(occ_intens_extens_before_after_for_model$cover_change, 
                                                                  ref = "No_change")
 
 # Model 2.3
-model2.3_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
-                                          family = nbinom2, 
-                                         data = occ_intens_extens_before_after_for_model)
+# model2.3_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
+#                                           family = nbinom2, 
+#                                          data = occ_intens_extens_before_after_for_model)
 
 # Save output to file
-save(model2.3_SSB, file = here::here("data", "models", "model2.3_SSB.RData"))
+#save(model2.3_SSB, file = here::here("data", "models", "model2.3_SSB.RData"))
 
 ## 3.4. N binomial with glmmTMB, nbiom2, Municipality --------------------------
 
@@ -322,17 +322,29 @@ save(model2.3_SSB, file = here::here("data", "models", "model2.3_SSB.RData"))
 # Save output to file
 # save(model2.4_SSB, file = here::here("data", "models","model2.4_SSB.RData"))
 
+## 3.5. N binomial with glmmTMB, nbiom2, SSBID, no interaction -----------------
+
+# Model 2.3 - no interaction
+model2.3_additional_no_interaction_SSB <- glmmTMB(ocurrences_after ~ cover_change + time_period + (1|SSBID),
+                                                  family = nbinom2,
+                                                  data = occ_intens_extens_before_after_for_model)
+
+# Save output to file
+save(model2.3_additional_no_interaction_SSB, file = here::here("data", "models", 
+                                                               "model2.3_additional_no_interaction_SSB.RData"))
+
+
 # 4. MODEL 2: OCC ~ COVER CHANGE + OFFSET --------------------------------------
 
 ## 4.1. N binomial glmmTMB, nbinom 2, SSBID ------------------------------------
 
 # Run model
-model2.5_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.0001)) + (1 | SSBID),
-                    family = nbinom2,
-                    data = occ_intens_extens_before_after_for_model)
+# model2.5_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.0001)) + (1 | SSBID),
+#                     family = nbinom2,
+#                     data = occ_intens_extens_before_after_for_model)
 
 # Save model output to file to save time next time
-save(model2.5_SSB, file = here::here("data", "models", "model2.5_SSB.RData"))
+#save(model2.5_SSB, file = here::here("data", "models", "model2.5_SSB.RData"))
 
 ## 4.2. N binomial glmmTMB, nbinom 2, Municipality -----------------------------
 
@@ -344,5 +356,26 @@ save(model2.5_SSB, file = here::here("data", "models", "model2.5_SSB.RData"))
 # Save model output to file to save time next time
 # save(model2.6_municipality, file = here::here("data", "models", 
 #                                               "model2.6_municipality.RData"))
+
+## 4.3. N binomial glmmTMB, nbinom 2, SSBID, no interaction --------------------
+
+# Run model
+model2.5_additional_no_interaction_SSB <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.0001)) + (1 | SSBID),
+                                                  family = nbinom2,
+                                                  data = occ_intens_extens_before_after_for_model)
+
+# Save model output to file to save time next time
+save(model2.5_additional_no_interaction_SSB, file = here::here("data", "models", 
+                                                               "model2.5_additional_no_interaction_SSB.RData"))
+
+# 5. COMPARE MODELS ------------------------------------------------------------
+
+# No offset
+AICtab(model2.3_SSB, model2.3_additional_no_interaction_SSB, base = TRUE)
+#deltaAIC = AIC(model2.3_additional_no_interaction_SSB) - AIC(model2.3_SSB) = 919.8
+
+# Offset
+AICctab(model2.5_SSB, model2.5_additional_no_interaction_SSB, base = TRUE)
+#deltaAIC = AIC(model2.5_additional_no_interaction_SSB ) - AIC(model2.5_SSB) = 25614.9
 
 # END OF SCRIPT ----------------------------------------------------------------
