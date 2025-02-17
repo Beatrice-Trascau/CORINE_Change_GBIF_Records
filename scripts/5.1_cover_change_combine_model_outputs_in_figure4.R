@@ -175,7 +175,7 @@ label_mapping <- c("Agriculture & Vegetation" = "ASNV",
 time_effect_no_year_interaction <- time_effect_no_year_interaction |>
   mutate(intial_cover = factor(label_mapping[as.character(intial_cover)]))
 
-time_effect_no_year_interaction <- time_effect_no_year_interaction1 |>
+time_effect_no_year_interaction <- time_effect_no_year_interaction |>
   mutate(intial_cover = factor(intial_cover,
                                levels = c("UF", "TWS", "SV", "MHG",
                                           "Forests", "CA", "ASNV")))
@@ -234,9 +234,9 @@ significant_results <- cover_points |>
   filter(!is.na(Significant))
 
 # Calculate ymin and ymax
-y_min <- min(significant_data$Estimate - significant_data$std_error, 
+y_min <- min(significant_results$Estimate - significant_results$std_error, 
              na.rm = TRUE)
-y_max <- max(significant_data$Estimate + significant_data$std_error, 
+y_max <- max(significant_results$Estimate + significant_results$std_error, 
              na.rm = TRUE)
 
 # Create a df with break points for y axis
@@ -247,58 +247,63 @@ y_breaks_df <- cover_points |>
 
 # Plot "heatmap" with points
 cover_points_plot <- ggplot() +
-  # Create facets for each combination of initial land cover and cover change
+  # Create facets for each combination
   facet_grid(intial_cover ~ cover_change, switch = "y") +
-  # Add black background where initial_cover = cover_change
-  geom_rect(data = cover_effect_no_year_interaction |> 
-              filter(plot_type == "same"), 
+  # Add colored background for significant plots and black for same initial/cover change
+  geom_rect(data = cover_points %>% filter(plot_type == "significant"), 
+            aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, fill = Significant)) +
+  geom_rect(data = cover_points %>% filter(plot_type == "same"), 
             aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf), 
             fill = "black") +
-  # Add y-axis text for significant results
+  # Add y-axis text for significant results with adjusted position
   geom_text(data = y_breaks_df,
             aes(x = 0.4, y = y_breaks, label = format(y_breaks, digits = 2)),
             hjust = 1,
             size = 3) +
   # Add elements only for significant plots
-  geom_hline(data = cover_effect_no_year_interaction |>
-               filter(plot_type == "significant"), 
+  geom_hline(data = cover_points %>% filter(plot_type == "significant"), 
              aes(yintercept = 0), 
              linetype = "dotted") +
-  # Add error bars and points
-  geom_errorbar(data = cover_effect_no_year_interaction |>
-                  filter(plot_type == "significant"),
-                aes(x = 0.5, ymin = Estimate - std_error, 
-                    ymax = Estimate + std_error, color = Significant),
-                width = 0.2) +
-  geom_point(data = cover_effect_no_year_interaction |>
-               filter(plot_type == "significant"),
-             aes(x = 0.5, y = Estimate, color = Significant),
-             size = 2) +
-  # Custom scale for point colors
-  scale_color_gradient2(low = "#0072B2", mid = "white", high = "red", 
-                        midpoint = 0, na.value = "grey90", 
-                        name = "Estimate", 
-                        breaks = legend_breaks_cover,
-                        labels = scales::label_number()) +
+  # Add error bars and points (now in black)
+  geom_errorbar(data = cover_points %>% filter(plot_type == "significant"),
+                aes(x = 0.5, ymin = Estimate - std_error, ymax = Estimate + std_error),
+                width = 0.05,
+                color = "black") +
+  geom_point(data = cover_points %>% filter(plot_type == "significant"),
+             aes(x = 0.5, y = Estimate),
+             size = 2,
+             color = "black") +
+  # Custom scale for fill colors (previously was for point colors)
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", 
+                       midpoint = 0, na.value = "grey90", 
+                       name = "Estimate", 
+                       breaks = legend_breaks_cover,
+                       labels = scales::label_number()) +
   # Set consistent y-axis limits
   coord_cartesian(ylim = c(y_min, y_max)) +
   # Theme customization
-  theme_classic() +
-  theme(axis.text.x = element_blank(),
+  theme_bw() +
+  theme(
+    axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
-    axis.title.x = element_text(size = 12, face = "bold"),
+    axis.title.x = element_text(size = 14, face = "bold"),
     panel.grid = element_blank(),
-    strip.text.x = element_text(hjust = 0, size = 12),
-    strip.text.y.left = element_text(size = 14, hjust = 1),
+    strip.text.x = element_text(angle = 15, hjust = 0, size = 14),
+    strip.text.y.left = element_text(size = 14, angle = 0, hjust = 1),
     strip.background = element_blank(),
     panel.border = element_rect(color = "black", fill = NA),
-    axis.text.y = element_blank(),  
-    axis.ticks.y = element_blank(), 
+    axis.text.y = element_blank(),  # Remove default y-axis text
+    axis.ticks.y = element_blank(),  # Remove default y-axis ticks
     axis.title.y = element_text(size = 14, face = "bold"),
-    axis.line = element_blank()) +
-  labs(y = "Initial Cover",
-       x = "Cover Change") +
-  scale_x_continuous(position = "top")
+    axis.line = element_blank()
+  ) +
+  labs(y = "Estimate",
+       x = "Cover change") +  # Added x-axis label
+  scale_x_continuous(position = "top")  # Move x-axis to top
+
+# Save figure
+ggsave(here("figures", "model_outputs_Figure4.5a.png"),
+       width=20, height=13)
 
 # Combine the two plots
 cover_time_point_plot <- plot_grid(cover_points_plot, time,
