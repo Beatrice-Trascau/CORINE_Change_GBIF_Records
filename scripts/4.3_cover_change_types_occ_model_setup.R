@@ -1,8 +1,8 @@
 ##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
 # 4.3_cover_change_types_occ_model_simple_setup
-# This script contains code which runs the simple models looking at the effect 
-# of land cover change types on the number of occurrences in a pixel
+# This script contains code which prepares the cover change types data for
+# modelling
 ##----------------------------------------------------------------------------##
 
 # 1. LOAD AND PREPARE DATA FOR ANALYSIS ----------------------------------------
@@ -244,77 +244,5 @@ occ_cover_change_types_before_after_for_model <- occ_df_before_after |>
 save(occ_cover_change_types_before_after_for_model, 
      file = here::here("data", "derived_data",
                        "occ_cover_change_types_before_after_for_model.rda"))
-
-
-# 3. MODEL 1: OCC ~ COVER CHANGE -----------------------------------------------
-
-# Create subset of data
-occ_subset <- occ_cover_change_types_before_after_for_model |> 
-  sample_frac(0.1)
-
-
-## 3.1. N binomial with glmmTMB, nbiom1, SSB ID --------------------------------
-
-# Model 3.1
-# model3.1_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
-#                                          family = nbinom1, 
-#                                          data = occ_subset)
-# Save output to file
-# save(model3.1_SSB, file = here::here("data", "models", "model3.1_SSB.RData"))
-
-## 3.2. N binomial with glmmTMB, nbiom1, Municipality --------------------------
-
-# Model 3.2
-# model3.2_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|municipality),
-#                                          family = nbinom1,
-#                                          data = occ_subset)
-# Save output to file
-# save(model3.2_municipality, file = here::here("data", "models", 
-#                                                       "model3.2_municipality.RData"))
-
-## 3.3. N binomial with glmmTMB, nbiom2, SSBID ---------------------------------
-
-# Model 3.3
-# model3.3_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|SSBID),
-#                                          family = nbinom2, 
-#                                          data = occ_subset)
-
-# Save output to file
-# save(model3.3_SSB, file = here::here("data", "models", "model3.3_SSB.RData"))
-
-## 3.4. N binomial with glmmTMB, nbiom2, Municipality --------------------------
-
-# Model 3.4
-# model3.4_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period + (1|municipality),
-#                                          family = nbinom2, 
-#                                          data = occ_subset)
-
-# Save output to file
-# save(model3.4_municipality, file = here::here("data", "models", 
-#                                                       "model3.4_municipality.RData"))
-
-# 4. MODEL 2: OCC ~ COVER CHANGE + OFFSET --------------------------------------
-
-## 4.1. N binomial glmmTMB, nbinom 2, SSBID on data subset ---------------------
-
-# Run model
-model3.5_SSB <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(log(ocurrences_before + 0.0001)) + (1 | SSBID),
-                    family = nbinom2,
-                    data = occ_subset)
-
-# Save model output to file to save time next time
-save(model3.5_SSB, file = here::here("data", "models", "model3.5_SSB.RData"))
-
-## 4.2. N binomial glmmTMB, nbinom 2, Municipality on data subset ---------------------
-
-# Run model
-model3.6_municipality <- glmmTMB(ocurrences_after ~ cover_change * time_period * ocurrences_before + offset(log(ocurrences_before + 0.0001)) + (1 | municipality),
-                        family = nbinom2,
-                        data = occ_subset)
-
-# Save model output to file to save time next time
-save(model3.6_municipality, file = here::here("data", "models", 
-                                              "model3.6_municipality.RData"))
-
 
 # END OF SCRIPT ----------------------------------------------------------------
