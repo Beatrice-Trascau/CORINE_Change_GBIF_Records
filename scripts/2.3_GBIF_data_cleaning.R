@@ -20,7 +20,7 @@ clean_occurrences1 <- occurrence_a |>
 # 2.2. Remove records that are not Animalia, Plantae or Fungi ------------------
 
 clean_occurrences2 <- clean_occurrences1 |>
-  filter(kingdom %in% c("Animalia", "Animalia", "Fungi"))
+  filter(kingdom %in% c("Animalia", "Plantae", "Fungi"))
 
 # 2.3. Remove records with no registered species-level information -------------
 clean_occurrences3 <- clean_occurrences2 |>
@@ -61,7 +61,8 @@ clean_occurrences <- clean_occurrences5 |>
          locality, decimalLatitude, decimalLongitude, 
          coordinateUncertaintyInMeters, kingdom, phylum, class, order, family,
          genus, specificEpithet, speciesKey, species, organismQuantity,
-         occurrenceStatus, scientificName) |>
+         occurrenceStatus, scientificName, publisher, institutionID, collectionID,
+         datasetID, institutionCode, datasetName, ownerInstitutionCode, recordedByID) |>
   mutate(period = case_when(year %in% c(2000:2005) ~ "2000.2005",
                           year %in% c(2006:2011) ~ "2006.2011",
                           year %in% c(2012:2018) ~ "2012.2018"))
@@ -69,5 +70,8 @@ clean_occurrences <- clean_occurrences5 |>
 # Save cleaned occurrences
 write.csv(clean_occurrences,
           here("data", "derived_data", "cleaned_occurrences_july24.txt"))
+
+save(clean_occurrences, file = here::here("data", "derived_data",
+                                          "clened_occurrences_extra_info_Jan2025.rda"))
 
 # END OF SCRIPT ----------------------------------------------------------------
