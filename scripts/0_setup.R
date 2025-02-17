@@ -23,7 +23,8 @@ package_vec <- c("here", "terra", "sf", "geodata", "mapview",
                  "plotly", "lme4", "DHARMa", "glmmTMB", "mgcv",
                  "tidyterra", "ggspatial", "htmlwidgets",
                  "htmltools", "patchwork", "webshot2",
-                 "rgbif", "CoordinateCleaner", "DHARMa") # specify packages
+                 "rgbif", "CoordinateCleaner", "DHARMa",
+                 "writexl", "bbmle") # specify packages
 
 # Execute the function
 sapply(package_vec, install_load_package)
@@ -121,6 +122,24 @@ extract_summary_as_df <- function(model) {
   coefs <- as.data.frame(model_summary$coefficients$cond)  
   coefs <- coefs |> rownames_to_column(var = "term")  
   return(coefs)
+}
+
+# 9. FUNCTION TO EXTRACT TABLE WITH KM2 FOR EACH TRANSITION --------------------
+create_transition_table <- function(data) {
+  data |>
+    # Convert pixel counts to km² (each pixel is 0.01 km²)
+    mutate(Area_km2 = count * 0.01) |>
+    # Select & rename columns
+    select(
+      `Initial Land Cover`    = source_name,
+      `Land Cover Changed To` = target_name,
+      Year                    = source_year,
+      `Quantity (km²)`        = Area_km2) |>
+    # Sum area by transition and year
+    group_by(`Initial Land Cover`, `Land Cover Changed To`, Year) |>
+    summarize(`Quantity (km²)` = sum(`Quantity (km²)`), .groups = "drop") |>
+    # Exclude rows with no actual change
+    filter(`Initial Land Cover` != `Land Cover Changed To`)
 }
 
 # END OF SCRIPT ----------------------------------------------------------------
