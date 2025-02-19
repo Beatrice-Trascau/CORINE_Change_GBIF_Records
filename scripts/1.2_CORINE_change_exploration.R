@@ -665,4 +665,157 @@ write.csv(transition_quantities, here("data", "derived_data",
 write_xlsx(transition_quantities, here("data", "derived_data", 
                                        "land_cover_transitions_quantity_km2.xlsx"))
 
+# 6. NEW MAPS WITH AGGREGATIONS ------------------------------------------------
+
+## 6.1. Prepare layers for plotting --------------------------------------------
+
+# Reproject Norway shapefile to match CLC
+corine_crs <- crs(norway_corine_change_modified_stack)
+norway_sf_projected <- st_transform(norway_sf, crs = corine_crs)
+
+# Extract first layer of each pair
+binary_2000_2006 <- !is.na(norway_corine_change_modified_stack[[1]])
+binary_2006_2012 <- !is.na(norway_corine_change_modified_stack[[3]])
+binary_2012_2018 <- !is.na(norway_corine_change_modified_stack[[5]])
+
+# Aggregate to 50km resolution
+agg_factor <- 500
+
+agg_2000_2006 <- aggregate(binary_2000_2006, fact = agg_factor, 
+                           fun = calc_percent_change)
+agg_2006_2012 <- aggregate(binary_2006_2012, fact = agg_factor, 
+                           fun = calc_percent_change)
+agg_2012_2018 <- aggregate(binary_2012_2018, fact = agg_factor, 
+                           fun = calc_percent_change)
+
+# Convert to dataframe for plotting
+df_2000_2006 <- as.data.frame(agg_2000_2006, xy = TRUE) |>
+  filter(!is.na(U2006_CHA0006_00_V2020_20u1)) |>
+  rename(percent_change = U2006_CHA0006_00_V2020_20u1)
+
+df_2006_2012 <- as.data.frame(agg_2006_2012, xy = TRUE) |>
+  filter(!is.na(U2012_CHA0612_06_V2020_20u1)) |>
+  rename(percent_change = U2012_CHA0612_06_V2020_20u1)
+
+df_2012_2018 <- as.data.frame(agg_2012_2018, xy = TRUE) |>
+  filter(!is.na(U2018_CHA1218_12_V2020_20u1)) |>
+  rename(percent_change = U2018_CHA1218_12_V2020_20u1)
+
+## 6.2. Prepare plot -----------------------------------------------------------
+
+# Create base theme for plotting
+base_theme <- theme_classic() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_blank(),
+        axis.line = element_blank())
+
+# Previous global min/max calculations remain the same
+global_min <- floor(min(c(df_2000_2006$percent_change,
+                          df_2006_2012$percent_change,
+                          df_2012_2018$percent_change)) * 100) / 100
+global_max <- ceiling(max(c(df_2000_2006$percent_change,
+                            df_2006_2012$percent_change,
+                            df_2012_2018$percent_change)) * 100) / 100
+
+
+# Function to plot maps
+create_period_map <- function(data, include_decorations = FALSE, include_legend = FALSE) {
+  legend_breaks <- c(global_min, 
+                     global_min + (global_max - global_min)/3,
+                     global_min + 2*(global_max - global_min)/3,
+                     global_max)
+  
+  fill_scale <- scale_fill_gradient(
+    low = "#FFFFFF",
+    high = "#800080",
+    name = "% Area Changed",
+    limits = c(global_min, global_max),
+    breaks = legend_breaks,
+    labels = sprintf("%.2f", legend_breaks),
+    guide = guide_colorbar(
+      direction = "horizontal",
+      title.position = "top",
+      title.hjust = 0.5,
+      barwidth = 10,
+      barheight = 0.5,
+      nbin = 100,
+      draw.ulim = TRUE,
+      draw.llim = TRUE,
+      frame.colour = "black",     # Add black frame around legend
+      frame.linewidth = 0.5,      # Set frame line width
+      ticks.colour = "black",     # Ensure tick marks are visible
+      ticks.linewidth = 0.5       # Set tick line width
+    ),
+    na.value = "transparent"
+  )
+  
+  # Base map construction remains the same
+  p <- ggplot() +
+    geom_sf(data = norway_sf_projected, fill = "#F5F5F5", color = "black") +
+    geom_tile(data = data,
+              aes(x = x, y = y, fill = percent_change),
+              alpha = 0.8) +
+    fill_scale +
+    coord_sf() +
+    base_theme
+  
+  if(include_decorations) {
+    p <- p +
+      annotation_north_arrow(
+        location = "br",
+        which_north = "true",
+        pad_y = unit(0.8, "cm"),
+        style = north_arrow_fancy_orienteering
+      ) +
+      annotation_scale(location = "br", width_hint = 0.35)
+  }
+  
+  if(!include_legend) {
+    p <- p + theme(legend.position = "none")
+  } else {
+    p <- p + theme(
+      legend.position = "bottom",
+      legend.title = element_text(size = 12),
+      legend.text = element_text(size = 10),
+      legend.box.spacing = unit(0.2, "cm"),
+      legend.margin = margin(t = 0.2, b = 0.2, unit = "cm"),
+      legend.box.margin = margin(t = 5, r = 5, b = 5, l = 5) 
+    )
+  }
+  
+  return(p)
+}
+
+# Create and combine maps as before
+map_2000_2006 <- create_period_map(df_2000_2006, 
+                                   include_decorations = TRUE, 
+                                   include_legend = TRUE)
+map_2006_2012 <- create_period_map(df_2006_2012, 
+                                   include_decorations = FALSE, 
+                                   include_legend = FALSE)
+map_2012_2018 <- create_period_map(df_2012_2018, 
+                                   include_decorations = FALSE, 
+                                   include_legend = FALSE)
+
+# Combine all maps into one plot
+all_periods_changes <- plot_grid(
+  map_2000_2006, map_2006_2012, map_2012_2018,
+  labels = c("a)", "b)", "c)"),
+  label_size = 12,
+  ncol = 3,
+  nrow = 1,
+  align = 'h',
+  axis = 'tb')
+
+# Save to file
+ggsave(here("figures", "cover_change_all_periods_Figure1_aggregated50km.png"),
+       all_periods_changes, width = 17, height = 13, dpi = 300)
+
+ggsave(here("figures", "cover_change_all_periods_Figure1_aggregated50km.svg"),
+       all_periods_changes, width = 17, height = 13,dpi = 300)
+
 # END OF SCRIPT ----------------------------------------------------------------
