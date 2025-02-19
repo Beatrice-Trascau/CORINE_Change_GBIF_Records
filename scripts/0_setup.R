@@ -142,4 +142,12 @@ create_transition_table <- function(data) {
     filter(`Initial Land Cover` != `Land Cover Changed To`)
 }
 
+# 10. AGGREGATE TO 50KM --------------------------------------------------------
+
+calc_percent_change <- function(x) {
+  valid_cells <- sum(!is.na(x))
+  if(valid_cells == 0) return(NA)
+  return((sum(x, na.rm = TRUE) / valid_cells) * 100)
+}
+
 # END OF SCRIPT ----------------------------------------------------------------
