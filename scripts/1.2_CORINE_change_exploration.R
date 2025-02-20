@@ -678,8 +678,8 @@ binary_2000_2006 <- !is.na(norway_corine_change_modified_stack[[1]])
 binary_2006_2012 <- !is.na(norway_corine_change_modified_stack[[3]])
 binary_2012_2018 <- !is.na(norway_corine_change_modified_stack[[5]])
 
-# Aggregate to 50km resolution
-agg_factor <- 500
+# Aggregate to 15km resolution
+agg_factor <- 150
 
 agg_2000_2006 <- aggregate(binary_2000_2006, fact = agg_factor, 
                            fun = calc_percent_change)
@@ -724,45 +724,58 @@ global_max <- ceiling(max(c(df_2000_2006$percent_change,
 
 # Function to plot maps
 create_period_map <- function(data, include_decorations = FALSE, include_legend = FALSE) {
-  legend_breaks <- c(global_min, 
-                     global_min + (global_max - global_min)/3,
-                     global_min + 2*(global_max - global_min)/3,
-                     global_max)
+  # Define all breaks for color scaling (maintaining scientific accuracy)
+  color_breaks <- c(0, 0.5, 1, 5, 10, 15)
   
-  fill_scale <- scale_fill_gradient(
-    low = "#FFFFFF",
-    high = "#800080",
+  # Define subset of breaks for label display (omitting 0.5)
+  label_breaks <- c(0, 1, 5, 10, 15)
+  label_values <- c("0.0", "1.0", "5.0", "10.0", "15.0")
+  
+  fill_scale <- scale_fill_gradientn(
+    colors = c("#FFFFFF", "#83506c", "#F564E3", "#0072B2", "#009E73", "#E69F00"),
     name = "% Area Changed",
-    limits = c(global_min, global_max),
-    breaks = legend_breaks,
-    labels = sprintf("%.2f", legend_breaks),
+    limits = c(0, max(color_breaks)),
+    # Use color_breaks for the underlying scale
+    values = scales::rescale(color_breaks),
+    # Use label_breaks for display
+    breaks = label_breaks,
+    labels = label_values,
     guide = guide_colorbar(
       direction = "horizontal",
       title.position = "top",
       title.hjust = 0.5,
-      barwidth = 10,
+      barwidth = 15,
       barheight = 0.5,
       nbin = 100,
       draw.ulim = TRUE,
       draw.llim = TRUE,
-      frame.colour = "black",     # Add black frame around legend
-      frame.linewidth = 0.5,      # Set frame line width
-      ticks.colour = "black",     # Ensure tick marks are visible
-      ticks.linewidth = 0.5       # Set tick line width
+      frame.colour = "black",
+      frame.linewidth = 0.5,
+      ticks.colour = "black",
+      ticks = TRUE,
+      label.theme = element_text(
+        size = 10,
+        angle = 45,
+        hjust = 1
+      )
     ),
     na.value = "transparent"
   )
   
-  # Base map construction remains the same
+  # Construct map with explicit spatial parameters
   p <- ggplot() +
+    # Maintain consistent projection and appearance of Norway outline
     geom_sf(data = norway_sf_projected, fill = "#F5F5F5", color = "black") +
+    # Ensure proper rendering of change data
     geom_tile(data = data,
               aes(x = x, y = y, fill = percent_change),
               alpha = 0.8) +
     fill_scale +
+    # Maintain proper spatial extent
     coord_sf() +
     base_theme
   
+  # Add cartographic elements if requested
   if(include_decorations) {
     p <- p +
       annotation_north_arrow(
@@ -774,6 +787,7 @@ create_period_map <- function(data, include_decorations = FALSE, include_legend 
       annotation_scale(location = "br", width_hint = 0.35)
   }
   
+  # Configure legend visibility and positioning
   if(!include_legend) {
     p <- p + theme(legend.position = "none")
   } else {
@@ -783,13 +797,12 @@ create_period_map <- function(data, include_decorations = FALSE, include_legend 
       legend.text = element_text(size = 10),
       legend.box.spacing = unit(0.2, "cm"),
       legend.margin = margin(t = 0.2, b = 0.2, unit = "cm"),
-      legend.box.margin = margin(t = 5, r = 5, b = 5, l = 5) 
+      legend.box.margin = margin(t = 5, r = 5, b = 5, l = 5)
     )
   }
   
   return(p)
 }
-
 # Create and combine maps as before
 map_2000_2006 <- create_period_map(df_2000_2006, 
                                    include_decorations = TRUE, 
