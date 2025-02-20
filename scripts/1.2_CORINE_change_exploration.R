@@ -822,7 +822,8 @@ all_periods_changes <- plot_grid(
   ncol = 3,
   nrow = 1,
   align = 'h',
-  axis = 'tb')
+  axis = 'tb',
+  label_y = 0.8)
 
 # Save to file
 ggsave(here("figures", "cover_change_all_periods_Figure1_aggregated50km.png"),
