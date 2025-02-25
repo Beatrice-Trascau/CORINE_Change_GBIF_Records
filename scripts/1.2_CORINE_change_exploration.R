@@ -8,16 +8,11 @@
 
 # 1. READ IN DATA --------------------------------------------------------------
 
-## 1.1. Download layers (if needed) --------------------------------------------
-
-download_file("https://ntnu.box.com/shared/static/97g9x4839ij4lnlldji2wh8e0e2lm5bf.tif", 
-              "data/norway_corine_change_modified_stack.tif")
-
-## 1.2. Read in layers ---------------------------------------------------------
+## 1.1. Read in layers ---------------------------------------------------------
 norway_corine_change_modified_stack <- rast(here("data", "derived_data",
                                         "norway_corine_change_modified_stack.tif"))
 
-## 1.3. Calculate the amount of land changing in each period -------------------
+## 1.2. Calculate the amount of land changing in each period -------------------
 
 # Create vector to store the %
 change_percentages <- numeric(nlyr(norway_corine_change_modified_stack))
@@ -98,7 +93,7 @@ change_2000.2006 <- ggplot()+
     legend.title = element_blank(),
     legend.text = element_text(size = 14))
 
-## 2.2. Plot map for 2006-2012 and 2012-2018 -----------------------------------
+## 2.3. Plot map for 2006-2012 and 2012-2018 -----------------------------------
 # This was done separately from the 2000-2006 period because I wanted the first
 # map to have a North arrow and scale but did not want them in the others
 
@@ -241,7 +236,7 @@ gain_all_years <- corine_change_meaning |>
 # Merge the gain and loss dataframes into a single df
 gain_loss_all_years <- rbind(loss_all_years, gain_all_years)
 
-## 3.5. Plot land cover transitions --------------------------------------------
+## 3.4. Plot land cover transitions --------------------------------------------
 
 # Set scaling factor
 scaling_factor <- 10
@@ -288,7 +283,7 @@ cover_transitions <- ggplot(gain_loss_all_years, aes(x = focus, y = scaled_count
                                    margin = margin(l = 2))) +
   guides(fill = guide_legend(ncol = 2))
 
-## 3.6. Plot intensification and extensification transitions -------------------
+## 3.5. Plot intensification and extensification transitions -------------------
 # Create new column with Intensification/Extensification based on "difference"
 # values. Check CORINE_Land_Cover_Transition_Classes_and_Scores.pdf in 
 # T:\vm\inh\zoologi\Bruker\Beatrice\Chapter 1 for details
@@ -363,7 +358,7 @@ intens_extens_transitions <- ggplot(intens_extens_gain_loss_all_years,
                                    margin = margin(l = 2))) +
   guides(fill = guide_legend(ncol = 2))
 
-## 3.5. Combine plots from 3.3. and 3.4. ---------------------------------------
+## 3.6. Combine plots from 3.3. and 3.4. ---------------------------------------
 
 # Create figure with 2 panels
 combined_barplot <- plot_grid(cover_transitions, intens_extens_transitions,
@@ -646,7 +641,7 @@ ggsave(here("figures", "cover_transitions_alluvials_Figure4.png"),
        width=20, height=13)
 
 # Save to file as .svg
-ggsave(here("figures", "cover_transitions_alluvials_Figure4.pdf"),
+ggsave(here("figures", "cover_transitions_alluvials_Figure4.svg"),
        width=20, height=13)
 
 # 5. EXTRACT TABLE WITH AMOUNT OF LAND FOR EACH TRANSITION IN KM2 --------------
