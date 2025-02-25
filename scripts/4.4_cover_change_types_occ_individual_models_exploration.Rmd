@@ -63,7 +63,7 @@ kable(urban_model2_coeff_df)
 
 ## Compare Model 1 and Model 2
 
-```{r compare AICs }
+```{r urban compare AICs }
 AICctab(urban_model1_SSB_interaction, urban_model2_SSB_no_interaction, base = TRUE) 
 
 ```
@@ -108,6 +108,34 @@ urban_model4_coeff_df[] <- lapply(urban_model4_coeff_df,
 
 # Print table using knitr::kable
 kable(urban_model4_coeff_df)
+```
+
+## Model 5: 0.1 marginal value and no interaction
+
+```{r urban model 5}
+
+# Load model
+load(here::here("data", "models", "urban_model5_SSB_no_interaction_0.1_offset.RData"))
+
+# Get model summary
+urban_model5_summary <- summary(urban_model5_SSB_no_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+urban_model5_coeff_df <- as.data.frame(urban_model5_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+urban_model5_coeff_df[] <- lapply(urban_model5_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(urban_model5_coeff_df)
+```
+
+## Compare AIC Model 3 &  Model 5
+
+```{r urban model 3 & 5 AIC}
+
+AICctab(urban_model3_SSB_interaction_0.1_offset, urban_model5_SSB_no_interaction_0.1_offset, base = TRUE)
 ```
 
 # Complex Agricultural Cover
@@ -204,6 +232,33 @@ kable(ca_model4_coeff_df)
 
 ```
 
+## Model 5: 0.1 & no interaction
+
+```{r CAC model 5}
+
+# Load model
+load(here::here("data", "models", "complex_agri_model5_SSB_no_interaction_0.1_offset.RData"))
+
+# Get model summary
+ca_model5_summary <- summary(complex_agri_model5_SSB_no_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+ca_model5_coeff_df <- as.data.frame(ca_model5_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+ca_model5_coeff_df[] <- lapply(ca_model5_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(ca_model5_coeff_df)
+```
+
+## Compare AIC Model 3 & Model 5
+
+```{r CAC model 3 & 5 compare AIC}
+AICctab(complex_agri_model3_SSB_interaction_0.1_offset, complex_agri_model5_SSB_no_interaction_0.1_offset, base = TRUE)
+```
+
 # Agriculture with Significant Natural Vegetation
 
 ## Model 1: Interaction
@@ -298,6 +353,33 @@ kable(asnv_model4_coeff_df)
 
 ```
 
+## Model 5: 0.1 & no interaction
+
+```{r ASNV model 5}
+
+# Load model
+load(here::here("data", "models", "agri_veg_model5_SSB_no_interaction_0.1_offset.RData"))
+
+# Get model summary
+asnv_model5_summary <- summary(agri_veg_model5_SSB_no_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+asnv_model5_coeff_df <- as.data.frame(asnv_model5_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+asnv_model5_coeff_df[] <- lapply(asnv_model5_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(asnv_model5_coeff_df)
+```
+
+## Compare AIC Model 3 & Model 5
+
+```{r ASNV model 3 & 5 AIC}
+AICctab(agri_veg_model3_SSB_interaction_0.1_offset, agri_veg_model5_SSB_no_interaction_0.1_offset, base = TRUE)
+```
+
 # Forests
 
 ## Model 1: Interaction
@@ -388,6 +470,33 @@ forests_model4_coeff_df[] <- lapply(forests_model4_coeff_df,
 
 # Print table using knitr::kable
 kable(forests_model4_coeff_df)
+```
+
+## Model 5: 0.1 & no interaction
+
+```{r forests model 5}
+
+# Load model
+load(here::here("data", "models", "forests_model5_SSB_no_interaction_0.1_offset.RData"))
+
+# Get model summary
+forests_model5_summary <- summary(forests_model5_SSB_no_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+forests_model5_coeff_df <- as.data.frame(forests_model5_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+forests_model5_coeff_df[] <- lapply(forests_model5_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(forests_model5_coeff_df)
+```
+
+## Compare AIC Model 3 & Model 5
+
+```{r forests model 3 & 5 AIC}
+AICctab(forests_model3_SSB_interaction_0.1_offset, forests_model5_SSB_no_interaction_0.1_offset, base = TRUE)
 ```
 
 # Moors, Heathland & Grassland
@@ -482,6 +591,33 @@ moors_model4_coeff_df[] <- lapply(moors_model4_coeff_df,
 kable(moors_model4_coeff_df)
 ```
 
+## Model 5: 0.1 & no interaction
+
+```{r mhg model 5}
+
+# Load model
+load(here::here("data", "models", "moors_model5_SSB_no_interaction_0.1_offset.RData"))
+
+# Get model summary
+moors_model5_summary <- summary(moors_model5_SSB_no_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+moors_model5_coeff_df <- as.data.frame(moors_model5_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+moors_model5_coeff_df[] <- lapply(moors_model5_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(moors_model5_coeff_df)
+```
+
+## Compare AIC Model 3 & Model 5
+
+```{r mhg model 3 & 5 AIC}
+AICctab(moors_model3_SSB_interaction_0.1_offset, moors_model5_SSB_no_interaction_0.1_offset, base = TRUE)
+```
+
 # Transitional Woodland Shrub
 
 ## Model 1: Interaction
@@ -572,6 +708,33 @@ woodland_model4_coeff_df[] <- lapply(woodland_model4_coeff_df,
 
 # Print table using knitr::kable
 kable(woodland_model4_coeff_df)
+```
+
+## Model 5: 0.1  & no interaction
+
+```{r tws model 5}
+
+# Load model
+load(here::here("data", "models", "woodland_model5_SSB_no_interaction_0.1_offset.RData"))
+
+# Get model summary
+woodland_model5_summary <- summary(woodland_model5_SSB_no_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+woodland_model5_coeff_df <- as.data.frame(woodland_model5_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+woodland_model5_coeff_df[] <- lapply(woodland_model5_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(woodland_model5_coeff_df)
+```
+
+## Compare AIC Model 3 & Model 5
+
+```{r tws model 3 & 5 AIC}
+AICctab(woodland_model3_SSB_interaction_0.1_offset, woodland_model5_SSB_no_interaction_0.1_offset, base = TRUE)
 ```
 
 # Sparse Vegetation
@@ -666,10 +829,37 @@ sparse_model4_coeff_df[] <- lapply(sparse_model4_coeff_df,
 kable(sparse_model4_coeff_df)
 ```
 
+## Model 5: 0.1 & no interaction
+
+```{r sv model 5}
+
+# Load model
+load(here::here("data", "models", "sparse_model5_SSB_no_interaction_0.1_offset.RData"))
+
+# Get model summary
+sparse_model5_summary <- summary(sparse_model5_SSB_no_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+sparse_model5_coeff_df <- as.data.frame(sparse_model5_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+sparse_model5_coeff_df[] <- lapply(sparse_model5_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(sparse_model5_coeff_df)
+```
+
+## Compare AIC Model 3 & Model 5
+
+```{r sv model 3 & 5 AIC}
+AICctab(sparse_model3_SSB_interaction_0.1_offset, sparse_model5_SSB_no_interaction_0.1_offset, base = TRUE)
+```
+
 # Differences
 
 | Cover Type                                       | Variable                                             | 0.001         | 0.1           | 0.01          |
-|--------------------------------------------------|------------------------------------------------------|---------------|---------------|---------------|
+|------------------|-------------------|------------|------------|------------|
 | Agricultural with Significant Natural Vegetation | 2012-2018                                            | negative (S)  | positive (NS) | negatives (S) |
 | Agricultural with Significant Natural Vegetation | ASNV -\> Urban \* 2012-2018                          | negative (S)  | negative (S)  | positive (NS) |
 | Forests                                          | Forest -\> Moors, Heathland & Grassland              | positive (S)  | negative (NS) | positive (NS) |
