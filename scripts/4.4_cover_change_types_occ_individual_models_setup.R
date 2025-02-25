@@ -109,6 +109,16 @@ urban_model4_SSB_interaction_0.01_offset <- glmmTMB(ocurrences_after ~ cover_cha
 save(urban_model4_SSB_interaction_0.01_offset, file = here::here("data", "models", 
                                                 "urban_model4_SSB_interaction_0.01_offset.RData"))
 
+## 2.5. 0.1 offset no interaction ----------------------------------------------
+
+# Run 0.1 model
+urban_model5_SSB_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
+                                                      family = nbinom2, data = occ_urban)
+
+# Save model output to file to save time next time
+save(urban_model5_SSB_no_interaction_0.1_offset, file = here::here("data", "models",
+                                                                   "urban_model5_SSB_no_interaction_0.1_offset.RData"))
+
 # 3. COMPLEX AGRICULTURAL COVER ------------------------------------------------
 
 # Filter out other land cover change
@@ -121,12 +131,12 @@ occ_complex_agri$cover_change <- relevel(occ_complex_agri$cover_change,
 
 ## 3.1. Interaction ------------------------------------------------------------
 
-# # Run model
+# Run model
 complex_agri_model1_SSB_interaction <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.001)) + (1 | SSBID),
                           family = nbinom2,
                           data = occ_complex_agri)
 
-# # Save model output to file to save time next time
+# Save model output to file to save time next time
 save(complex_agri_model1_SSB_interaction, file = here::here("data", "models",
                                        "complex_agri_model1_SSB_interaction.RData"))
 
@@ -137,7 +147,7 @@ complex_agri_model2_SSB_no_interaction <- glmmTMB(ocurrences_after ~ cover_chang
                                                 family = nbinom2,
                                                 data = occ_complex_agri)
 
-# # Save model output to file to save time next time
+# Save model output to file to save time next time
 save(complex_agri_model2_SSB_no_interaction, file = here::here("data", "models",
                                                              "complex_agri_model2_SSB_no_interaction.RData"))
 
@@ -165,7 +175,15 @@ complex_agri_model4_SSB_interaction_0.01_offset <- glmmTMB(ocurrences_after ~ co
 save(complex_agri_model4_SSB_interaction_0.01_offset, file = here::here("data", "models",
                                                                  "complex_agri_model4_SSB_interaction_0.01_offset.RData"))
 
+## 3.5. 0.1 offset no interaction ----------------------------------------------
 
+# Run 0.1 model
+complex_agri_model5_SSB_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
+                                                             family = nbinom2, data = occ_complex_agri)
+
+# Save model output to file to save time next time
+save(complex_agri_model5_SSB_no_interaction_0.1_offset, file = here::here("data", "models",
+                                                                          "complex_agri_model5_SSB_no_interaction_0.1_offset.RData"))
 
 # 4. AGRICULTURE WITH SIGNIFICANT NATURAL VEGETATION ---------------------------
 
@@ -223,6 +241,16 @@ agri_veg_model4_SSB_interaction_0.01_offset <- glmmTMB(ocurrences_after ~ cover_
 save(agri_veg_model4_SSB_interaction_0.01_offset, file = here::here("data", "models",
                                                                     "agri_veg_model4_SSB_interaction_0.01_offset.RData"))
 
+## 4.5. 0.1 offset no interaction ----------------------------------------------
+
+# Run 0.1 model
+agri_veg_model5_SSB_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
+                                                         family = nbinom2, data = occ_agri_veg)
+
+# Save model output to file to save time next time
+save(agri_veg_model5_SSB_no_interaction_0.1_offset, file = here::here("data", "models",
+                                                                      "agri_veg_model5_SSB_no_interaction_0.1_offset.RData"))
+
 # 5. FORESTS -------------------------------------------------------------------
 
 # Filter out other land cover change
@@ -279,6 +307,15 @@ forests_model4_SSB_interaction_0.01_offset <- glmmTMB(ocurrences_after ~ cover_c
 save(forests_model4_SSB_interaction_0.01_offset, file = here::here("data", "models",
                                                                     "forests_model4_SSB_interaction_0.01_offset.RData"))
 
+## 5.5. 0.1 offset no interaction ----------------------------------------------
+
+# Run 0.1 model
+forests_model5_SSB_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
+                                                        family = nbinom2, data = occ_forests)
+
+# Save model output to file to save time next time
+save(forests_model5_SSB_no_interaction_0.1_offset, file = here::here("data", "models",
+                                                                     "forests_model5_SSB_no_interaction_0.1_offset.RData"))
 
 # 6. MOORS, HEATHLAND AND GRASSLAND --------------------------------------------
 
@@ -297,7 +334,7 @@ moors_model1_SSB_interaction <- glmmTMB(ocurrences_after ~ cover_change * time_p
                             family = nbinom2,
                             data = occ_moors)
 
-# # Save model output to file to save time next time
+# Save model output to file to save time next time
 save(moors_model1_SSB_interaction, file = here::here("data", "models",
                                          "moors_model1_SSB_interaction.RData"))
 
@@ -336,13 +373,23 @@ moors_model4_SSB_interaction_0.01_offset <- glmmTMB(ocurrences_after ~ cover_cha
 save(moors_model4_SSB_interaction_0.01_offset, file = here::here("data", "models",
                                                                    "moors_model4_SSB_interaction_0.01_offset.RData"))
 
+## 6.5. 0.1 offset no interaction ----------------------------------------------
+
+# Run 0.1 model
+moors_model5_SSB_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
+                                                      family = nbinom2, data = occ_moors)
+
+# Save model output to file to save time next time
+save(moors_model5_SSB_no_interaction_0.1_offset, file = here::here("data", "models",
+                                                                   "moors_model5_SSB_no_interaction_0.1_offset.RData"))
+
 # 7. TRANSITIONAL WOODLAND SHRUB -----------------------------------------------
 
 # Filter out other land cover change
 occ_woodland <- occ_cover_types |>
   filter(lc_change_from == "woodland_shrub")
 
-# # Relevel cover_change to have 'urban_urban' as the reference
+# Relevel cover_change to have 'urban_urban' as the reference
 occ_woodland$cover_change <- relevel(occ_woodland$cover_change,
                                      ref = "woodland_shrub_woodland_shrub")
 
@@ -353,7 +400,7 @@ woodland_model1_SSB_interaction <- glmmTMB(ocurrences_after ~ cover_change * tim
                           family = nbinom2,
                           data = occ_woodland)
 
-# # Save model output to file to save time next time
+# Save model output to file to save time next time
 save(woodland_model1_SSB_interaction, file = here::here("data", "models",
                                        "woodland_model1_SSB_interaction.RData"))
 
@@ -364,7 +411,7 @@ woodland_model2_SSB_no_interaction <- glmmTMB(ocurrences_after ~ cover_change + 
                                             family = nbinom2,
                                             data = occ_woodland)
 
-# # Save model output to file to save time next time
+# Save model output to file to save time next time
 save(woodland_model2_SSB_no_interaction, file = here::here("data", "models",
                                                          "woodland_model2_SSB_no_interaction.RData"))
 
@@ -392,6 +439,15 @@ woodland_model4_SSB_interaction_0.01_offset <- glmmTMB(ocurrences_after ~ cover_
 save(woodland_model4_SSB_interaction_0.01_offset, file = here::here("data", "models",
                                                                  "woodland_model4_SSB_interaction_0.01_offset.RData"))
 
+## 7.5. 0.1 offset no interaction ----------------------------------------------
+
+# Run 0.1 model
+woodland_model5_SSB_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
+                                                         family = nbinom2, data = occ_woodland)
+
+# Save model output to file to save time next time
+save(woodland_model5_SSB_no_interaction_0.1_offset, file = here::here("data", "models",
+                                                                      "woodland_model5_SSB_no_interaction_0.1_offset.RData"))
 
 # 8. SPARSE VEGETATION ---------------------------------------------------------
 
@@ -403,7 +459,7 @@ occ_sparse <- occ_cover_types |>
 occ_sparse$cover_change <- relevel(occ_sparse$cover_change,
                                    ref = "sparse_veg_sparse_veg")
 
-# 8.1. No Interaction ----------------------------------------------------------
+## 8.1. No Interaction ---------------------------------------------------------
 
 # Run model
 sparse_model1_SSB_interaction <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.001)) + (1 | SSBID),
@@ -439,7 +495,7 @@ sparse_model3_SSB_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_cha
 save(sparse_model3_SSB_interaction_0.1_offset, file = here::here("data", "models",
                                                                    "sparse_model3_SSB_interaction_0.1_offset.RData"))
 
-## 7.4. 0.01 offset ------------------------------------------------------------
+## 8.4. 0.01 offset ------------------------------------------------------------
 
 # Run 0.1 model
 sparse_model4_SSB_interaction_0.01_offset <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.01)) + (1 | SSBID),
@@ -448,5 +504,15 @@ sparse_model4_SSB_interaction_0.01_offset <- glmmTMB(ocurrences_after ~ cover_ch
 # Save model output to file to save time next time
 save(sparse_model4_SSB_interaction_0.01_offset, file = here::here("data", "models",
                                                                     "sparse_model4_SSB_interaction_0.01_offset.RData"))
+
+## 8.5. 0.1 offset no interaction ----------------------------------------------
+
+# Run 0.1 model
+sparse_model5_SSB_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
+                                                       family = nbinom2, data = occ_sparse)
+
+# Save model output to file to save time next time
+save(sparse_model5_SSB_no_interaction_0.1_offset, file = here::here("data", "models",
+                                                                    "sparse_model5_SSB_no_interaction_0.1_offset.RData"))
 
 # END OF SCRIPT ----------------------------------------------------------------
