@@ -208,7 +208,7 @@ save(occ_y_n_cover_change_before_after_for_modell,
 
 # 3. MODEL 1: OCC ~ COVER CHANGE + OFFSET --------------------------------------
 
-## 3.1. N binomial glmmTMB, nbinom2, SSBID on data subset ----------------------
+## 3.1. N binomial glmmTMB, nbinom2, SSBID -------------------------------------
 
 # Run negative binomial model
 YN_model1_SSB_interaction <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.001)) + (1 | SSBID),
@@ -246,7 +246,8 @@ YN_model3_SSB_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change 
                                                 data = occ_y_n_cover_change_before_after_for_modell)
 
 # Save model output to file to save time next time
-save(YN_model3_SSB_interaction_0.1_offset, file = "YN_model3_SSB_interaction_0.1_offset.RData")
+save(YN_model3_SSB_interaction_0.1_offset, file = here::here("data", "models", 
+                                                             "YN_model3_SSB_interaction_0.1_offset.RData"))
 
 ## 4.2 Model with 0.01 offset --------------------------------------------------
 
@@ -256,7 +257,19 @@ YN_model4_SSB_interaction_0.01_offset <- glmmTMB(ocurrences_after ~ cover_change
                                                  data = occ_y_n_cover_change_before_after_for_modell)
 
 # Save model output to file to save time next time
-save(YN_model4_SSB_interaction_0.01_offset, file = "YN_model4_SSB_interaction_0.01_offset.RData")
+save(YN_model4_SSB_interaction_0.01_offset, file = here::here("data", "models", 
+                                                              "YN_model4_SSB_interaction_0.01_offset.RData"))
+
+## 4.3. Model with 0.1 offset and no interaction -------------------------------
+
+# Run negative binomial model
+YN_model5_SSB_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
+                                                   family = nbinom2,
+                                                   data = occ_y_n_cover_change_before_after_for_modell)
+
+# Save model output to file to save time next time
+save(YN_model5_SSB_no_interaction_0.1_offset, file = here::here("data", "models",
+                                                                "YN_model5_SSB_no_interaction_0.1_offset.RData"))
 
 # 5. EXPLORATORY FIGURES OF DF USED IN MODELS ----------------------------------
 
