@@ -16,3 +16,5 @@ occurrence_a <- occ_download_get("0016426-240626123714530") |>
 
 # Save file
 save(occurrence_a, file = here::here("data","raw_data","occurrence_a.rda"))
+
+# END OF SCRIPT ----------------------------------------------------------------
