@@ -1,0 +1,680 @@
+---
+title: "4.4_cover_change_types_occ_individual_model_exploration"
+output: html_document
+date: "2025-02-25"
+---
+
+# Introduction
+
+This markdown outlines the process of modelling the number of species occurrence records in relation to land cover changes, time and SSB ID (or Municipality). Here, land cover changes are modelled as individual land cover types and compared to a baseline of no change (in that specific land cover type).
+
+```{r library load, include = FALSE}
+library(here)
+library(dplyr)
+library(DHARMa)
+library(ggplot2)
+library(bbmle)
+library(kableExtra)
+```
+
+# 1. Urban Fabric
+
+## Model 1: Interaction
+
+```{r  Urban Fabric model 1}
+
+# Load model
+load(here::here("data", "models", "urban_model1_SSB_interaction.RData"))
+
+# Get model summary
+urban_model1_summary <- summary(urban_model1_SSB_interaction)
+
+# Convert summary coefficients to df
+urban_model1_coeff_df <- as.data.frame(urban_model1_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+urban_model1_coeff_df[] <- lapply(urban_model1_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(urban_model1_coeff_df)
+```
+
+## Model 2: No Interaction
+
+```{r  Urban Fabric model 2}
+
+# Load model
+load(here::here("data", "models", "urban_model2_SSB_no_interaction.RData"))
+
+# Get model summary
+urban_model2_summary <- summary(urban_model2_SSB_no_interaction)
+
+# Convert summary coefficients to df
+urban_model2_coeff_df <- as.data.frame(urban_model2_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+urban_model2_coeff_df[] <- lapply(urban_model2_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(urban_model2_coeff_df)
+```
+
+## Compare Model 1 and Model 2
+
+```{r compare AICs }
+AICctab(urban_model1_SSB_interaction, urban_model2_SSB_no_interaction, base = TRUE) 
+
+```
+
+## Model 3: 0.1 marginal value
+
+```{r urban fabric model 3}
+
+# Load model
+load(here::here("data", "models", "urban_model3_SSB_interaction_0.1_offset.RData"))
+
+# Get model summary
+urban_model3_summary <- summary(urban_model3_SSB_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+urban_model3_coeff_df <- as.data.frame(urban_model3_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+urban_model3_coeff_df[] <- lapply(urban_model3_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(urban_model3_coeff_df)
+```
+
+## Model 4: 0.01 marginal value
+
+```{r urban fabric model 4}
+
+# Load model
+load(here::here("data", "models", "urban_model4_SSB_interaction_0.01_offset.RData"))
+
+# Get model summary
+urban_model4_summary <- summary(urban_model4_SSB_interaction_0.01_offset)
+
+# Convert summary coefficients to df
+urban_model4_coeff_df <- as.data.frame(urban_model4_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+urban_model4_coeff_df[] <- lapply(urban_model4_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(urban_model4_coeff_df)
+```
+
+# Complex Agricultural Cover
+
+## Model 1: Interaction
+
+```{r CAC model 1}
+
+# Load model
+load(here::here("data", "models", "complex_agri_model1_SSB_interaction.RData"))
+
+# Get model summary
+ca_model1_summary <- summary(complex_agri_model1_SSB_interaction)
+
+# Convert summary coefficients to df
+ca_model1_coeff_df <- as.data.frame(ca_model1_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+ca_model1_coeff_df[] <- lapply(ca_model1_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(ca_model1_coeff_df)
+```
+
+## Model 2: No Interaction
+
+```{r CAC model 2}
+
+# Load model
+load(here::here("data", "models", "complex_agri_model2_SSB_no_interaction.RData"))
+
+# Get model summary
+ca_model2_summary <- summary(complex_agri_model2_SSB_no_interaction)
+
+# Convert summary coefficients to df
+ca_model2_coeff_df <- as.data.frame(ca_model2_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+ca_model2_coeff_df[] <- lapply(ca_model2_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(ca_model2_coeff_df)
+
+```
+
+## Compare Model 1 and Model 2
+
+```{r compare AICs }
+AICctab(complex_agri_model1_SSB_interaction, complex_agri_model2_SSB_no_interaction, base = TRUE)  
+```
+
+## Model 3: 0.1 marginal value
+
+```{r CAC model 3}
+# Load model
+load(here::here("data", "models", "complex_agri_model3_SSB_interaction_0.1_offset.RData"))
+
+# Get model summary
+ca_model3_summary <- summary(complex_agri_model3_SSB_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+ca_model3_coeff_df <- as.data.frame(ca_model3_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+ca_model3_coeff_df[] <- lapply(ca_model3_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(ca_model3_coeff_df)
+
+```
+
+## Model 4: 0.01 marginal value
+
+```{r CAC model 3}
+
+# Load model
+load(here::here("data", "models", "complex_agri_model4_SSB_interaction_0.01_offset.RData"))
+
+# Get model summary
+ca_model4_summary <- summary(complex_agri_model4_SSB_interaction_0.01_offset)
+
+# Convert summary coefficients to df
+ca_model4_coeff_df <- as.data.frame(ca_model4_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+ca_model4_coeff_df[] <- lapply(ca_model4_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(ca_model4_coeff_df)
+
+```
+
+# Agriculture with Significant Natural Vegetation
+
+## Model 1: Interaction
+
+```{r ASNV model 1}
+
+# Load model
+load(here::here("data", "models", "agri_veg_model1_SSB_interaction.RData"))
+
+# Get model summary
+asnv_model1_summary <- summary(agri_veg_model1_SSB_interaction)
+
+# Convert summary coefficients to df
+asnv_model1_coeff_df <- as.data.frame(asnv_model1_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+asnv_model1_coeff_df[] <- lapply(asnv_model1_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(asnv_model1_coeff_df)
+```
+
+## Model 2: No Interaction
+
+```{r ASNV model 2}
+
+# Load model
+load(here::here("data", "models", "agri_veg_model2_SSB_no_interaction.RData"))
+
+# Get model summary
+asnv_model2_summary <- summary(agri_veg_model2_SSB_no_interaction)
+
+# Convert summary coefficients to df
+asnv_model2_coeff_df <- as.data.frame(asnv_model2_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+asnv_model2_coeff_df[] <- lapply(asnv_model2_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(asnv_model2_coeff_df)
+```
+
+## Compare Model 1 and Model 2
+
+```{r compare AICs }
+
+AICctab(agri_veg_model1_SSB_interaction, agri_veg_model2_SSB_no_interaction, base = TRUE)  
+```
+
+## Model 3: 0.1 marginal value
+
+```{r ASNV model 3}
+
+# Load model
+load(here::here("data", "models", "agri_veg_model3_SSB_interaction_0.1_offset.RData"))
+
+# Get model summary
+asnv_model3_summary <- summary(agri_veg_model3_SSB_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+asnv_model3_coeff_df <- as.data.frame(asnv_model3_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+asnv_model3_coeff_df[] <- lapply(asnv_model3_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(asnv_model3_coeff_df)
+```
+
+## Model 4: 0.01 marginal value
+
+```{r ASNV model 4}
+
+# Load model
+load(here::here("data", "models", "agri_veg_model4_SSB_interaction_0.01_offset.RData"))
+
+# Get model summary
+asnv_model4_summary <- summary(agri_veg_model4_SSB_interaction_0.01_offset)
+
+# Convert summary coefficients to df
+asnv_model4_coeff_df <- as.data.frame(asnv_model4_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+asnv_model4_coeff_df[] <- lapply(asnv_model4_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(asnv_model4_coeff_df)
+
+```
+
+# Forests
+
+## Model 1: Interaction
+
+```{r forests model 1}
+
+# Load model
+load(here::here("data", "models", "forests_model1_SSB_interaction.RData"))
+
+# Get model summary
+forests_model1_summary <- summary(forests_model1_SSB_interaction)
+
+# Convert summary coefficients to df
+forests_model1_coeff_df <- as.data.frame(forests_model1_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+forests_model1_coeff_df[] <- lapply(forests_model1_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(forests_model1_coeff_df)
+```
+
+## Model 2: No interaction
+
+```{r forests model 2}
+
+# Load model
+load(here::here("data", "models", "forests_model2_SSB_no_interaction.RData"))
+
+# Get model summary
+forests_model2_summary <- summary(forests_model2_SSB_no_interaction)
+
+# Convert summary coefficients to df
+forests_model2_coeff_df <- as.data.frame(forests_model2_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+forests_model2_coeff_df[] <- lapply(forests_model2_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(forests_model2_coeff_df)
+```
+
+## Compare Model 1 and Model 2
+
+```{r forests compare AIC}
+AICctab(forests_model1_SSB_interaction, forests_model2_SSB_no_interaction, base = TRUE)  
+```
+
+## Model 3: 0.1 marginal value
+
+```{r forests model 3}
+
+# Load model
+load(here::here("data", "models", "forests_model3_SSB_interaction_0.1_offset.RData"))
+
+# Get model summary
+forests_model3_summary <- summary(forests_model3_SSB_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+forests_model3_coeff_df <- as.data.frame(forests_model3_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+forests_model3_coeff_df[] <- lapply(forests_model3_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(forests_model3_coeff_df)
+```
+
+## Model 4: 0.01 marginal value
+
+```{r forests model 4}
+
+# Load model
+load(here::here("data", "models", "forests_model4_SSB_interaction_0.01_offset.RData"))
+
+# Get model summary
+forests_model4_summary <- summary(forests_model4_SSB_interaction_0.01_offset)
+
+# Convert summary coefficients to df
+forests_model4_coeff_df <- as.data.frame(forests_model4_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+forests_model4_coeff_df[] <- lapply(forests_model4_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(forests_model4_coeff_df)
+```
+
+# Moors, Heathland & Grassland
+
+## Model 1: Interaction
+
+```{r mhg model 1}
+
+# Load model
+load(here::here("data", "models", "moors_model1_SSB_interaction.RData"))
+
+# Get model summary
+moors_model1_summary <- summary(moors_model1_SSB_interaction)
+
+# Convert summary coefficients to df
+moors_model1_coeff_df <- as.data.frame(moors_model1_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+moors_model1_coeff_df[] <- lapply(moors_model1_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(moors_model1_coeff_df)
+```
+
+## Model 2: No Interaction
+
+```{r mhg model 2}
+
+# Load model
+load(here::here("data", "models", "moors_model2_SSB_no_interaction.RData"))
+
+# Get model summary
+moors_model2_summary <- summary(moors_model2_SSB_no_interaction)
+
+# Convert summary coefficients to df
+moors_model2_coeff_df <- as.data.frame(moors_model2_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+moors_model2_coeff_df[] <- lapply(moors_model2_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(moors_model2_coeff_df)
+```
+
+## Compare Model 1 and Model 2
+
+```{r moors compare models}
+AICctab(moors_model1_SSB_interaction, moors_model2_SSB_no_interaction, base = TRUE)
+```
+
+## Model 3: 0.1 marginal value
+
+```{r mhg model 3}
+
+# Load model
+load(here::here("data", "models", "moors_model3_SSB_interaction_0.1_offset.RData"))
+
+# Get model summary
+moors_model3_summary <- summary(moors_model3_SSB_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+moors_model3_coeff_df <- as.data.frame(moors_model3_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+moors_model3_coeff_df[] <- lapply(moors_model3_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(moors_model3_coeff_df)
+```
+
+## Model 4: 0.01 marginal value
+
+```{r mhg model 4}
+
+# Load model
+load(here::here("data", "models", "moors_model4_SSB_interaction_0.01_offset.RData"))
+
+# Get model summary
+moors_model4_summary <- summary(moors_model4_SSB_interaction_0.01_offset)
+
+# Convert summary coefficients to df
+moors_model4_coeff_df <- as.data.frame(moors_model4_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+moors_model4_coeff_df[] <- lapply(moors_model4_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(moors_model4_coeff_df)
+```
+
+# Transitional Woodland Shrub
+
+## Model 1: Interaction
+
+```{r tws model 1}
+
+# Load model
+load(here::here("data", "models", "woodland_model1_SSB_interaction.RData"))
+
+# Get model summary
+woodland_model1_summary <- summary(woodland_model1_SSB_interaction)
+
+# Convert summary coefficients to df
+woodland_model1_coeff_df <- as.data.frame(woodland_model1_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+woodland_model1_coeff_df[] <- lapply(woodland_model1_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(woodland_model1_coeff_df)
+```
+
+## Model 2: No Interaction
+
+```{r tws model 2}
+
+# Load model
+load(here::here("data", "models", "woodland_model2_SSB_no_interaction.RData"))
+
+# Get model summary
+woodland_model2_summary <- summary(woodland_model2_SSB_no_interaction)
+
+# Convert summary coefficients to df
+woodland_model2_coeff_df <- as.data.frame(woodland_model2_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+woodland_model2_coeff_df[] <- lapply(woodland_model2_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(woodland_model2_coeff_df)
+```
+
+## Compare Model 1 and Model 2
+
+```{r tws model comparison}
+AICctab(woodland_model1_SSB_interaction, woodland_model2_SSB_no_interaction, base = TRUE)
+```
+
+## Model 3: 0.1 marginal value
+
+```{r tws model 3}
+
+# Load model
+load(here::here("data", "models", "woodland_model3_SSB_interaction_0.1_offset.RData"))
+
+# Get model summary
+woodland_model3_summary <- summary(woodland_model3_SSB_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+woodland_model3_coeff_df <- as.data.frame(woodland_model3_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+woodland_model3_coeff_df[] <- lapply(woodland_model3_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(woodland_model3_coeff_df)
+```
+
+## Model 4: 0.01 marginal value
+
+```{r tws model 4}
+
+# Load model
+load(here::here("data", "models", "woodland_model4_SSB_interaction_0.01_offset.RData"))
+
+# Get model summary
+woodland_model4_summary <- summary(woodland_model4_SSB_interaction_0.01_offset)
+
+# Convert summary coefficients to df
+woodland_model4_coeff_df <- as.data.frame(woodland_model4_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+woodland_model4_coeff_df[] <- lapply(woodland_model4_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(woodland_model4_coeff_df)
+```
+
+# Sparse Vegetation
+
+## Model 1: Interaction
+
+```{r sv model 1}
+
+# Load model
+load(here::here("data", "models", "sparse_model1_SSB_interaction.RData"))
+
+# Get model summary
+sparse_model1_summary <- summary(sparse_model1_SSB_interaction)
+
+# Convert summary coefficients to df
+sparse_model1_coeff_df <- as.data.frame(sparse_model1_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+sparse_model1_coeff_df[] <- lapply(sparse_model1_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(sparse_model1_coeff_df)
+```
+
+## Model 2: No Interaction
+
+```{r sv model 2}
+
+# Load model
+load(here::here("data", "models", "sparse_model2_SSB_no_interaction.RData"))
+
+# Get model summary
+sparse_model2_summary <- summary(sparse_model2_SSB_no_interaction)
+
+# Convert summary coefficients to df
+sparse_model2_coeff_df <- as.data.frame(sparse_model2_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+sparse_model2_coeff_df[] <- lapply(sparse_model2_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(sparse_model2_coeff_df)
+```
+
+## Compare Model 1 and Model 2
+
+```{r sv compare models}
+AICctab(sparse_model1_SSB_interaction, sparse_model2_SSB_no_interaction, base = TRUE)
+```
+
+## Model 3: 0.1 marginal value
+
+```{r sv model 3}
+
+# Load model
+load(here::here("data", "models", "sparse_model3_SSB_interaction_0.1_offset.RData"))
+
+# Get model summary
+sparse_model3_summary <- summary(sparse_model3_SSB_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+sparse_model3_coeff_df <- as.data.frame(sparse_model3_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+sparse_model3_coeff_df[] <- lapply(sparse_model3_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(sparse_model3_coeff_df)
+```
+
+## Model 4: 0.01 marginal value
+
+```{r sv model 4}
+
+# Load model
+load(here::here("data", "models", "sparse_model4_SSB_interaction_0.01_offset.RData"))
+
+# Get model summary
+sparse_model4_summary <- summary(sparse_model4_SSB_interaction_0.01_offset)
+
+# Convert summary coefficients to df
+sparse_model4_coeff_df <- as.data.frame(sparse_model4_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+sparse_model4_coeff_df[] <- lapply(sparse_model4_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(sparse_model4_coeff_df)
+```
+
+# Differences
+
+| Cover Type                                       | Variable                                             | 0.001         | 0.1           | 0.01          |
+|--------------------------------------------------|------------------------------------------------------|---------------|---------------|---------------|
+| Agricultural with Significant Natural Vegetation | 2012-2018                                            | negative (S)  | positive (NS) | negatives (S) |
+| Agricultural with Significant Natural Vegetation | ASNV -\> Urban \* 2012-2018                          | negative (S)  | negative (S)  | positive (NS) |
+| Forests                                          | Forest -\> Moors, Heathland & Grassland              | positive (S)  | negative (NS) | positive (NS) |
+| Moors, Heathland & Grassland                     | Moors, Heathland & Grassland -\> Complex Agriculture | positive (S)  | negative (NS) | positive (NS) |
+| Moors, Heathland & Grassland                     | Moors, Heathland & Grassland -\> Forest              | positive (NS) | negative (S)  | positive (NS) |
+| Transitional Woodland Shrub                      | Transitional Woodland Shrub -\> Urban \* 06-12       | negative (S)  | positive (NS) | negative (NS) |
+| Sparse Vegetation                                | Sparse Vegetation -\> Forests                        | negative (NS) | positive (S)  | positive (S)  |
+| Sparse Vegetation                                | Sparse Vegetation -\> Urban                          | positive (S)  | negative (NS) | positive (S)  |
