@@ -1,7 +1,7 @@
 ---
 title: "Land Cover Change (Y/N) and Occurrence Records & Time"
 author: "Beatrice Trascau"
-date: "2025-02-17"
+date: "2025-02-25"
 output: html_document
 ---
 
@@ -11,6 +11,7 @@ library(dplyr)
 library(DHARMa)
 library(ggplot2)
 library(knitr)
+library(bbmle)
 ```
 
 # Introduction
@@ -20,10 +21,133 @@ This markdown outlines the process of modelling the number of occurrence records
 The models ran as part of this are as follows:
 
 | Model Name                            | Interaction?                | Marginal Value |
-|---------------------------------------------|-----------------------------------------|-------------------------------------------|
+|---------------------------------------|-----------------------------|----------------|
 | YN_model1_SSB_interaction             | cover_change \* time_period | 0.001          |
 | YN_model2_SSB_no_interaction          | cover_change + time_period  | 0.001          |
 | YN_model3_SSB_interaction_0.1_offset  | cover_change \* time_period | 0.1            |
 | YN_model4_SSB_interaction_0.01_offset | cover_change \* time_period | 0.01           |
 
-# 
+# YN_model1_SSB_interaction
+
+## Get output
+
+```{r YN model 1}
+
+# Load model
+load(here::here("data", "models", "YN_model1_SSB_interaction.RData"))
+
+# Get model summary
+YN_model1_summary <- summary(YN_model1_SSB_interaction)
+
+# Convert summary coefficients to df
+YN_model_coeff_df <- as.data.frame(YN_model1_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+YN_model_coeff_df[] <- lapply(YN_model_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(YN_model_coeff_df)
+```
+
+# YN_model1_SSB_no_interaction
+
+## Get output
+
+```{r YN model 2}
+
+# Load model
+load(here::here("data", "models", "YN_model2_SSB_no_interaction.RData"))
+
+# Get model summary
+YN_model2_summary <- summary(YN_model2_SSB_no_interaction)
+
+# Convert summary coefficients to df
+YN_model2_coeff_df <- as.data.frame(YN_model2_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+YN_model2_coeff_df[] <- lapply(YN_model2_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(YN_model2_coeff_df)
+```
+
+## Compare Model 1 and Model 2
+
+```{r compare AICs }
+AICctab(YN_model1_SSB_interaction, YN_model2_SSB_no_interaction, base = TRUE)
+
+#                                AICc           dAICc    df
+#YN_model1_SSB_interaction    899375941.7         0.0    8 
+#YN_model2_SSB_no_interaction 899411298.0     35356.3    6 
+```
+
+# Model 3: 0.1 offset
+
+```{r YN model 3}
+
+# Load model
+load(here::here("data", "models", "YN_model3_SSB_interaction_0.1_offset.RData"))
+
+# Get model summary
+YN_model3_summary <- summary(YN_model3_SSB_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+YN_model3_coeff_df <- as.data.frame(YN_model3_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+YN_model3_coeff_df[] <- lapply(YN_model3_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(YN_model3_coeff_df)
+```
+
+# Model 4: 0.01 offset
+
+```{r YN model 4}
+
+# Load model
+load(here::here("data", "models", "YN_model4_SSB_interaction_0.01_offset.RData"))
+
+# Get model summary
+YN_model4_summary <- summary(YN_model4_SSB_interaction_0.01_offset)
+
+# Convert summary coefficients to df
+YN_model4_coeff_df <- as.data.frame(YN_model4_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+YN_model4_coeff_df[] <- lapply(YN_model4_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(YN_model4_coeff_df)
+```
+
+# Model 5: 0.1 offset and no interaction
+
+```{r YN model 5}
+
+# Load model
+load(here::here("data", "models", "YN_model5_SSB_no_interaction_0.1_offset.RData"))
+
+# Get model summary
+YN_model5_summary <- summary(YN_model5_SSB_no_interaction_0.1_offset)
+
+# Convert summary coefficients to df
+YN_model5_coeff_df <- as.data.frame(YN_model5_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+YN_model5_coeff_df[] <- lapply(YN_model5_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(YN_model5_coeff_df)
+```
+
+# AIC Comparison Model 3 and Model 5
+
+```{r model 3 & model 5 AIC}
+AICctab(YN_model3_SSB_interaction_0.1_offset, YN_model5_SSB_no_interaction_0.1_offset, base = TRUE)
+```
