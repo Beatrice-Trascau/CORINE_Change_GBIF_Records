@@ -324,9 +324,10 @@ IntensExtens_model3_SSB_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change * 
                                                       data = occ_intens_extens_before_after_for_model)
 
 # Save model output to file to save time next time
-save(IntensExtens_model3_SSB_0.1_offset, file = "IntensExtens_model3_SSB_0.1_offset.RData")
+save(IntensExtens_model3_SSB_0.1_offset, file = here::here("data", "models", 
+                                                           "IntensExtens_model3_SSB_0.1_offset.RData"))
 
-## 2.2 Model with 0.01 offset --------------------------------------------------
+## 4.2 Model with 0.01 offset --------------------------------------------------
 
 # Run negative binomial model
 IntensExtens_model4_SSB_0.01_offset <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.01)) + (1 | SSBID),
@@ -334,6 +335,18 @@ IntensExtens_model4_SSB_0.01_offset <- glmmTMB(ocurrences_after ~ cover_change *
                                                        data = occ_intens_extens_before_after_for_model)
 
 # Save model output to file to save time next time
-save(IntensExtens_model4_SSB_0.01_offset, file = "IntensExtens_model4_SSB_0.01_offset.RData")
+save(IntensExtens_model4_SSB_0.01_offset, file = here::here("data", "models", 
+                                                            "IntensExtens_model4_SSB_0.01_offset.RData"))
+
+## 4.3. Model with 0.1 offset and no interaction -------------------------------
+
+# Run model
+IntensExtens_model5_SSB_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
+                                              family = nbinom2,
+                                              data = occ_intens_extens_before_after_for_model)
+
+# Save model output to file to save time next time
+save(IntensExtens_model5_SSB_no_interaction_0.1_offset, file = here::here("data", "models", 
+                                                           "IntensExtens_model5_SSB_no_interaction_0.1_offset.RData"))
 
 # END OF SCRIPT ----------------------------------------------------------------
