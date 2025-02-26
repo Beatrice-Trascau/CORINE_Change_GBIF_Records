@@ -18,7 +18,7 @@ library(bbmle)
 ```
 
 | Model Name                             | Interaction?                | Marginal Value |
-|--------------------------------|-----------------------|-----------------|
+|-------------------------------|-----------------------|------------------|
 | IntensExtens_model1_SSB_interaction    | cover_change \* time_period | 0.001          |
 | IntensExtens_model2_SSB_no_interaction | cover_change + time_period  | 0.001          |
 | IntensExtens_model3_SSB_0.1_offset     | cover_change \* time_period | 0.1            |
@@ -147,4 +147,8 @@ kable(IntensExtens_model5_coeff_df)
 
 ```{r model 3 & model 5 AIC}
 AICctab(IntensExtens_model3_SSB_0.1_offset, IntensExtens_model5_SSB_no_interaction_0.1_offset, base = TRUE)
+
+#                                                   AICc        dAICc       df
+# IntensExtens_model3_SSB_0.1_offset                896812521.1         0.0 11
+# IntensExtens_model5_SSB_no_interaction_0.1_offset 896817178.4      4657.3 7 
 ```
