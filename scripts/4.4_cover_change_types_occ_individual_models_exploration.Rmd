@@ -131,11 +131,15 @@ urban_model5_coeff_df[] <- lapply(urban_model5_coeff_df,
 kable(urban_model5_coeff_df)
 ```
 
-## Compare AIC Model 3 &  Model 5
+## Compare AIC Model 3 & Model 5
 
 ```{r urban model 3 & 5 AIC}
 
 AICctab(urban_model3_SSB_interaction_0.1_offset, urban_model5_SSB_no_interaction_0.1_offset, base = TRUE)
+
+#                                            AICc       dAICc      df
+# urban_model5_SSB_no_interaction_0.1_offset 87844894.6        0.0 7 
+# urban_model3_SSB_interaction_0.1_offset    87844895.0        0.4 9 
 ```
 
 # Complex Agricultural Cover
@@ -256,7 +260,11 @@ kable(ca_model5_coeff_df)
 ## Compare AIC Model 3 & Model 5
 
 ```{r CAC model 3 & 5 compare AIC}
-AICctab(complex_agri_model3_SSB_interaction_0.1_offset, complex_agri_model5_SSB_no_interaction_0.1_offset, base = TRUE)
+AICctab(complex_agri_model3_SSB_interaction_0.1_offset, complex_agri_model5_SSB_no_interaction_0.1_offset, base = TRUE) 
+
+#                                                   AICc       dAICc      df
+# complex_agri_model3_SSB_interaction_0.1_offset    23296033.4        0.0 16
+# complex_agri_model5_SSB_no_interaction_0.1_offset 23296119.2       85.8 10
 ```
 
 # Agriculture with Significant Natural Vegetation
@@ -378,6 +386,10 @@ kable(asnv_model5_coeff_df)
 
 ```{r ASNV model 3 & 5 AIC}
 AICctab(agri_veg_model3_SSB_interaction_0.1_offset, agri_veg_model5_SSB_no_interaction_0.1_offset, base = TRUE)
+
+#                                               AICc       dAICc      df
+# agri_veg_model3_SSB_interaction_0.1_offset    18256470.5        0.0 17
+# agri_veg_model5_SSB_no_interaction_0.1_offset 18256490.6       20.1 10
 ```
 
 # Forests
@@ -497,6 +509,10 @@ kable(forests_model5_coeff_df)
 
 ```{r forests model 3 & 5 AIC}
 AICctab(forests_model3_SSB_interaction_0.1_offset, forests_model5_SSB_no_interaction_0.1_offset, base = TRUE)
+
+#                                              AICc        dAICc       df
+# forests_model3_SSB_interaction_0.1_offset    201983553.0         0.0 23
+# forests_model5_SSB_no_interaction_0.1_offset 201984905.5      1352.5 11
 ```
 
 # Moors, Heathland & Grassland
@@ -616,6 +632,10 @@ kable(moors_model5_coeff_df)
 
 ```{r mhg model 3 & 5 AIC}
 AICctab(moors_model3_SSB_interaction_0.1_offset, moors_model5_SSB_no_interaction_0.1_offset, base = TRUE)
+
+#                                            AICc      dAICc     df
+# moors_model3_SSB_interaction_0.1_offset    7978336.2       0.0 14
+# moors_model5_SSB_no_interaction_0.1_offset 7978367.5      31.3 10
 ```
 
 # Transitional Woodland Shrub
@@ -710,7 +730,7 @@ woodland_model4_coeff_df[] <- lapply(woodland_model4_coeff_df,
 kable(woodland_model4_coeff_df)
 ```
 
-## Model 5: 0.1  & no interaction
+## Model 5: 0.1 & no interaction
 
 ```{r tws model 5}
 
@@ -735,6 +755,10 @@ kable(woodland_model5_coeff_df)
 
 ```{r tws model 3 & 5 AIC}
 AICctab(woodland_model3_SSB_interaction_0.1_offset, woodland_model5_SSB_no_interaction_0.1_offset, base = TRUE)
+
+#                                               AICc     dAICc    df
+# woodland_model3_SSB_interaction_0.1_offset    968593.4      0.0 14
+# woodland_model5_SSB_no_interaction_0.1_offset 969440.7    847.2 10
 ```
 
 # Sparse Vegetation
@@ -854,12 +878,16 @@ kable(sparse_model5_coeff_df)
 
 ```{r sv model 3 & 5 AIC}
 AICctab(sparse_model3_SSB_interaction_0.1_offset, sparse_model5_SSB_no_interaction_0.1_offset, base = TRUE)
+
+#                                             AICc      dAICc     df
+# sparse_model3_SSB_interaction_0.1_offset    5057541.6       0.0 12
+# sparse_model5_SSB_no_interaction_0.1_offset 5057546.1       4.5 8 
 ```
 
 # Differences
 
 | Cover Type                                       | Variable                                             | 0.001         | 0.1           | 0.01          |
-|------------------|-------------------|------------|------------|------------|
+|---------------|---------------|---------------|---------------|---------------|
 | Agricultural with Significant Natural Vegetation | 2012-2018                                            | negative (S)  | positive (NS) | negatives (S) |
 | Agricultural with Significant Natural Vegetation | ASNV -\> Urban \* 2012-2018                          | negative (S)  | negative (S)  | positive (NS) |
 | Forests                                          | Forest -\> Moors, Heathland & Grassland              | positive (S)  | negative (NS) | positive (NS) |
