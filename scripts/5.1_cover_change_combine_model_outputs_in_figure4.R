@@ -6,20 +6,24 @@
 ##----------------------------------------------------------------------------##
 
 # 1. LOAD DATA -----------------------------------------------------------------
-load(here("data", "models", "model4.1_urban.RData"))
-load(here("data", "models", "model4.2_complex_agri.RData"))
-load(here("data", "models", "model4.3_agri_veg.RData"))
-load(here("data", "models", "model4.4_forests.RData"))
-load(here("data", "models", "model4.5_moors.RData"))
-load(here("data", "models", "model4.6_woodland.RData"))
-load(here("data", "models", "model4.7_sparse.RData"))
+load(here("data", "models", "urban_model3_SSB_interaction_0.1_offset.RData"))
+load(here("data", "models", "complex_agri_model3_SSB_interaction_0.1_offset.RData"))
+load(here("data", "models", "agri_veg_model3_SSB_interaction_0.1_offset.RData"))
+load(here("data", "models", "forests_model3_SSB_interaction_0.1_offset.RData"))
+load(here("data", "models", "moors_model3_SSB_interaction_0.1_offset.RData"))
+load(here("data", "models", "woodland_model3_SSB_interaction_0.1_offset.RData"))
+load(here("data", "models", "sparse_model3_SSB_interaction_0.1_offset.RData"))
 
 # 2. EXTRACT MODEL OUTPUTS -----------------------------------------------------
 
 # Create list of models
-model_list <- list(model4.1_urban, model4.2_complex_agri, model4.3_agri_veg,
-                   model4.4_forests, model4.5_moors, model4.6_woodland,
-                   model4.7_sparse)
+model_list <- list(urban_model3_SSB_interaction_0.1_offset, 
+                   complex_agri_model3_SSB_interaction_0.1_offset, 
+                   agri_veg_model3_SSB_interaction_0.1_offset,
+                   forests_model3_SSB_interaction_0.1_offset,
+                   moors_model3_SSB_interaction_0.1_offset, 
+                   woodland_model3_SSB_interaction_0.1_offset,
+                   sparse_model3_SSB_interaction_0.1_offset)
 
 # Apply function to extract model summary to df
 models_results <-lapply(model_list, extract_summary_as_df)
