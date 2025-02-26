@@ -21,7 +21,7 @@ This markdown outlines the process of modelling the number of occurrence records
 The models ran as part of this are as follows:
 
 | Model Name                            | Interaction?                | Marginal Value |
-|---------------------------------------|-----------------------------|----------------|
+|--------------------------------|------------------------|-----------------|
 | YN_model1_SSB_interaction             | cover_change \* time_period | 0.001          |
 | YN_model2_SSB_no_interaction          | cover_change + time_period  | 0.001          |
 | YN_model3_SSB_interaction_0.1_offset  | cover_change \* time_period | 0.1            |
@@ -150,4 +150,8 @@ kable(YN_model5_coeff_df)
 
 ```{r model 3 & model 5 AIC}
 AICctab(YN_model3_SSB_interaction_0.1_offset, YN_model5_SSB_no_interaction_0.1_offset, base = TRUE)
+ 
+#                                         AICc        dAICc       df
+# YN_model3_SSB_interaction_0.1_offset    896897400.1         0.0 8 
+# YN_model5_SSB_no_interaction_0.1_offset 896901072.8      3672.7 6 
 ```
