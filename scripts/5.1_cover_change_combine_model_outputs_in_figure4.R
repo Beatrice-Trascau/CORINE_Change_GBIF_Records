@@ -97,21 +97,25 @@ cover_effect_no_year_interaction <- effect_no_year_interaction |>
   filter(!cover_change %in% c("2006-2012", "2012-2018"))
 
 # Manually add rows where intial_cover equals cover_change
-missing_rows <- data.frame(
-  model_id = NA, 
-  term = NA,
-  cover_change = c("Urban Fabric", "Forests", "Complex Agriculture", 
-                   "Transitional Woodland Shrub", "Moors, Heathland & Grassland",
-                   "Sparse Vegetation", "Agriculture & Vegetation"),
-  intial_cover = c("Urban Fabric", "Forests", "Complex Agriculture", 
-                    "Transitional Woodland Shrub", "Moors, Heathland & Grassland", 
-                    "Sparse Vegetation", "Agriculture & Vegetation"),
-  Estimate = NA,  
-  `Std. Error` = NA,
-  `z value` = NA,
-  `Pr(>|z|)` = NA,
-  Significant = NA,
-  time_period = NA)
+missing_rows <- data.frame(model_id = NA, term = NA,
+                           cover_change = c("Urban Fabric", 
+                                            "Forests", "Complex Agriculture",
+                                            "Transitional Woodland Shrub", 
+                                            "Moors, Heathland & Grassland",
+                                            "Sparse Vegetation", 
+                                            "Agriculture & Vegetation"),
+                           intial_cover = c("Urban Fabric", "Forests", 
+                                            "Complex Agriculture",
+                                            "Transitional Woodland Shrub", 
+                                            "Moors, Heathland & Grassland",
+                                            "Sparse Vegetation", 
+                                            "Agriculture & Vegetation"),
+                           Estimate = NA,
+                           `Std. Error` = NA,
+                           `z value` = NA,
+                           `Pr(>|z|)` = NA,
+                           Significant = NA,
+                           time_period = NA)
 
 # Add missing rows to cover df
 cover_effect_no_year_interaction <- cover_effect_no_year_interaction |>
@@ -124,13 +128,13 @@ cover_effect_no_year_interaction <- cover_effect_no_year_interaction |>
 # Reorder the levels of initial land cover column
 cover_effect_no_year_interaction <- cover_effect_no_year_interaction |>
   mutate(intial_cover = factor(intial_cover, 
-                                levels = c("Urban Fabric",
-                                           "Transitional Woodland Shrub",
-                                           "Sparse Vegetation",
-                                           "Moors, Heathland & Grassland",
-                                           "Forests",
-                                           "Complex Agriculture",
-                                           "Agriculture & Vegetation")),
+                               levels = c("Urban Fabric",
+                                          "Transitional Woodland Shrub",
+                                          "Sparse Vegetation",
+                                          "Moors, Heathland & Grassland",
+                                          "Forests",
+                                          "Complex Agriculture",
+                                          "Agriculture & Vegetation")),
          cover_change = factor(cover_change, 
                                levels = c("Agriculture & Vegetation", 
                                           "Complex Agriculture", 
@@ -143,7 +147,7 @@ cover_effect_no_year_interaction <- cover_effect_no_year_interaction |>
 # Define breaks for the time legend
 legend_breaks_cover <- c(min(cover_effect_no_year_interaction$Significant, na.rm = TRUE),
                          5, 2.5, 0, -2.5,
-                        max(cover_effect_no_year_interaction$Significant, na.rm = TRUE))
+                         max(cover_effect_no_year_interaction$Significant, na.rm = TRUE))
 
 # Plot heatmap for cover change effects
 a <- ggplot(cover_effect_no_year_interaction, 
@@ -186,13 +190,35 @@ time_effect_no_year_interaction <- time_effect_no_year_interaction |>
 
 # Define breaks for the time legend
 legend_breaks_time <- c(min(time_effect_no_year_interaction$Significant, na.rm = TRUE), 
-                   0, -0.4, -0.8,
-                   max(time_effect_no_year_interaction$Significant, na.rm = TRUE))
+                        0, -0.4, -0.8,
+                        max(time_effect_no_year_interaction$Significant, na.rm = TRUE))
 
 
-# Plot heatmap for time period effects
-time <- ggplot(time_effect_no_year_interaction, 
-               aes(x = cover_change, y = intial_cover)) +
+# Add significance indicator to time effects
+time_effect_no_year_interaction <- time_effect_no_year_interaction |>
+  mutate(plot_type = ifelse(`Pr(>|z|)` < p_value_threshold, "significant", "non_significant"))
+
+# Filter to only include significant time effects
+time_sig <- time_effect_no_year_interaction |>
+  filter(plot_type == "significant")
+
+# Reverse mapping to get full names back
+reverse_mapping <- setNames(names(label_mapping), label_mapping)
+
+# Convert abbreviated labels back to full names for plotting
+time_sig <- time_sig |>
+  mutate(intial_cover_full = factor(reverse_mapping[as.character(intial_cover)],
+                                    levels = c("Urban Fabric",
+                                               "Transitional Woodland Shrub",
+                                               "Sparse Vegetation",
+                                               "Moors, Heathland & Grassland",
+                                               "Forests",
+                                               "Complex Agriculture",
+                                               "Agriculture & Vegetation")))
+
+# Plot time effects with only significant effects shown
+time_updated <- ggplot(time_sig, 
+                       aes(x = cover_change, y = intial_cover_full)) +
   geom_tile(aes(fill = Significant), color = "black", size = 0.5) +
   scale_fill_gradient2(low = "#0072B2", mid = "white", high = "red", 
                        midpoint = 0, na.value = "grey90", name = "Estimate", 
@@ -211,7 +237,7 @@ time <- ggplot(time_effect_no_year_interaction,
 
 # Combine the two plots
 cover_time_combined_plot <- plot_grid(a, time,
-                           ncol = 1, labels = c("a)", "b)"))
+                                      ncol = 1, labels = c("a)", "b)"))
 
 # Save to file as .png
 ggsave(here("figures", "model_outputs_Figure4.5.png"),
@@ -222,69 +248,90 @@ ggsave(here("figures", "model_outputs_Figure4.5.png"),
 # Create a new order for the factors
 new_order <- c("UF", "TWS", "SV", "MHG", "Forests", "CA", "ASNV")
 
-# Change df to fit the plot
-cover_points <- cover_effect_no_year_interaction |>
-  mutate(intial_cover = factor(label_mapping[as.character(intial_cover)], 
-                               levels = rev(new_order)),
-    cover_change = factor(label_mapping[as.character(cover_change)]),
-    plot_type = case_when(
-      is_same ~ "same",
-      is.na(Significant) ~ "non_significant",
-      !is.na(Significant) ~ "significant")) |>
-  rename(std_error = 'Std. Error')
+# Use full names rather than abbreviations in the cover_points plot
+cover_points_full <- cover_effect_no_year_interaction |>
+  # Keep the original names
+  mutate(plot_type = case_when(is_same ~ "same",
+                               is.na(Significant) ~ "non_significant",
+                               !is.na(Significant) ~ "significant")) |>
+  rename(std_error = 'Std. Error') |>
+  # Set reversed order (Agriculture & Vegetation at top) for facets
+  mutate(intial_cover = factor(intial_cover, 
+                               levels = c("Agriculture & Vegetation",
+                                          "Complex Agriculture",
+                                          "Forests",
+                                          "Moors, Heathland & Grassland", 
+                                          "Sparse Vegetation",
+                                          "Transitional Woodland Shrub",
+                                          "Urban Fabric")))
 
-# Calculate y-axis with only the significant results
-significant_results <- cover_points |>
+# Calculate y-axis values with only the significant results
+significant_results_full <- cover_points_full |>
   filter(!is.na(Significant))
 
 # Calculate ymin and ymax
-y_min <- min(significant_results$Estimate - significant_results$std_error, 
+y_min <- min(significant_results_full$Estimate - significant_results_full$std_error, 
              na.rm = TRUE)
-y_max <- max(significant_results$Estimate + significant_results$std_error, 
+y_max <- max(significant_results_full$Estimate + significant_results_full$std_error, 
              na.rm = TRUE)
 
 # Create a df with break points for y axis
-y_breaks_df <- cover_points |>
+y_breaks_df_full <- cover_points_full |>
   filter(plot_type == "significant") |>
   distinct(intial_cover, cover_change) |>
   crossing(y_breaks = pretty(c(y_min, y_max), n = 4))
 
-# Plot "heatmap" with points
-cover_points_plot <- ggplot() +
+# Plot "heatmap" with points using full names
+cover_points_plot_fixed <- ggplot() +
   # Create facets for each combination
   facet_grid(intial_cover ~ cover_change, switch = "y") +
   # Add colored background for significant plots and black for same initial/cover change
-  geom_rect(data = cover_points %>% filter(plot_type == "significant"), 
+  geom_rect(data = cover_points_full %>% filter(plot_type == "significant"), 
             aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, fill = Significant)) +
-  geom_rect(data = cover_points %>% filter(plot_type == "same"), 
+  geom_rect(data = cover_points_full %>% filter(plot_type == "same"), 
             aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf), 
             fill = "black") +
-  # Add y-axis text for significant results with adjusted position
-  geom_text(data = y_breaks_df,
-            aes(x = 0.4, y = y_breaks, label = format(y_breaks, digits = 2)),
-            hjust = 1,
-            size = 3) +
   # Add elements only for significant plots
-  geom_hline(data = cover_points %>% filter(plot_type == "significant"), 
+  geom_hline(data = cover_points_full %>% filter(plot_type == "significant"), 
              aes(yintercept = 0), 
              linetype = "dotted") +
-  # Add error bars and points (now in black)
-  geom_errorbar(data = cover_points %>% filter(plot_type == "significant"),
+  # Add y-axis text for significant results with adjusted position - use a fixed axis
+  scale_x_continuous(limits = c(0, 1), position = "top", breaks = NULL) +
+  # Add error bars and points - centered at x=0.5
+  geom_errorbar(data = cover_points_full %>% filter(plot_type == "significant"),
                 aes(x = 0.5, ymin = Estimate - std_error, ymax = Estimate + std_error),
-                width = 0.05,
+                width = 0.1,  # Increased width slightly for visibility
                 color = "black") +
-  geom_point(data = cover_points %>% filter(plot_type == "significant"),
+  geom_point(data = cover_points_full %>% filter(plot_type == "significant"),
              aes(x = 0.5, y = Estimate),
              size = 2,
              color = "black") +
-  # Custom scale for fill colors (previously was for point colors)
+  # Create simplified y-break points with fixed values
+  {
+    # Use fixed values instead of calculating from data
+    fixed_breaks <- c(-3.5, 0, 5)
+    
+    # Create dataframe with these fixed y-breaks per facet
+    y_breaks_df_simple <- cover_points_full %>%
+      filter(plot_type == "significant") %>%
+      distinct(intial_cover, cover_change) %>%
+      crossing(y_breaks = fixed_breaks) %>%
+      distinct(intial_cover, cover_change, y_breaks)
+    
+    # Add the text labels
+    geom_text(data = y_breaks_df_simple,
+              aes(x = 0.001, y = y_breaks, label = y_breaks),
+              hjust = 0,
+              size = 3)
+  } +
+  # Custom scale for fill colors
   scale_fill_gradient2(low = "blue", mid = "white", high = "red", 
                        midpoint = 0, na.value = "grey90", 
                        name = "Estimate", 
                        breaks = legend_breaks_cover,
                        labels = scales::label_number()) +
-  # Set consistent y-axis limits
-  coord_cartesian(ylim = c(y_min, y_max)) +
+  # Set consistent y-axis limits (using rounded values for cleaner display)
+  coord_cartesian(ylim = c(floor(y_min), ceiling(y_max))) +
   # Theme customization
   theme_bw() +
   theme(
@@ -292,29 +339,26 @@ cover_points_plot <- ggplot() +
     axis.ticks.x = element_blank(),
     axis.title.x = element_text(size = 14, face = "bold"),
     panel.grid = element_blank(),
-    strip.text.x = element_text(angle = 15, hjust = 0, size = 14),
-    strip.text.y.left = element_text(size = 14, angle = 0, hjust = 1),
+    strip.text.x = element_text(angle = 0, hjust = 0.5, size = 11), 
+    strip.text.y.left = element_text(size = 11, angle = 0, hjust = 1),  
     strip.background = element_blank(),
     panel.border = element_rect(color = "black", fill = NA),
-    axis.text.y = element_blank(),  # Remove default y-axis text
-    axis.ticks.y = element_blank(),  # Remove default y-axis ticks
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
     axis.title.y = element_text(size = 14, face = "bold"),
-    axis.line = element_blank()
-  ) +
-  labs(y = "Estimate",
-       x = "Cover change") +  # Added x-axis label
-  scale_x_continuous(position = "top")  # Move x-axis to top
-
-# Save figure
-ggsave(here("figures", "model_outputs_Figure4.5a.png"),
-       width=20, height=13)
+    axis.line = element_blank()) +
+  labs(y = "Estimate", x = "Cover change")
 
 # Combine the two plots
-cover_time_point_plot <- plot_grid(cover_points_plot, time,
-                                      ncol = 1, labels = c("a)", "b)"))
+cover_time_point_plot <- plot_grid(cover_points_plot_fixed, time_updated,
+                                   ncol = 1, labels = c("a)", "b)"))
 
 # Save to file as .png
 ggsave(here("figures", "model_outputs_Figure4.5.png"),
+       width=20, height=13)
+
+# Save to file as .svg
+ggsave(here("figures", "model_outputs_Figure4.5.svg"),
        width=20, height=13)
 
 # END OF SCRIPT ----------------------------------------------------------------
