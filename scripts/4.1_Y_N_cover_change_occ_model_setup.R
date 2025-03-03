@@ -189,6 +189,21 @@ occ_y_n_cover_change_after_records_for_model <- bind_rows(occ_df_after_2000.2006
   select(-cell_ID) |>
   rename(municipality = NAME_2)
 
+# Ensure unique combinations of SSBID time_period and cover_change before
+#   the full join to prevent duplicates in the fully joined df
+
+# Aggregate before data to ensure uniqueness
+occ_df_before_records_unique <- occ_df_before_records |>
+  group_by(SSBID, time_period, cover_change, municipality) |>
+  summarise(ocurrences_before = sum(ocurrences_before)) |>
+  ungroup()
+
+# Aggregate after data to ensure uniqueness
+occ_y_n_cover_change_after_records_unique <- occ_y_n_cover_change_after_records_for_model |>
+  group_by(SSBID, time_period, cover_change, municipality) |>
+  summarise(ocurrences_after = sum(ocurrences_after)) |>
+  ungroup()
+
 # Full join of the dfs on SSBid and time_period
 occ_df_before_after <- full_join(occ_y_n_cover_change_after_records_for_model,
                                  occ_df_before_records,
@@ -200,6 +215,12 @@ occ_y_n_cover_change_before_after_for_modell <- occ_df_before_after |>
   mutate(ocurrences_after = ifelse(is.na(ocurrences_after), 0, ocurrences_after),
          ocurrences_before = ifelse(is.na(ocurrences_before), 0, ocurrences_before),
          SSBID = as.factor(SSBID))
+
+# Check for duplicates - this should return 0 rows if there are no duplicates
+duplicate_check <- occ_y_n_cover_change_before_after_for_modell |>
+  group_by(SSBID, time_period, cover_change, municipality) |>
+  summarise(count = n()) |>
+  filter(count > 1)
 
 # Write dataframe to file
 save(occ_y_n_cover_change_before_after_for_modell,
