@@ -1,24 +1,3 @@
-# Define function
-install_load_package <- function(x) {
-  if (!require(x, character.only = TRUE)) {
-    install.packages(x, repos = "http://cran.us.r-project.org")
-  }
-  require(x, character.only = TRUE)
-}
-
-# Define list of packages
-package_vec <- c("here", "terra", "sf", "geodata", "mapview",
-                 "tidyverse", "dplyr", "ggplot2", "ggalluvial",
-                 "networkD3", "gt", "cowplot", "data.table",
-                 "tidyterra", "patchwork", "styler", "scales",
-                 "plotly", "lme4", "DHARMa", "glmmTMB", "mgcv",
-                 "tidyterra", "ggspatial", "htmlwidgets",
-                 "htmltools", "patchwork", "webshot2",
-                 "rgbif", "CoordinateCleaner", "DHARMa") # specify packages
-
-# Execute the function
-sapply(package_vec, install_load_package)
-
 ##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
 # 4.4_cover_change_types_occ_individual_models_setup
@@ -53,7 +32,8 @@ occ_cover_types <- occ_cover_types |>
   
   # 3. replace "." in values with "_"
   mutate(lc_change_from = str_replace_all(lc_change_from, "\\.", "_"),
-         lc_change_to = str_replace_all(lc_change_to, "\\.", "_"))
+         lc_change_to = str_replace_all(lc_change_to, "\\.", "_")) |>
+  mutate(cover_change = factor(cover_change))
 
 
 # 2. MODELS FOR URBAN ----------------------------------------------------------
