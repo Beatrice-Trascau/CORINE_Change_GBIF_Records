@@ -205,8 +205,8 @@ occ_y_n_cover_change_after_records_unique <- occ_y_n_cover_change_after_records_
   ungroup()
 
 # Full join of the dfs on SSBid and time_period
-occ_df_before_after <- full_join(occ_y_n_cover_change_after_records_for_model,
-                                 occ_df_before_records,
+occ_df_before_after <- full_join(occ_y_n_cover_change_after_records_unique,
+                                 occ_df_before_records_unique,
                                  by = c("SSBID", "time_period", 
                                         "cover_change", "municipality"))
 
