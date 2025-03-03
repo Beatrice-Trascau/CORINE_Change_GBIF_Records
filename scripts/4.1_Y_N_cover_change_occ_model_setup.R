@@ -1,3 +1,25 @@
+# Define function
+install_load_package <- function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, repos = "http://cran.us.r-project.org")
+  }
+  require(x, character.only = TRUE)
+}
+
+# Define list of packages
+package_vec <- c("here", "terra", "sf", "geodata", "mapview",
+                 "tidyverse", "dplyr", "ggplot2", "ggalluvial",
+                 "networkD3", "gt", "cowplot", "data.table",
+                 "tidyterra", "patchwork", "styler", "scales",
+                 "plotly", "lme4", "DHARMa", "glmmTMB", "mgcv",
+                 "tidyterra", "ggspatial", "htmlwidgets",
+                 "htmltools", "patchwork", "webshot2",
+                 "rgbif", "CoordinateCleaner", "DHARMa", 
+                 "writexl", "bbmle") # specify packages
+
+# Execute the function
+sapply(package_vec, install_load_package)
+
 ##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
 # 4.1_Y_N_cover_change_occ_model_setup
@@ -172,64 +194,102 @@ occ_df_after_2012.2018_records <- occ_df_after_2012.2018 |>
   mutate(time_period = "2012-2018") |>
   select(-c(land_cover2012, land_cover2018))
 
-## 2.4. Combine dataframes  ----------------------------------------------------
+# 3. COMBINE DATAFRAMES  -------------------------------------------------------
+
+## 3.1. Combine before and after dfs -------------------------------------------
 
 # Before land cover change
 occ_df_before_records <- bind_rows(occ_df_before_2000.2006_records,
                                    occ_df_before_2006.2012_records,
                                    occ_df_before_2012.2018_records) |>
-  select(-cell_ID) |>
-  rename(municipality = NAME_2)
+  select(-NAME_2)
 
 
 # After land cover change
-occ_y_n_cover_change_after_records_for_model <- bind_rows(occ_df_after_2000.2006_records,
-                                                          occ_df_after_2006.2012_records,
-                                                          occ_df_after_2012.2018_records) |>
-  select(-cell_ID) |>
-  rename(municipality = NAME_2)
+occ_df_after_records <- bind_rows(occ_df_after_2000.2006_records,
+                                  occ_df_after_2006.2012_records,
+                                  occ_df_after_2012.2018_records) |>
+  select(-NAME_2)
 
-# Ensure unique combinations of SSBID time_period and cover_change before
-#   the full join to prevent duplicates in the fully joined df
+## 3.2. Check for SSBID differences --------------------------------------------
 
-# Aggregate before data to ensure uniqueness
-occ_df_before_records_unique <- occ_df_before_records |>
-  group_by(SSBID, time_period, cover_change, municipality) |>
-  summarise(ocurrences_before = sum(ocurrences_before)) |>
-  ungroup()
+cell_ssbid_mapping <- full_join(
+  select(occ_df_before_records, cell_ID, time_period, SSBID_before = SSBID),
+  select(occ_df_after_records, cell_ID, time_period, SSBID_after = SSBID),
+  by = c("cell_ID", "time_period")) |>
+  # Flag cells with actual discrepancies (both values present but different)
+  mutate(has_discrepancy = !is.na(SSBID_before) & !is.na(SSBID_after) & 
+           SSBID_before != SSBID_after)
 
-# Aggregate after data to ensure uniqueness
-occ_y_n_cover_change_after_records_unique <- occ_y_n_cover_change_after_records_for_model |>
-  group_by(SSBID, time_period, cover_change, municipality) |>
-  summarise(ocurrences_after = sum(ocurrences_after)) |>
-  ungroup()
+# Extract only the truly discrepant cells
+discrepant_cells <- cell_ssbid_mapping |>
+  filter(has_discrepancy) |>
+  select(cell_ID, time_period)
 
-# Full join of the dfs on SSBid and time_period
-occ_df_before_after <- full_join(occ_y_n_cover_change_after_records_unique,
-                                 occ_df_before_records_unique,
-                                 by = c("SSBID", "time_period", 
-                                        "cover_change", "municipality"))
+# Count discrepancies for documentation
+n_discrepant_cells <- nrow(discrepant_cells)
+message("Removing ", n_discrepant_cells, " cell/time_period combinations with inconsistent SSBID assignments")
 
-# Replace NA with 0 for occurrences_before and occurrences_after
+# Remove only the discrepant cells
+occ_df_before_records_consistent <- occ_df_before_records |>
+  anti_join(discrepant_cells, by = c("cell_ID", "time_period"))
+
+occ_df_after_records_consistent <- occ_df_after_records |>
+  anti_join(discrepant_cells, by = c("cell_ID", "time_period"))
+
+## 3.3. Join datasets ----------------------------------------------------------
+
+# Join datasets using only essential identifiers
+occ_df_before_after <- full_join(
+  occ_df_before_records_consistent,
+  occ_df_after_records_consistent,
+  by = c("cell_ID", "time_period", "SSBID"))
+
+# Process the joined dataset to create final model-ready data
 occ_y_n_cover_change_before_after_for_modell <- occ_df_before_after |>
-  mutate(ocurrences_after = ifelse(is.na(ocurrences_after), 0, ocurrences_after),
-         ocurrences_before = ifelse(is.na(ocurrences_before), 0, ocurrences_before),
-         SSBID = as.factor(SSBID))
+  mutate(
+    # Reconcile cover_change values
+    cover_change = case_when(
+      !is.na(cover_change.x) & !is.na(cover_change.y) ~ cover_change.x, 
+      !is.na(cover_change.x) & is.na(cover_change.y) ~ cover_change.x,
+      is.na(cover_change.x) & !is.na(cover_change.y) ~ cover_change.y,
+      TRUE ~ NA_character_),
+    
+    # Handle occurrence counts
+    ocurrences_before = ifelse(is.na(ocurrences_before), 0, ocurrences_before),
+    ocurrences_after = ifelse(is.na(ocurrences_after), 0, ocurrences_after),
+    
+    # Consolidate gbifID
+    gbifID = coalesce(gbifID.x, gbifID.y),
+    
+    # Convert to factors for modeling
+    SSBID = as.factor(SSBID),
+    cell_ID = as.factor(cell_ID)) |>
+  # Remove redundant columns
+  select(-matches("\\.x$|\\.y$"))
 
-# Check for duplicates - this should return 0 rows if there are no duplicates
+# Verify no duplicates exist in the final dataset
 duplicate_check <- occ_y_n_cover_change_before_after_for_modell |>
-  group_by(SSBID, time_period, cover_change, municipality) |>
-  summarise(count = n()) |>
+  group_by(cell_ID, time_period) |>
+  summarise(count = n(), .groups = "drop") |>
   filter(count > 1)
+
+if(nrow(duplicate_check) > 0) {
+  warning("Duplicate cell_ID/time_period combinations found in final dataset!")
+  print(head(duplicate_check))
+} else {
+  message("Verified: No duplicate cell_ID/time_period combinations in final dataset")
+}
 
 # Write dataframe to file
 save(occ_y_n_cover_change_before_after_for_modell,
      file = here::here("data", "derived_data",
                        "occ_y_n_cover_change_before_after_for_modell.rda"))
 
-# 3. MODEL 1: OCC ~ COVER CHANGE + OFFSET --------------------------------------
 
-## 3.1. N binomial glmmTMB, nbinom2, SSBID -------------------------------------
+# 4. MODEL 1: OCC ~ COVER CHANGE + OFFSET --------------------------------------
+
+## 4.1. N binomial glmmTMB, nbinom2, SSBID -------------------------------------
 
 # Run negative binomial model
 YN_model1_SSB_interaction <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.001)) + (1 | SSBID),
@@ -240,7 +300,7 @@ YN_model1_SSB_interaction <- glmmTMB(ocurrences_after ~ cover_change * time_peri
 save(YN_model1_SSB_interaction, file = here::here("data", "models", 
                                                   "YN_model1_SSB_interaction.RData"))
 
-## 3.2. N binomial glmmTMB, nbinom2, SSBID, no interactio  ---------------------
+## 4.2. N binomial glmmTMB, nbinom2, SSBID, no interactio  ---------------------
 
 # Run negative binomial model
 YN_model2_SSB_no_interaction <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.001)) + (1 | SSBID),
@@ -251,15 +311,15 @@ YN_model2_SSB_no_interaction <- glmmTMB(ocurrences_after ~ cover_change + time_p
 save(YN_model2_SSB_no_interaction, file = here::here("data", "models", 
                                                      "YN_model2_SSB_no_interaction.RData"))
 
-## 3.3. Compare models ---------------------------------------------------------
+## 4.3. Compare models ---------------------------------------------------------
 
 # Get AIC table
-AICctab(YN_model1_SSB_interaction, YN_model2_SSB_no_interaction, base = TRUE)
+#AICctab(YN_model1_SSB_interaction, YN_model2_SSB_no_interaction, base = TRUE)
 #deltaAIC = 
 
-# 4. CHECK MARGINAL VALUE IMPACT -----------------------------------------------
+# 5. CHECK MARGINAL VALUE IMPACT -----------------------------------------------
 
-## 4.1 Model with 0.1 offset ---------------------------------------------------
+## 5.1 Model with 0.1 offset ---------------------------------------------------
 
 # Run negative binomial model
 YN_model3_SSB_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
@@ -270,7 +330,7 @@ YN_model3_SSB_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change 
 save(YN_model3_SSB_interaction_0.1_offset, file = here::here("data", "models", 
                                                              "YN_model3_SSB_interaction_0.1_offset.RData"))
 
-## 4.2 Model with 0.01 offset --------------------------------------------------
+## 5.2 Model with 0.01 offset --------------------------------------------------
 
 # Run negative binomial model
 YN_model4_SSB_interaction_0.01_offset <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.01)) + (1 | SSBID),
@@ -281,7 +341,7 @@ YN_model4_SSB_interaction_0.01_offset <- glmmTMB(ocurrences_after ~ cover_change
 save(YN_model4_SSB_interaction_0.01_offset, file = here::here("data", "models", 
                                                               "YN_model4_SSB_interaction_0.01_offset.RData"))
 
-## 4.3. Model with 0.1 offset and no interaction -------------------------------
+## 5.3. Model with 0.1 offset and no interaction -------------------------------
 
 # Run negative binomial model
 YN_model5_SSB_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
@@ -292,9 +352,9 @@ YN_model5_SSB_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_chan
 save(YN_model5_SSB_no_interaction_0.1_offset, file = here::here("data", "models",
                                                                 "YN_model5_SSB_no_interaction_0.1_offset.RData"))
 
-# 5. EXPLORATORY FIGURES OF DF USED IN MODELS ----------------------------------
+# 6. EXPLORATORY FIGURES OF DF USED IN MODELS ----------------------------------
 
-## 5.1. Violin plot with log-transformed values --------------------------------
+## 6.1. Violin plot with log-transformed values --------------------------------
 
 p1 <- ggplot(occ_y_n_cover_change_before_after_for_modell, 
              aes(x = time_period, y = ocurrences_after, 
@@ -319,7 +379,7 @@ ggsave(here("figures", "occurrences_in_Y_N_cover_change_FigureS1.png"),
        width=17, height=13)
 
 
-## 5.2. Violin plot with original values and log-transformed values ------------
+## 6.2. Violin plot with original values and log-transformed values ------------
 
 # Violin plot with the original data
 p2 <- ggplot(occ_y_n_cover_change_before_after_for_modell, 
