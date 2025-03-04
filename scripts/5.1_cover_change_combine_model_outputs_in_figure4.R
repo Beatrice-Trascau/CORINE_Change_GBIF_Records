@@ -275,62 +275,77 @@ y_min <- min(significant_results_full$Estimate - significant_results_full$std_er
 y_max <- max(significant_results_full$Estimate + significant_results_full$std_error, 
              na.rm = TRUE)
 
+# Add wrap width
+wrap_width <- 15
+
+# Define correct order for labels
+correct_order <- c("Agriculture & Vegetation", 
+                   "Complex Agriculture", 
+                   "Forests", 
+                   "Moors, Heathland & Grassland", 
+                   "Sparse Vegetation", 
+                   "Transitional Woodland Shrub", 
+                   "Urban Fabric")
+
+# Apply str_wrap to create wrapped labels with correct ordering
+cover_points_full_wrapped <- cover_points_full |>
+  # Ensure cover_change is in the correct order first
+  mutate(cover_change = factor(as.character(cover_change), levels = correct_order),
+    # Create wrapped versions of the category names using str_wrap
+    intial_cover_wrapped = factor(
+      stringr::str_wrap(as.character(intial_cover), width = wrap_width),
+      levels = stringr::str_wrap(levels(intial_cover), width = wrap_width)),
+    # Create wrapped versions with preserved ordering
+    cover_change_wrapped = factor(
+      stringr::str_wrap(as.character(cover_change), width = wrap_width),
+      levels = stringr::str_wrap(correct_order, width = wrap_width)))
+
 # Create a df with break points for y axis
-y_breaks_df_full <- cover_points_full |>
+y_breaks_df_wrapped <- cover_points_full_wrapped |>
   filter(plot_type == "significant") |>
-  distinct(intial_cover, cover_change) |>
-  crossing(y_breaks = pretty(c(y_min, y_max), n = 4))
+  distinct(intial_cover_wrapped, cover_change_wrapped, .keep_all = TRUE) |>
+  select(intial_cover_wrapped, cover_change_wrapped, intial_cover, cover_change) |>
+  crossing(y_breaks = c(-4, 0, 2))
 
 # Plot "heatmap" with points using full names
 cover_points_plot_fixed <- ggplot() +
-  # Create facets for each combination
-  facet_grid(intial_cover ~ cover_change, switch = "y") +
-  # Add colored background for significant plots and black for same initial/cover change
-  geom_rect(data = cover_points_full %>% filter(plot_type == "significant"), 
+  # Create facets with wrapped labels
+  facet_grid(intial_cover_wrapped ~ cover_change_wrapped, switch = "y") +
+  # Add colored background for significant plots
+  geom_rect(data = cover_points_full_wrapped %>% filter(plot_type == "significant"), 
             aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, fill = Significant)) +
-  geom_rect(data = cover_points_full %>% filter(plot_type == "same"), 
+  # Add black background for same initial/cover change
+  geom_rect(data = cover_points_full_wrapped %>% filter(plot_type == "same"), 
             aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf), 
             fill = "black") +
-  # Add elements only for significant plots
-  geom_hline(data = cover_points_full %>% filter(plot_type == "significant"), 
+  # Add horizontal reference line at y=0
+  geom_hline(data = cover_points_full_wrapped %>% filter(plot_type == "significant"), 
              aes(yintercept = 0), 
              linetype = "dotted") +
-  # Add y-axis text for significant results with adjusted position - use a fixed axis
+  # Set x-axis scale
   scale_x_continuous(limits = c(0, 1), position = "top", breaks = NULL) +
-  # Add error bars and points - centered at x=0.5
-  geom_errorbar(data = cover_points_full %>% filter(plot_type == "significant"),
+  # Add error bars
+  geom_errorbar(data = cover_points_full_wrapped %>% filter(plot_type == "significant"),
                 aes(x = 0.5, ymin = Estimate - std_error, ymax = Estimate + std_error),
-                width = 0.1,  # Increased width slightly for visibility
+                width = 0.1,
                 color = "black") +
-  geom_point(data = cover_points_full %>% filter(plot_type == "significant"),
+  # Add points
+  geom_point(data = cover_points_full_wrapped %>% filter(plot_type == "significant"),
              aes(x = 0.5, y = Estimate),
              size = 2,
              color = "black") +
-  # Create simplified y-break points with fixed values
-  {
-    # Use fixed values instead of calculating from data
-    fixed_breaks <- c(-3.5, 0, 5)
-    
-    # Create dataframe with these fixed y-breaks per facet
-    y_breaks_df_simple <- cover_points_full %>%
-      filter(plot_type == "significant") %>%
-      distinct(intial_cover, cover_change) %>%
-      crossing(y_breaks = fixed_breaks) %>%
-      distinct(intial_cover, cover_change, y_breaks)
-    
-    # Add the text labels
-    geom_text(data = y_breaks_df_simple,
-              aes(x = 0.001, y = y_breaks, label = y_breaks),
-              hjust = 0,
-              size = 3)
-  } +
-  # Custom scale for fill colors
+  # Add y-axis labels
+  geom_text(data = y_breaks_df_wrapped,
+            aes(x = 0.001, y = y_breaks, label = y_breaks),
+            hjust = 0,
+            size = 3) +
+  # Set color scale
   scale_fill_gradient2(low = "blue", mid = "white", high = "red", 
                        midpoint = 0, na.value = "grey90", 
                        name = "Estimate", 
                        breaks = legend_breaks_cover,
                        labels = scales::label_number()) +
-  # Set consistent y-axis limits (using rounded values for cleaner display)
+  # Set y-axis limits
   coord_cartesian(ylim = c(floor(y_min), ceiling(y_max))) +
   # Theme customization
   theme_bw() +
@@ -339,15 +354,19 @@ cover_points_plot_fixed <- ggplot() +
     axis.ticks.x = element_blank(),
     axis.title.x = element_text(size = 14, face = "bold"),
     panel.grid = element_blank(),
-    strip.text.x = element_text(angle = 0, hjust = 0.5, size = 11), 
-    strip.text.y.left = element_text(size = 11, angle = 0, hjust = 1),  
+    # Adjust strip text to accommodate wrapped labels
+    strip.text.x = element_text(angle = 0, hjust = 0.5, size = 11),
+    strip.text.y.left = element_text(size = 11, angle = 0, hjust = 1),
     strip.background = element_blank(),
     panel.border = element_rect(color = "black", fill = NA),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
     axis.title.y = element_text(size = 14, face = "bold"),
-    axis.line = element_blank()) +
-  labs(y = "Estimate", x = "Cover change")
+    axis.line = element_blank(),
+    # Add some extra spacing for wrapped text
+    strip.text = element_text(margin = margin(3, 3, 3, 3))) +
+  labs(y = "Initial Cover",
+       x = "Cover change")
 
 # Combine the two plots
 cover_time_point_plot <- plot_grid(cover_points_plot_fixed, time_updated,
