@@ -21,7 +21,7 @@ This markdown outlines the process of modelling the number of occurrence records
 The models ran as part of this are as follows:
 
 | Model Name                            | Interaction?                | Marginal Value |
-|--------------------------------|------------------------|-----------------|
+|---------------------------------------|-----------------------------|----------------|
 | YN_model1_SSB_interaction             | cover_change \* time_period | 0.001          |
 | YN_model2_SSB_no_interaction          | cover_change + time_period  | 0.001          |
 | YN_model3_SSB_interaction_0.1_offset  | cover_change \* time_period | 0.1            |
@@ -32,6 +32,9 @@ The models ran as part of this are as follows:
 ## Get output
 
 ```{r YN model 1}
+
+# Load data
+load(here("data", "derived_data", "occ_y_n_cover_change_before_after_for_modell.rda"))
 
 # Load model
 load(here::here("data", "models", "YN_model1_SSB_interaction.RData"))
@@ -78,9 +81,9 @@ kable(YN_model2_coeff_df)
 ```{r compare AICs }
 AICctab(YN_model1_SSB_interaction, YN_model2_SSB_no_interaction, base = TRUE)
 
-#                                AICc           dAICc    df
-#YN_model1_SSB_interaction    899375941.7         0.0    8 
-#YN_model2_SSB_no_interaction 899411298.0     35356.3    6 
+#                              AICc      dAICc     df
+# YN_model2_SSB_no_interaction 3931684.9       0.0 6 
+# YN_model1_SSB_interaction    3931688.1       3.2 8 
 ```
 
 # Model 3: 0.1 offset
@@ -106,7 +109,7 @@ kable(YN_model3_coeff_df)
 
 # Model 4: 0.01 offset
 
-```{r YN model 4}
+```{r model4}
 
 # Load model
 load(here::here("data", "models", "YN_model4_SSB_interaction_0.01_offset.RData"))
@@ -150,8 +153,25 @@ kable(YN_model5_coeff_df)
 
 ```{r model 3 & model 5 AIC}
 AICctab(YN_model3_SSB_interaction_0.1_offset, YN_model5_SSB_no_interaction_0.1_offset, base = TRUE)
- 
-#                                         AICc        dAICc       df
-# YN_model3_SSB_interaction_0.1_offset    896897400.1         0.0 8 
-# YN_model5_SSB_no_interaction_0.1_offset 896901072.8      3672.7 6 
+#                                         AICc      dAICc     df
+# YN_model5_SSB_no_interaction_0.1_offset 3589299.7       0.0 6 
+# YN_model3_SSB_interaction_0.1_offset    3589302.4       2.7 8 
+```
+
+# Model Validation
+
+Doing some model validation on Model 5 (0.1 offset and no interaction).
+
+```{r model 5 residuals}
+
+simulationOutput <- simulateResiduals(fittedModel = YN_model3_SSB_interaction_0.1_offset)
+
+# Plot residual diagnostics
+plot(simulationOutput)
+
+# Test specific assumptions
+testDispersion(simulationOutput)
+testZeroInflation(simulationOutput)
+testOutliers(simulationOutput)
+
 ```
