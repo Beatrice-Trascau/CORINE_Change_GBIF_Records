@@ -175,3 +175,54 @@ testZeroInflation(simulationOutput)
 testOutliers(simulationOutput)
 
 ```
+
+# Model 6: 0.1 offset, interaction and zero inflation
+
+```{r YN model 6}
+
+# Load model
+load(here::here("data", "models", "YN_model6_zero_inflated_interaction_0.1_offset.RData"))
+
+# Get model summary
+YN_model6_summary <- summary(YN_ZINB_model)
+
+# Convert summary coefficients to df
+YN_model6_coeff_df <- as.data.frame(YN_model6_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+YN_model6_coeff_df[] <- lapply(YN_model6_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(YN_model6_coeff_df)
+```
+
+# Model 7: 0.1 offset, no interaction and zero inflation
+
+```{r YN model 7}
+# Load model
+load(here::here("data", "models", "YN_model7_zero_inflated_no_interaction_0.1_offset.RData"))
+
+# Get model summary
+YN_model7_summary <- summary(YN_ZINB_model_no_interaction)
+
+# Convert summary coefficients to df
+YN_model7_coeff_df <- as.data.frame(YN_model7_summary$coefficients$cond)
+
+# Make sure coefficients are using decimal format (not scientific)
+YN_model7_coeff_df[] <- lapply(YN_model7_coeff_df, 
+                              function(x) format(x, scientific = FALSE, digits = 5))
+
+# Print table using knitr::kable
+kable(YN_model7_coeff_df)
+```
+
+# AIC Comparison Model 6 and Model 7
+
+```{r model 6 & 7 AIC}
+AICctab(YN_ZINB_model, YN_ZINB_model_no_interaction, base = TRUE)
+
+#                              AICc      dAICc     df
+# YN_ZINB_model_no_interaction 3567188.5       0.0 10
+# YN_ZINB_model                3567192.3       3.8 12
+```
