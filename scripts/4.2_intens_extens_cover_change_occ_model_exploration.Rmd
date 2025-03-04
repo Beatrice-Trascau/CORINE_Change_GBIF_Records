@@ -30,11 +30,15 @@ library(bbmle)
 
 ```{r  IntensExtens model 1}
 
+# Load data
+
+
+
 # Load model
-load(here::here("data", "models", "IntensExtense_model1_SSB_interaction.RData"))
+load(here::here("data", "models", "IntensExtens_model1_SSB_interaction.RData"))
 
 # Get model summary
-IntensExtens_model1_summary <- summary(IntensExtense_model1_SSB_interaction)
+IntensExtens_model1_summary <- summary(IntensExtens_model1_SSB_interaction)
 
 # Convert summary coefficients to df
 IntensExtens_model_coeff_df <- as.data.frame(IntensExtens_model1_summary$coefficients$cond)
@@ -73,11 +77,11 @@ kable(IntensExtens_model2_coeff_df)
 ## Compare Model 1 and Model 2
 
 ```{r compare AICs }
-AICctab(IntensExtens_model_coeff_df, IntensExtens_model2_coeff_df, base = TRUE)
+AICctab(IntensExtens_model1_SSB_interaction, IntensExtens_model2_SSB_no_interaction, base = TRUE)
 
-#                                AICc           dAICc    df
-#YN_model1_SSB_interaction    899375941.7         0.0    8 
-#YN_model2_SSB_no_interaction 899411298.0     35356.3    6 
+#                                        AICc      dAICc     df
+# IntensExtens_model1_SSB_interaction    3931661.3       0.0 11
+# IntensExtens_model2_SSB_no_interaction 3931682.0      20.7 7 
 ```
 
 # IntensExtens_model3_SSB_0.1_offset
@@ -148,7 +152,24 @@ kable(IntensExtens_model5_coeff_df)
 ```{r model 3 & model 5 AIC}
 AICctab(IntensExtens_model3_SSB_0.1_offset, IntensExtens_model5_SSB_no_interaction_0.1_offset, base = TRUE)
 
-#                                                   AICc        dAICc       df
-# IntensExtens_model3_SSB_0.1_offset                896812521.1         0.0 11
-# IntensExtens_model5_SSB_no_interaction_0.1_offset 896817178.4      4657.3 7 
+#                                                   AICc      dAICc     df
+# IntensExtens_model3_SSB_0.1_offset                3589255.9       0.0 11
+# IntensExtens_model5_SSB_no_interaction_0.1_offset 3589293.8      37.8 7 
+
+```
+
+# Model Validation
+
+```{r model 5 residuals}
+
+simulationOutput <- simulateResiduals(fittedModel = IntensExtens_model3_SSB_0.1_offset)
+
+# Plot residual diagnostics
+plot(simulationOutput)
+
+# Test specific assumptions
+testDispersion(simulationOutput)
+testZeroInflation(simulationOutput)
+testOutliers(simulationOutput)
+
 ```
