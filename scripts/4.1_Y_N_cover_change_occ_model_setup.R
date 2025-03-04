@@ -1,25 +1,3 @@
-# Define function
-install_load_package <- function(x) {
-  if (!require(x, character.only = TRUE)) {
-    install.packages(x, repos = "http://cran.us.r-project.org")
-  }
-  require(x, character.only = TRUE)
-}
-
-# Define list of packages
-package_vec <- c("here", "terra", "sf", "geodata", "mapview",
-                 "tidyverse", "dplyr", "ggplot2", "ggalluvial",
-                 "networkD3", "gt", "cowplot", "data.table",
-                 "tidyterra", "patchwork", "styler", "scales",
-                 "plotly", "lme4", "DHARMa", "glmmTMB", "mgcv",
-                 "tidyterra", "ggspatial", "htmlwidgets",
-                 "htmltools", "patchwork", "webshot2",
-                 "rgbif", "CoordinateCleaner", "DHARMa", 
-                 "writexl", "bbmle") # specify packages
-
-# Execute the function
-sapply(package_vec, install_load_package)
-
 ##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
 # 4.1_Y_N_cover_change_occ_model_setup
@@ -177,7 +155,8 @@ occ_df_before_2012.2018_records <- occ_df_before_2012.2018 |>
 occ_df_after_2012.2018 <- occ_SSB_land_cover |>
   select(gbifID, year, species, land_cover2012, land_cover2018, 
          SSBID, cell_ID, NAME_2) |>
-  filter(year >= 2015 & year <= 2018) |>
+  filter(!is.na(land_cover2012) & !is.na(land_cover2018))
+filter(year >= 2015 & year <= 2018) |>
   mutate(cover_change = if_else(land_cover2012 == land_cover2018, "N", "Y"))
 
 # Calculate number of records for the period 1997-2000
@@ -352,9 +331,36 @@ YN_model5_SSB_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_chan
 save(YN_model5_SSB_no_interaction_0.1_offset, file = here::here("data", "models",
                                                                 "YN_model5_SSB_no_interaction_0.1_offset.RData"))
 
-# 6. EXPLORATORY FIGURES OF DF USED IN MODELS ----------------------------------
+# 6. ZERO-INFLATED MODELS ------------------------------------------------------
 
-## 6.1. Violin plot with log-transformed values --------------------------------
+## 6.1. Zero inflated interaction ----------------------------------------------
+
+YN_ZINB_model <- glmmTMB(ocurrences_after ~ cover_change * time_period + 
+                           offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
+                         zi = ~cover_change + time_period, 
+                         family = nbinom2,
+                         data = occ_y_n_cover_change_before_after_for_modell)
+
+# Save model output to file to save time next time
+save(YN_ZINB_model, file = here::here("data", "models",
+                                      "YN_model6_zero_inflated_interaction_0.1_offset.RData"))
+
+## 6.2. Zero inflated no interaction -------------------------------------------
+
+YN_ZINB_model_no_interaction <- glmmTMB(ocurrences_after ~ cover_change + time_period + 
+                                          offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
+                                        zi = ~cover_change + time_period, 
+                                        family = nbinom2,
+                                        data = occ_y_n_cover_change_before_after_for_modell)
+
+# Save model output to file to save time next time
+save(YN_ZINB_model_no_interaction, file = here::here("data", "models",
+                                                     "YN_model7_zero_inflated_no_interaction_0.1_offset.RData"))
+
+
+# 7. EXPLORATORY FIGURES OF DF USED IN MODELS ----------------------------------
+
+## 7.1. Violin plot with log-transformed values --------------------------------
 
 p1 <- ggplot(occ_y_n_cover_change_before_after_for_modell, 
              aes(x = time_period, y = ocurrences_after, 
@@ -379,7 +385,7 @@ ggsave(here("figures", "occurrences_in_Y_N_cover_change_FigureS1.png"),
        width=17, height=13)
 
 
-## 6.2. Violin plot with original values and log-transformed values ------------
+## 7.2. Violin plot with original values and log-transformed values ------------
 
 # Violin plot with the original data
 p2 <- ggplot(occ_y_n_cover_change_before_after_for_modell, 
