@@ -16,8 +16,8 @@ ssb_grids <- vect(here("data", "raw_data",
                        "SSB050KM", "ssb50km.shp"))
 
 # Cleaned occurrence records
-occurrences_norway <- fread(here("data", "derived_data", 
-                        "cleaned_occurrences_july24.txt"))
+load(here("data", "derived_data","cleaned_occurrences_feb17_25.rda"))
+occurrences_norway <- cleaned_occurrences_feb17_25
 
 # Download shapefile of municipalities
 norway_municipalities <- geodata::gadm(country = "NOR", level = 2, 
