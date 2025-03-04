@@ -18,7 +18,7 @@ library(bbmle)
 ```
 
 | Model Name                             | Interaction?                | Marginal Value |
-|-------------------------------|-----------------------|------------------|
+|----------------------------------------|-----------------------------|----------------|
 | IntensExtens_model1_SSB_interaction    | cover_change \* time_period | 0.001          |
 | IntensExtens_model2_SSB_no_interaction | cover_change + time_period  | 0.001          |
 | IntensExtens_model3_SSB_0.1_offset     | cover_change \* time_period | 0.1            |
