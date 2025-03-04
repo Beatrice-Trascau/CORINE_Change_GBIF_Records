@@ -155,8 +155,8 @@ occ_df_before_2012.2018_records <- occ_df_before_2012.2018 |>
 occ_df_after_2012.2018 <- occ_SSB_land_cover |>
   select(gbifID, year, species, land_cover2012, land_cover2018, 
          SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2012) & !is.na(land_cover2018))
-filter(year >= 2015 & year <= 2018) |>
+  filter(!is.na(land_cover2012) & !is.na(land_cover2018)) |>
+  filter(year >= 2015 & year <= 2018) |>
   mutate(cover_change = if_else(land_cover2012 == land_cover2018, "N", "Y"))
 
 # Calculate number of records for the period 1997-2000
