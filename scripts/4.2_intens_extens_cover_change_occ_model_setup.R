@@ -390,4 +390,31 @@ IntensExtens_model5_SSB_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ 
 save(IntensExtens_model5_SSB_no_interaction_0.1_offset, file = here::here("data", "models", 
                                                                           "IntensExtens_model5_SSB_no_interaction_0.1_offset.RData"))
 
+# 6. ZERO-INFLATED MODELS ------------------------------------------------------
+
+## 6.1. Zero inflated interaction ----------------------------------------------
+
+IntensExtens_model6_zero_inflated_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change * time_period + 
+                                                                      offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
+                                                                    zi = ~cover_change + time_period, 
+                                                                    family = nbinom2,
+                                                                    data = occ_intens_extens_before_after_for_model)
+
+# Save model output to file to save time next time
+save(IntensExtens_model6_zero_inflated_interaction_0.1_offset, file = here::here("data", "models",
+                                                                                 "IntensExtens_model6_zero_inflated_interaction_0.1_offset.RData"))
+
+## 6.2. Zero inflated no interaction -------------------------------------------
+
+IntensExtens_model7_zero_inflated_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change + time_period + 
+                                                                         offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
+                                                                       zi = ~cover_change + time_period, 
+                                                                       family = nbinom2,
+                                                                       data = occ_y_n_cover_change_before_after_for_modell)
+
+# Save model output to file to save time next time
+save(IntensExtens_model7_zero_inflated_no_interaction_0.1_offset, file = here::here("data", "models",
+                                                                                    "IntensExtens_model7_zero_inflated_no_interaction_0.1_offset.RData"))
+
+
 # END OF SCRIPT ----------------------------------------------------------------
