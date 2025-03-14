@@ -449,4 +449,68 @@ ggplot(plot_data, aes(x = cover_change, y = percentage, fill = combined_label)) 
     legend.nrow = 5
   )
 
+# 6. SUMMARY STATISTICS --------------------------------------------------------
+
+## 6.1. Y/N Cover Change -------------------------------------------------------
+
+# Load data
+load(here::here("data", "derived_data",
+                "occ_y_n_cover_change_before_after_for_modell.rda"))
+
+# Create a summary statistics table for occurrences_after 
+occurrence_stats <- occ_y_n_cover_change_before_after_for_modell |>
+  group_by(time_period, cover_change) |>
+  summarise( count = n(),
+             zeros = sum(ocurrences_after == 0, na.rm = TRUE),
+             pct_zeros = round(sum(ocurrences_after == 0, na.rm = TRUE) / n() * 100, 1),
+             median = median(ocurrences_after, na.rm = TRUE),
+             q75 = quantile(ocurrences_after, 0.75, na.rm = TRUE),
+             q90 = quantile(ocurrences_after, 0.90, na.rm = TRUE),
+             max = max(ocurrences_after, na.rm = TRUE),
+             .groups = "drop") |>
+  arrange(time_period, cover_change)
+
+# Format with kableExtra
+occurrence_stats |>
+  kable(format = "html", 
+        col.names = c("Time Period", "Cover Change", "Count", "Zeros", "% Zeros", 
+                      "Median", "75th Percentile", "90th Percentile", "Maximum"),
+        digits = c(0, 0, 0, 0, 1, 2, 2, 2, 0)) |>
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = FALSE) |>
+  add_header_above(c(" " = 2, "Sample Size" = 1, "Zero Values" = 2, "Distribution Statistics" = 4)) |>
+  row_spec(0, bold = TRUE, background = "#F2F2F2") |>
+  column_spec(1:2, bold = TRUE)
+
+## 6.2. Intens/Extens Cover Change ---------------------------------------------
+
+# Load data
+load(here::here("data", "derived_data",
+                "occ_intens_extens_before_after_for_model.rda"))
+
+# Create a summary statistics table for occurrences_after 
+occurrence_stats <- occ_intens_extens_before_after_for_model |>
+  group_by(time_period, cover_change) |>
+  summarise( count = n(),
+             zeros = sum(ocurrences_after == 0, na.rm = TRUE),
+             pct_zeros = round(sum(ocurrences_after == 0, na.rm = TRUE) / n() * 100, 1),
+             median = median(ocurrences_after, na.rm = TRUE),
+             q75 = quantile(ocurrences_after, 0.75, na.rm = TRUE),
+             q90 = quantile(ocurrences_after, 0.90, na.rm = TRUE),
+             max = max(ocurrences_after, na.rm = TRUE),
+             .groups = "drop") |>
+  arrange(time_period, cover_change)
+
+# Format with kableExtra
+occurrence_stats |>
+  kable(format = "html", 
+        col.names = c("Time Period", "Cover Change", "Count", "Zeros", "% Zeros", 
+                      "Median", "75th Percentile", "90th Percentile", "Maximum"),
+        digits = c(0, 0, 0, 0, 1, 2, 2, 2, 0)) |>
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), 
+                full_width = FALSE) |>
+  add_header_above(c(" " = 2, "Sample Size" = 1, "Zero Values" = 2, "Distribution Statistics" = 4)) |>
+  row_spec(0, bold = TRUE, background = "#F2F2F2") |>
+  column_spec(1:2, bold = TRUE)
+
 # END OF SCRIPT ----------------------------------------------------------------
