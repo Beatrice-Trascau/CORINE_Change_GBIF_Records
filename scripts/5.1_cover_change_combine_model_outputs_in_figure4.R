@@ -12,7 +12,7 @@ load(here("data", "models", "agri_veg_model3_SSB_interaction_0.1_offset.RData"))
 load(here("data", "models", "forests_model3_SSB_interaction_0.1_offset.RData"))
 load(here("data", "models", "moors_model3_SSB_interaction_0.1_offset.RData"))
 load(here("data", "models", "woodland_model3_SSB_interaction_0.1_offset.RData"))
-load(here("data", "models", "sparse_model3_SSB_interaction_0.1_offset.RData"))
+load(here("data", "models", "sparse_model5_SSB_no_interaction_0.1_offset.RData"))
 
 # 2. EXTRACT MODEL OUTPUTS -----------------------------------------------------
 
@@ -23,7 +23,7 @@ model_list <- list(urban_model3_SSB_interaction_0.1_offset,
                    forests_model3_SSB_interaction_0.1_offset,
                    moors_model3_SSB_interaction_0.1_offset, 
                    woodland_model3_SSB_interaction_0.1_offset,
-                   sparse_model3_SSB_interaction_0.1_offset)
+                   sparse_model5_SSB_no_interaction_0.1_offset)
 
 # Apply function to extract model summary to df
 models_results <-lapply(model_list, extract_summary_as_df)
@@ -97,25 +97,21 @@ cover_effect_no_year_interaction <- effect_no_year_interaction |>
   filter(!cover_change %in% c("2006-2012", "2012-2018"))
 
 # Manually add rows where intial_cover equals cover_change
-missing_rows <- data.frame(model_id = NA, term = NA,
-                           cover_change = c("Urban Fabric", 
-                                            "Forests", "Complex Agriculture",
-                                            "Transitional Woodland Shrub", 
-                                            "Moors, Heathland & Grassland",
-                                            "Sparse Vegetation", 
-                                            "Agriculture & Vegetation"),
-                           intial_cover = c("Urban Fabric", "Forests", 
-                                            "Complex Agriculture",
-                                            "Transitional Woodland Shrub", 
-                                            "Moors, Heathland & Grassland",
-                                            "Sparse Vegetation", 
-                                            "Agriculture & Vegetation"),
-                           Estimate = NA,
-                           `Std. Error` = NA,
-                           `z value` = NA,
-                           `Pr(>|z|)` = NA,
-                           Significant = NA,
-                           time_period = NA)
+missing_rows <- data.frame(
+  model_id = NA, 
+  term = NA,
+  cover_change = c("Urban Fabric", "Forests", "Complex Agriculture", 
+                   "Transitional Woodland Shrub", "Moors, Heathland & Grassland",
+                   "Sparse Vegetation", "Agriculture & Vegetation"),
+  intial_cover = c("Urban Fabric", "Forests", "Complex Agriculture", 
+                   "Transitional Woodland Shrub", "Moors, Heathland & Grassland", 
+                   "Sparse Vegetation", "Agriculture & Vegetation"),
+  Estimate = NA,  
+  `Std. Error` = NA,
+  `z value` = NA,
+  `Pr(>|z|)` = NA,
+  Significant = NA,
+  time_period = NA)
 
 # Add missing rows to cover df
 cover_effect_no_year_interaction <- cover_effect_no_year_interaction |>
@@ -216,9 +212,28 @@ time_sig <- time_sig |>
                                                "Complex Agriculture",
                                                "Agriculture & Vegetation")))
 
-# Plot time effects with only significant effects shown
-time_updated <- ggplot(time_sig, 
-                       aes(x = cover_change, y = intial_cover_full)) +
+# Define the same wrap width as used in cover_points_plot_fixed
+wrap_width <- 15
+
+# Apply str_wrap to time_sig data frame for consistent formatting
+time_sig_wrapped <- time_sig |>
+  # Create wrapped version of initial_cover_full with preserved ordering
+  mutate(intial_cover_full_wrapped = factor(stringr::str_wrap(as.character(intial_cover_full), 
+                                                              width = wrap_width),
+                                            levels = stringr::str_wrap(c("Urban Fabric","Transitional Woodland Shrub",
+                                                                         "Sparse Vegetation",
+                                                                         "Moors, Heathland & Grassland",
+                                                                         "Forests",
+                                                                         "Complex Agriculture",
+                                                                         "Agriculture & Vegetation"), 
+                                                                       width = wrap_width)),
+         # Create wrapped version of cover_change (time periods)
+         cover_change_wrapped = factor(stringr::str_wrap(as.character(cover_change), 
+                                                         width = wrap_width)))
+
+# Update the time_updated plot with wrapped labels
+time_updated <- ggplot(time_sig_wrapped, 
+                       aes(x = cover_change_wrapped, y = intial_cover_full_wrapped)) +
   geom_tile(aes(fill = Significant), color = "black", size = 0.5) +
   scale_fill_gradient2(low = "#0072B2", mid = "white", high = "red", 
                        midpoint = 0, na.value = "grey90", name = "Estimate", 
@@ -227,12 +242,14 @@ time_updated <- ggplot(time_sig,
   scale_x_discrete(position = "top") +
   theme_classic() +
   theme(
-    axis.text.x = element_text(hjust = 0, size = 14),
-    axis.text.y = element_text(size = 14),
+    axis.text.x = element_text(hjust = 0.5, size = 11),  
+    axis.text.y = element_text(size = 11),              
     axis.title.x = element_text(size = 14, face = "bold"),
     axis.title.y = element_text(size = 14, face = "bold"),
     axis.line = element_blank(),
-    axis.ticks = element_blank()) +
+    axis.ticks = element_blank(),
+    # Add some extra spacing for wrapped text
+    axis.text = element_text(margin = margin(3, 3, 3, 3))) +
   labs(x = "Time Period", y = "Initial Cover")
 
 # Combine the two plots
@@ -250,12 +267,13 @@ new_order <- c("UF", "TWS", "SV", "MHG", "Forests", "CA", "ASNV")
 
 # Use full names rather than abbreviations in the cover_points plot
 cover_points_full <- cover_effect_no_year_interaction |>
-  # Keep the original names
-  mutate(plot_type = case_when(is_same ~ "same",
-                               is.na(Significant) ~ "non_significant",
-                               !is.na(Significant) ~ "significant")) |>
+  # Skip the mapping to abbreviations and keep the original names
+  mutate(plot_type = case_when(
+    is_same ~ "same",
+    is.na(Significant) ~ "non_significant",
+    !is.na(Significant) ~ "significant")) |>
   rename(std_error = 'Std. Error') |>
-  # Set reversed order (Agriculture & Vegetation at top) for facets
+  # Reorder the facet levels - reversed order (Agriculture & Vegetation at top)
   mutate(intial_cover = factor(intial_cover, 
                                levels = c("Agriculture & Vegetation",
                                           "Complex Agriculture",
@@ -275,6 +293,12 @@ y_min <- min(significant_results_full$Estimate - significant_results_full$std_er
 y_max <- max(significant_results_full$Estimate + significant_results_full$std_error, 
              na.rm = TRUE)
 
+# Create a df with break points for y axis
+# y_breaks_df_full <- cover_points_full |>
+#   filter(plot_type == "significant") |>
+#   distinct(intial_cover, cover_change) |>
+#   crossing(y_breaks = pretty(c(y_min, y_max), n = 4))
+
 # Add wrap width
 wrap_width <- 15
 
@@ -289,8 +313,9 @@ correct_order <- c("Agriculture & Vegetation",
 
 # Apply str_wrap to create wrapped labels with correct ordering
 cover_points_full_wrapped <- cover_points_full |>
-  # Ensure cover_change is in the correct order first
-  mutate(cover_change = factor(as.character(cover_change), levels = correct_order),
+  mutate(
+    # Ensure cover_change is in the correct order first
+    cover_change = factor(as.character(cover_change), levels = correct_order),
     # Create wrapped versions of the category names using str_wrap
     intial_cover_wrapped = factor(
       stringr::str_wrap(as.character(intial_cover), width = wrap_width),
@@ -300,7 +325,7 @@ cover_points_full_wrapped <- cover_points_full |>
       stringr::str_wrap(as.character(cover_change), width = wrap_width),
       levels = stringr::str_wrap(correct_order, width = wrap_width)))
 
-# Create a df with break points for y axis
+# Update the y_breaks_df to use the wrapped labels
 y_breaks_df_wrapped <- cover_points_full_wrapped |>
   filter(plot_type == "significant") |>
   distinct(intial_cover_wrapped, cover_change_wrapped, .keep_all = TRUE) |>
@@ -364,9 +389,11 @@ cover_points_plot_fixed <- ggplot() +
     axis.title.y = element_text(size = 14, face = "bold"),
     axis.line = element_blank(),
     # Add some extra spacing for wrapped text
-    strip.text = element_text(margin = margin(3, 3, 3, 3))) +
+    strip.text = element_text(margin = margin(3, 3, 3, 3))
+  ) +
   labs(y = "Initial Cover",
        x = "Cover change")
+
 
 # Combine the two plots
 cover_time_point_plot <- plot_grid(cover_points_plot_fixed, time_updated,
