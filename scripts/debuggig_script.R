@@ -18,7 +18,7 @@ levels(as.factor(corine_2000_wgs84_df$U2006_CHA0006_00_V2020_20u1))
 ## 1.3. Aggregate corine layer to 250km by 250 km ----
 factor <- 25000 / 100
 coarse_corine <-  terra::aggregate(corine_2000_wgs84, fact=factor, 
-                            fun=max, na.rm=TRUE)
+                                   fun=max, na.rm=TRUE)
 
 # check values
 coarse_corine_df <- as.data.frame(coarse_corine)
@@ -100,7 +100,7 @@ levels(as.factor(corine_2000_2006_df$U2006_CHA0006_06_V2020_20u1))
 
 ## 3.2. Re-project corine to WGS 84 (the crs used by GBIF records) ----
 corine_2000_2006_wgs84 <- project(corine_2000_2006, "+proj=longlat +datum=WGS84 +no_defs",
-                             method = "near")
+                                  method = "near")
 
 # check values
 corine_2000_2006_wgs84_df <- as.data.frame(corine_2000_2006_wgs84)
@@ -110,7 +110,7 @@ levels(as.factor(corine_2000_2006_wgs84_df$U2006_CHA0006_06_V2020_20u1))
 ## 3.3. Aggregate corine layer to 250km by 250 km ----
 factor <- 25000 / 100
 coarse_corine_2000_2006 <-  terra::aggregate(corine_2000_2006_wgs84, fact=factor, 
-                                   fun=max, na.rm=TRUE)
+                                             fun=max, na.rm=TRUE)
 
 # check values
 coarse_corine_2000_2006_df <- as.data.frame(coarse_corine_2000_2006)
