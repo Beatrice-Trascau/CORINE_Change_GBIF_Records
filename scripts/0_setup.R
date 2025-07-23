@@ -29,7 +29,40 @@ package_vec <- c("here", "terra", "sf", "geodata", "mapview",
 # Execute the function
 sapply(package_vec, install_load_package)
 
-# 2. FUNCTION TO ONLY DOWNLOAD FILES THAT ARE NOT ALREADY IN THE FOLDERS -------
+# 2. CREATE NECESSARY FILE STRUCTURE -------------------------------------------
+
+# Function to create the file structure needed to run the analysis smoothly
+create_project_structure <- function(base_path = "boreal_arctic_trait_space") {
+  # Define the directory structure
+  dirs <- c(
+    file.path(base_path),
+    file.path(base_path, "data"),
+    file.path(base_path, "scripts"),
+    file.path(base_path, "figure"),
+    file.path(base_path, "data", "raw_data"),
+    file.path(base_path, "data", "derived_data"),
+    file.path(base_path, "data", "raw_data", "biomes")
+  )
+  
+  # Create directories if they don't exist
+  for (dir in dirs) {
+    if (!dir.exists(dir)) {
+      dir.create(dir, recursive = TRUE)
+      cat("Created directory:", dir, "\n")
+    } else {
+      cat("Directory already exists:", dir, "\n")
+    }
+  }
+  
+  cat("\nProject structure setup complete!\n")
+}
+
+# Run function
+create_project_structure
+
+
+
+# 3. FUNCTION TO ONLY DOWNLOAD FILES THAT ARE NOT ALREADY IN THE FOLDERS -------
 
 download_files <- function(urls, filenames, dir = here("data", "raw_data")) {
   if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
@@ -41,7 +74,7 @@ download_files <- function(urls, filenames, dir = here("data", "raw_data")) {
   }
 }
 
-# 3. FUNCTION TO READ RASTERS --------------------------------------------------
+# 4. FUNCTION TO READ RASTERS --------------------------------------------------
 
 read_rasters <- function(filenames, dir = here("data/raw_data")) {
   rasters <- lapply(filenames, function(x) {
@@ -54,13 +87,13 @@ read_rasters <- function(filenames, dir = here("data/raw_data")) {
   return(do.call(c, rasters))
 }
 
-# 4. FUNCTION TO CROP AND MASK RASTERS TO NORWAY -------------------------------
+# 5. FUNCTION TO CROP AND MASK RASTERS TO NORWAY -------------------------------
 
 crop_mask_to_norway <- function(raster_stack, norway_shape) {
   return(crop(raster_stack, norway_shape, mask = TRUE))
 }
 
-# 5. FUNCTION TO MODIFY CLASSES IN RASTERS -------------------------------------
+# 6. FUNCTION TO MODIFY CLASSES IN RASTERS -------------------------------------
 
 modify_class_values <- function(raster_stack, class_modifications) {
   modified_stack <- raster_stack
@@ -73,7 +106,7 @@ modify_class_values <- function(raster_stack, class_modifications) {
   return(modified_stack)
 }
 
-# 6. FUNCTION TO CALCULATE FREQUENCY OF LAND COVER CHANGES BETWEEN LAYERS ------
+# 7. FUNCTION TO CALCULATE FREQUENCY OF LAND COVER CHANGES BETWEEN LAYERS ------
 
 process_corine_change <- function(stack, index1, index2, source_year, target_year) {
   index1 <- as.numeric(index1)
@@ -89,7 +122,7 @@ process_corine_change <- function(stack, index1, index2, source_year, target_yea
     select(-layer)
 }
 
-# 7. FUNCTION TO REMOVE YEAR FROM SANKEY LABELS AND ADD A HEADER ---------------
+# 8. FUNCTION TO REMOVE YEAR FROM SANKEY LABELS AND ADD A HEADER ---------------
 
 # Create function to remove the year part from labels and keep colours consitent
 customize_sankey <- function(sankey, label_text) {
@@ -116,7 +149,7 @@ customize_sankey <- function(sankey, label_text) {
   ', label_text))
 }
 
-# 8. FUNCTION TO EXTRACT MODEL SUMMARIES TO DATAFRAME --------------------------
+# 9. FUNCTION TO EXTRACT MODEL SUMMARIES TO DATAFRAME --------------------------
 extract_summary_as_df <- function(model) {
   model_summary <- summary(model)
   coefs <- as.data.frame(model_summary$coefficients$cond)  
@@ -124,7 +157,7 @@ extract_summary_as_df <- function(model) {
   return(coefs)
 }
 
-# 9. FUNCTION TO EXTRACT TABLE WITH KM2 FOR EACH TRANSITION --------------------
+# 10. FUNCTION TO EXTRACT TABLE WITH KM2 FOR EACH TRANSITION --------------------
 create_transition_table <- function(data) {
   data |>
     # Convert pixel counts to km² (each pixel is 0.01 km²)
@@ -142,7 +175,7 @@ create_transition_table <- function(data) {
     filter(`Initial Land Cover` != `Land Cover Changed To`)
 }
 
-# 10. AGGREGATE TO 50KM --------------------------------------------------------
+# 11. AGGREGATE TO 50KM --------------------------------------------------------
 
 calc_percent_change <- function(x) {
   valid_cells <- sum(!is.na(x))
