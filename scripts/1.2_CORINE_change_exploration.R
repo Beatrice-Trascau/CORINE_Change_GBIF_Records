@@ -14,6 +14,8 @@ norway_corine_change_modified_stack <- rast(here("data", "derived_data",
 
 ## 1.2. Calculate the amount of land changing in each period -------------------
 
+
+
 # Create vector to store the %
 change_percentages <- numeric(nlyr(norway_corine_change_modified_stack))
 
@@ -137,12 +139,12 @@ all_years_changes <- plot_grid(change_2000.2006, plots[[1]],
                                label_y = 0.7)
 
 # Save to file as .png
-ggsave(here("figures", "cover_change_all_periods_Figure1.png"),
-       width=17, height=13)
+# ggsave(here("figures", "cover_change_all_periods_Figure1.png"),
+#        width=17, height=13)
 
 # Save to file as .svg
-ggsave(here("figures", "cover_change_all_periods_Figure1.svg"),
-       width=17, height=13)
+# ggsave(here("figures", "cover_change_all_periods_Figure1.svg"),
+#        width=17, height=13)
 
 
 # 3. FIGURE 2 - BARPLOTS COUNTING THE TYPE OF TRANSITIONS FOR ALL YEARS --------
@@ -367,15 +369,17 @@ combined_barplot <- plot_grid(cover_transitions, intens_extens_transitions,
           align = "h")
 
 # Save to file as .png
-ggsave(here("figures", "cover_transitions_all_periods_Figure2.png"),
-       width=20, height=13)
+# ggsave(here("figures", "cover_transitions_all_periods_Figure2.png"),
+#        width=20, height=13)
 
 # Save to file as .svg
-ggsave(here("figures", "cover_transitions_all_periods_Figure2.pdf"),
-       width = 20, height=13)
+# ggsave(here("figures", "cover_transitions_all_periods_Figure2.pdf"),
+#        width = 20, height=13)
 
 
 # 4. SANKEY PLOT OF TRANSITIONS FOR ALL YEARS ----------------------------------
+
+## 4.1. Sankey plot with year labels under stacks ------------------------------
 
 # Re-format data for alluvial plot (all classes)
 alluvial_data_with_forest_corrected <- corine_change_meaning |>
@@ -387,7 +391,7 @@ alluvial_data_with_forest_corrected <- corine_change_meaning |>
   # convert to long format
   pivot_longer(cols = c(source_year, target_year), 
                names_to = "year_type", values_to = "year") |>
-  # Convert pixels to km² (each pixel = 100m × 100m = 0.01 km²)
+  # convert pixels to km² (each pixel = 100m × 100m = 0.01 km²)
   mutate(area_km2 = count * 0.01) |>
   # create cover_type column
   mutate(cover_type = ifelse(year_type == "source_year",
@@ -408,7 +412,7 @@ alluvial_data_forestless_corrected <- corine_change_meaning |>
                              source_year, target_year, sep = "_")) |>
   pivot_longer(cols = c(source_year, target_year), 
                names_to = "year_type", values_to = "year") |>
-  # Convert pixels to km² (each pixel = 100m × 100m = 0.01 km²)
+  # convert pixels to km² (each pixel = 100m × 100m = 0.01 km²)
   mutate(area_km2 = count * 0.01) |>
   mutate(cover_type = ifelse(year_type == "source_year",
                              source_name, target_name)) |>
@@ -523,6 +527,100 @@ ggsave(here("figures", "cover_transitions_alluvials_Figure4.png"),
 # Save to file as .svg
 ggsave(here("figures", "cover_transitions_alluvials_Figure4.svg"),
        width=20, height=13)
+
+## 4.2. Sankey plot with year labels under the ribbons -------------------------
+
+# Common margins for both panels
+common_margins <- theme(plot.margin = unit(c(0.5, 0.5, 0.5, 0.5), "cm"))
+
+# All classes
+all_classes_ribbons <- ggplot(alluvial_data_with_forest_corrected,
+                              aes(x = as.factor(year), 
+                                  stratum = cover_type, 
+                                  alluvium = alluvium_id,
+                                  y = area_km2, 
+                                  fill = cover_type)) +
+  geom_flow(stat = "alluvium", lode.guidance = "frontback",
+            color = "gray20", linewidth = 0.1, alpha = 0.7) +
+  geom_stratum(color = "white", linewidth = 0.5) +
+  geom_text(data = data.frame(x = c(1.5, 2.5, 3.5),
+                              y = rep(0.5, 3),
+                              label = c("2000-2006", "2006-2012", "2012-2018")),
+            aes(x = x, y = y, label = label),
+            inherit.aes = FALSE,
+            vjust = 1.5, size = 4, fontface = "bold", color = "black") +
+  shared_colors +
+  guides(color = "none") +  # Prevent spurious legend
+  scale_x_discrete(name = "", labels = c("", "", "", "")) +
+  scale_y_continuous(name = expression("Area (km"^2*")"),
+                     labels = scales::comma_format()) +
+  coord_cartesian(clip = "off") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 14, face = "bold", margin = margin(r = 10)),
+        legend.position = "none",
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_line(color = "grey85", linewidth = 0.3),
+        panel.background = element_rect(fill = "white", color = NA),
+        plot.background = element_rect(fill = "white", color = NA)) +
+  minimal_margins
+
+# Forestless
+forestless_ribbons <- ggplot(alluvial_data_forestless_corrected,
+                             aes(x = as.factor(year), 
+                                 stratum = cover_type, 
+                                 alluvium = alluvium_id,
+                                 y = area_km2, 
+                                 fill = cover_type)) +
+  geom_flow(stat = "alluvium", lode.guidance = "frontback",
+            color = "gray20", linewidth = 0.1, alpha = 0.7) +
+  geom_stratum(color = "white", linewidth = 0.5) +
+  geom_text(data = data.frame(x = c(1.5, 2.5, 3.5),
+                              y = rep(0.5, 3),
+                              label = c("2000-2006", "2006-2012", "2012-2018")),
+            aes(x = x, y = y, label = label),
+            inherit.aes = FALSE,
+            vjust = 1.5, size = 4, fontface = "bold", color = "black") +
+  shared_colors +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE),
+         color = "none") +
+  scale_x_discrete(name = "", labels = c("", "", "", "")) +
+  scale_y_continuous(name = expression("Area (km"^2*")"),
+                     labels = scales::comma_format()) +
+  coord_cartesian(clip = "off") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 10, color = "black"),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 14, face = "bold", margin = margin(r = 10)),
+        legend.position = "bottom",
+        legend.title = element_text(size = 14, face = "bold"),
+        legend.text = element_text(size = 12),
+        legend.key.width = unit(1.2, "cm"),
+        legend.key.height = unit(0.8, "cm"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_line(color = "grey85", linewidth = 0.3),
+        panel.background = element_rect(fill = "white", color = NA),
+        plot.background = element_rect(fill = "white", color = NA)) +
+  minimal_margins
+
+# Combine panels into single figure
+final_plot <- plot_grid(all_classes_ribbons, forestless_ribbons,
+  labels = c("a)", "b)"), label_size = 16, ncol = 1,
+  rel_heights = c(1.1, 1.4))
+
+# Save to file as .png
+ggsave(here("figures", "cover_transitions_alluvials_period_labels_Figure5.png"),
+       width=20, height=13)
+
+# Save to file as .svg
+ggsave(here("figures", "cover_transitions_alluvials_period_labels_Figure5.svg"),
+       width=20, height=13)
+
 
 # 5. EXTRACT TABLE WITH AMOUNT OF LAND FOR EACH TRANSITION IN KM2 --------------
 
