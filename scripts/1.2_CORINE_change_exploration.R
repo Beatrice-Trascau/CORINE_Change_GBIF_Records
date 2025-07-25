@@ -548,7 +548,7 @@ all_classes_ribbons <- ggplot(alluvial_data_with_forest_corrected,
                               label = c("2000-2006", "2006-2012", "2012-2018")),
             aes(x = x, y = y, label = label),
             inherit.aes = FALSE,
-            vjust = 1.5, size = 4, fontface = "bold", color = "black") +
+            vjust = 1.5, size = 5, fontface = "bold", color = "black") +
   shared_colors +
   guides(color = "none") +  # Prevent spurious legend
   scale_x_discrete(name = "", labels = c("", "", "", "")) +
@@ -557,7 +557,7 @@ all_classes_ribbons <- ggplot(alluvial_data_with_forest_corrected,
   coord_cartesian(clip = "off") +
   theme_minimal() +
   theme(axis.text.x = element_blank(),
-        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.y = element_text(size = 14, color = "black"),
         axis.title.x = element_blank(),
         axis.title.y = element_text(size = 14, face = "bold", margin = margin(r = 10)),
         legend.position = "none",
@@ -566,7 +566,7 @@ all_classes_ribbons <- ggplot(alluvial_data_with_forest_corrected,
         panel.grid.major.y = element_line(color = "grey85", linewidth = 0.3),
         panel.background = element_rect(fill = "white", color = NA),
         plot.background = element_rect(fill = "white", color = NA)) +
-  minimal_margins
+  common_margins
 
 # Forestless
 forestless_ribbons <- ggplot(alluvial_data_forestless_corrected,
@@ -583,7 +583,7 @@ forestless_ribbons <- ggplot(alluvial_data_forestless_corrected,
                               label = c("2000-2006", "2006-2012", "2012-2018")),
             aes(x = x, y = y, label = label),
             inherit.aes = FALSE,
-            vjust = 1.5, size = 4, fontface = "bold", color = "black") +
+            vjust = 1.5, size = 5, fontface = "bold", color = "black") +
   shared_colors +
   guides(fill = guide_legend(nrow = 2, byrow = TRUE),
          color = "none") +
@@ -593,7 +593,7 @@ forestless_ribbons <- ggplot(alluvial_data_forestless_corrected,
   coord_cartesian(clip = "off") +
   theme_minimal() +
   theme(axis.text.x = element_blank(),
-        axis.text.y = element_text(size = 10, color = "black"),
+        axis.text.y = element_text(size = 14, color = "black"),
         axis.title.x = element_blank(),
         axis.title.y = element_text(size = 14, face = "bold", margin = margin(r = 10)),
         legend.position = "bottom",
@@ -606,10 +606,10 @@ forestless_ribbons <- ggplot(alluvial_data_forestless_corrected,
         panel.grid.major.y = element_line(color = "grey85", linewidth = 0.3),
         panel.background = element_rect(fill = "white", color = NA),
         plot.background = element_rect(fill = "white", color = NA)) +
-  minimal_margins
+  common_margins
 
 # Combine panels into single figure
-final_plot <- plot_grid(all_classes_ribbons, forestless_ribbons,
+final_ribbons <- plot_grid(all_classes_ribbons, forestless_ribbons,
   labels = c("a)", "b)"), label_size = 16, ncol = 1,
   rel_heights = c(1.1, 1.4))
 
