@@ -7,6 +7,10 @@
 
 # 1. DEFINE URLS, NAMES AND NEW VALUES FOR RASTERS -----------------------------
 
+# Source setup file
+library(here)
+source(here("scripts", "0_setup.R"))
+
 # URLs and Filenames for the CORINE Change Layers
 change_file_ids <- c("11SfcfbeCDV_ROx6gGwAtQcJvFqVxPQ22",
                      "1BufYIeI4KmVKjU95Mi45loHccuwmF__0",
