@@ -25,8 +25,6 @@ norway_corine_change_modified_stack <- rast(here("data", "derived_data",
 
 ## 1.2. Calculate the amount of land changing in each period -------------------
 
-
-
 # Create vector to store the %
 change_percentages <- numeric(nlyr(norway_corine_change_modified_stack))
 
