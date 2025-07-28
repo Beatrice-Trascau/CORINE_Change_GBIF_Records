@@ -8,13 +8,12 @@
 # 1. DEFINE URLS, NAMES AND NEW VALUES FOR RASTERS -----------------------------
 
 # URLs and Filenames for the CORINE Change Layers
-change_urls <- c(
-  "https://ntnu.box.com/shared/static/vduuevecunldbrc7jb60jarjts99c4db.tif",
-  "https://ntnu.box.com/shared/static/nmn2kguk9ipx0u4a2a8yfvcozdf6g9ij.tif",
-  "https://ntnu.box.com/shared/static/pah7ig013inqeepg3gwvfan9w00anitp.tif",
-  "https://ntnu.box.com/shared/static/g9grkxsvv20sz48rkbig8f9tb8gennfy.tif",
-  "https://ntnu.box.com/shared/static/v51lua6b9fph0k7bmsbbc1g20tkdjqh9.tif",
-  "https://ntnu.box.com/shared/static/x7ck0jnagfoxvjxvxf99l9lhknky5xlt.tif")
+change_file_ids <- c("11SfcfbeCDV_ROx6gGwAtQcJvFqVxPQ22",
+                     "1BufYIeI4KmVKjU95Mi45loHccuwmF__0",
+                     "18Y_c0WUxbJmQhFCqBOXtPULAU__6F65Z",
+                     "185UgRClG-m51jdV1v9C9twszvaTL1rUF",
+                     "1z7ZVaklvFDRqyUvB7p_x6VwmqaQVPc_3",
+                     "1pKGHqc69vTqlqfoJuT-QLcLScW2H_HNc")
 
 change_filenames <- c(
   "U2006_CHA0006_00_V2020_20u1.tif",
@@ -25,11 +24,10 @@ change_filenames <- c(
   "U2018_CHA1218_18_V2020_20u1.tif")
 
 # URLs and Filenames for the CORINE Status Layers
-status_urls <- c(
-  "https://ntnu.box.com/shared/static/ffmbbb89aikwg64tg9ei30c8fnf7chl2.tif",
-  "https://ntnu.box.com/shared/static/2x6g9jaov5rex3u0xt3hq9mmy91d63ew.tif",
-  "https://ntnu.box.com/shared/static/ut1pcbnj7xgfwv3ptahu5c3krdy24l7d.tif",
-  "https://ntnu.box.com/shared/static/iub514rfjnkopg3nu4nc18j4axq5jfon.tif")
+status_file_ids <- c("1_3bR8t9tkr4HdPhTeASxvvJRM2a1fuoq",
+                                    "1jqaO6YOfk3elRXE8CkSCxi_V2Ia3ZXv3",
+                                    "1xzu3BtWD-h0bk9T6FGsDy_6F9NetNvnx",
+                                    "1NizlVm72fGC0_0SKEYRNmGwdukSOVdC7")
 
 status_filenames <- c(
   "U2006_CLC2000_V2020_20u1.tif",
@@ -50,9 +48,16 @@ class_modifications <- list(
 
 # 2. READ IN CORINE LAYERS -----------------------------------------------------
 
-## 2.1. Download layers (if needed) ----
-download_files(change_urls, change_filenames)
-download_files(status_urls, status_filenames)
+## 2.1. Download layers (if needed) --------------------------------------------
+
+# # When running the below download command the following things will happen:
+  # 1. New browser window will open
+  # 2. You will be asked to sign in to your Google account (you will need one)
+  # 3. You will be asked to give permission to the googledrive package
+  # 4. You will then get an authorisation code which you will need to paste into the console
+  # 5. The download should then proceed with no issues.
+download_gdrive_files(change_file_ids, change_filenames, dir = here("data", "raw_data"))
+download_gdrive_files(status_file_ids, status_filenames, dir = here("data", "raw_data"))
 
 
 ## 2.2. Read in  layers --------------------------------------------------------
