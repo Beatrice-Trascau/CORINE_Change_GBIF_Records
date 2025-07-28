@@ -24,7 +24,7 @@ package_vec <- c("here", "terra", "sf", "geodata", "mapview",
                  "tidyterra", "ggspatial", "htmlwidgets",
                  "htmltools", "patchwork", "webshot2",
                  "rgbif", "CoordinateCleaner", "DHARMa",
-                 "writexl", "bbmle", "kableExtra") # specify packages
+                 "writexl", "bbmle", "kableExtra", "googledrive") # specify packages
 
 # Execute the function
 sapply(package_vec, install_load_package)
@@ -60,16 +60,39 @@ create_project_structure <- function(base_path = "boreal_arctic_trait_space") {
 # Run function
 create_project_structure
 
+# 3. FUNCTION TO DOWNLOAD FILES FROM GOOGLE DRIVE ------------------------------
 
+# Authenticate with Google - will open a new browser window
+drive_auth()
+# When running this for the first time:
+  # 1. New browser window will open
+  # 2. You will be asked to sign in to your Google account (you will need one)
+  # 3. You will be asked to give permission to the googledrive package
+  # 4. You can close the window after you approve
+  # 5. A success message should appear in R
 
-# 3. FUNCTION TO ONLY DOWNLOAD FILES THAT ARE NOT ALREADY IN THE FOLDERS -------
+# Check that authentication worked
+drive_user() # this should show your google account info
 
-download_files <- function(urls, filenames, dir = here("data", "raw_data")) {
+# The function will only download the files that are not already in the folders
+download_gdrive_files <- function(file_ids, filenames, dir = here("data", "raw_data")) {
   if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
-  for (i in seq_along(urls)) {
+  
+  # Authenticate (will use cached credentials after first time)
+  drive_auth()
+  
+  for (i in seq_along(file_ids)) {
     file_path <- file.path(dir, filenames[i])
+    
     if (!file.exists(file_path)) {
-      download.file(urls[i], file_path)
+      cat("Downloading:", filenames[i], "to", dir, "\n")
+      drive_download(as_id(file_ids[i]), path = file_path, overwrite = FALSE)
+      
+      # Check file size to confirm successful download
+      file_size <- file.size(file_path)
+      cat("Downloaded", round(file_size/1024/1024, 1), "MB\n")
+    } else {
+      cat("File already exists:", filenames[i], "\n")
     }
   }
 }
