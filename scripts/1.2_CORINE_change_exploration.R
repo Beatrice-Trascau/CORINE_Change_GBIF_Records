@@ -8,7 +8,18 @@
 
 # 1. READ IN DATA --------------------------------------------------------------
 
+# Source setup file
+library(here)
+source(here("scripts", "0_setup.R"))
+
 ## 1.1. Read in layers ---------------------------------------------------------
+
+# Download the CORINE land cover change layers from Google Drive
+drive_download(as_id("1H0fK2dqOqVDifOL5ar_HFhgPK6Z9Acwj"),
+               path = here("data", "derived_data", 
+                           "norway_corine_change_modified_stack.tif"))
+
+# Read in the CORINE modified stack
 norway_corine_change_modified_stack <- rast(here("data", "derived_data",
                                         "norway_corine_change_modified_stack.tif"))
 
