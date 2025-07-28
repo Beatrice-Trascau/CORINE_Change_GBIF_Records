@@ -7,6 +7,27 @@
 
 # 1. LOAD DATA -----------------------------------------------------------------
 
+## 1.1. Download data (if needed) ----------------------------------------------
+
+# CORINE Status Layers
+drive_download(as_id("1TEUH2UUEXsdT-4eeWGSVornzu1paQjZW"),
+               path = here("data", "derived_data", 
+                           "norway_corine_status_modified_stack.tif"))
+
+# SSB Grids (zipped)
+drive_download(as_id("1_AcppTeFEjQi1lX1-tn9GJONf4dxdxeo"),
+               path = here("data", "raw_data", 
+                           "SSB050KM.zip"))
+# Unzip SSB Grids
+unzip(here("data", "raw_data", "SSB050KM.zip"),
+      exdir = here("data", "raw_data"))
+
+# Cleaned occurrences
+drive_download(as_id(""),
+               path = here("data", "derived_data", ""))
+
+## 1.2. Read in data -----------------------------------------------------------
+
 # CORINE Status Layers
 norway_corine_status_modified_stack <- rast(here("data", "derived_data",
                                                  "norway_corine_status_modified_stack.tif"))
@@ -18,11 +39,6 @@ ssb_grids <- vect(here("data", "raw_data",
 # Cleaned occurrence records
 load(here("data", "derived_data","cleaned_occurrences_feb17_25.rda"))
 occurrences_norway <- cleaned_occurrences_feb17_25
-
-# Download shapefile of municipalities
-norway_municipalities <- geodata::gadm(country = "NOR", level = 2, 
-                                       path = tempdir(),
-                                       version = "latest")
 
 # 2. ADD GBIF OCCURRENCE RECORDS -----------------------------------------------
 
