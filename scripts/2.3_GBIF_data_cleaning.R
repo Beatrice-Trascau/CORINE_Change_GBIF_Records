@@ -6,6 +6,14 @@
 
 # 1. LOAD DATA -----------------------------------------------------------------
 
+# Source setup file
+library(here)
+source(here("scripts", "0_setup.R"))
+
+# Download the occurrences from Google Drive
+drive_download(as_id(""),
+               path = here("data", "derived_data", ""))
+
 # Load data
 load(here("data", "raw_data", "occurrence_a.rda"))
 
