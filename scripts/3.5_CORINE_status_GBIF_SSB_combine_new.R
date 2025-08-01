@@ -95,3 +95,18 @@ cat("Occurrences assigned to valid grid cells:", nrow(occurrences_sf_valid),
     sprintf("(%.2f%%)\n", retention_rate)) #5342487 (86.24%)
 cat("Unique cells with occurrences:", 
     length(unique(occurrences_sf_valid$cell_ID)), "\n") #505047 
+
+# 4. EXTRACT LAND COVER DATA TO REFERENCE GRID ---------------------------------
+
+# Add reference grid to CLC stack
+combined_stack <- c(reference_grid, norway_corine_status_modified_stack)
+
+# Convert the new stack to dataframe
+lc_df <- as.data.frame(combined_stack, cells = TRUE) |>
+  filter(!is.na(cell_id)) |>
+  select(-cell) |>
+  rename(cell_ID = cell_id,
+         land_cover_2000 = U2006_CLC2000_V2020_20u1,
+         land_cover2006 = U2012_CLC2006_V2020_20u1,
+         land_cover2012 = U2018_CLC2012_V2020_20u1,
+         land_cover2018 = U2018_CLC2018_V2020_20u1)
