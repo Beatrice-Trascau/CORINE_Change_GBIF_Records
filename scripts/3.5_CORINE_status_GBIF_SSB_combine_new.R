@@ -110,3 +110,45 @@ lc_df <- as.data.frame(combined_stack, cells = TRUE) |>
          land_cover2006 = U2012_CLC2006_V2020_20u1,
          land_cover2012 = U2018_CLC2012_V2020_20u1,
          land_cover2018 = U2018_CLC2018_V2020_20u1)
+
+# 5. EXTRACT SSB GRID DATA TO REFERENCE GRID -----------------------------------
+
+## 5.1. Extract SSB ID for reference grid --------------------------------------
+
+# Convert SSB grid to sf
+ssb_grid_sf <- st_as_sf(ssb_grids)
+
+# Check if the SSB grid has a CRS and set it manually if it doesn't
+if(is.na(st_crs(ssb_grid_sf))){
+  st_crs(ssb_grid_sf) <- crs(reference_grid)
+  cat("SSB grid CRS was missing - set to match reference grid\n")
+}
+
+# Reproject SSB grid to match reference grid CRS
+ssb_grid_reprojected <- st_transform(ssb_grid_sf, crs(reference_grid))
+
+# Convert grid dataframe to sf object
+grid_centroids <- st_as_sf(grid_df, coords = c("x", "y"),
+                           crs = crs(reference_grid))
+
+# Intersect grid centroids with the SSB polygons
+ssb_intersect <- st_intersection(grid_centroids, ssb_grid_reprojected)
+
+# Create lookup table for cell_ID to SSB ID
+ssb_lookup <- data.frame(cell_ID = ssb_intersect$cell_id,
+                         SSBID = ssb_intersect$SSBID)
+
+## 5.2. Make sure SSB ID was assigned correctly --------------------------------
+
+# Get the number of SSB IDs with multiple cells assigned
+cell_id_counts <- table(ssb_lookup$cell_ID)
+multiple_assignments <- cell_id_counts[cell_id_counts > 1]
+
+# Check if there are any cells assigned to multiple SSB IDs
+if(length(multiple_assignments) > 0){
+  cat("Warning:", length(multiple_assignments),
+      "cells assigned to multiple SSB IDs\n")
+  print(head(multiple_assignments))
+} else {
+  cat("Good: Each cell assigned to exactly one SSB ID\n")
+}
