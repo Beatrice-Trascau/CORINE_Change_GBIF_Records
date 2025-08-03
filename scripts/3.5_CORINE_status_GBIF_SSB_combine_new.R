@@ -191,3 +191,22 @@ occurrnces_summary <- occurrences_df_periods |>
             .groups = "drop")
 
 # 7. COMBINE ALL DATA USING CELL_ID AS KEY -------------------------------------
+
+# Add land cover data
+combined_data <- lc_df
+
+# Add occurrence data
+combined_data <- combined_data |>
+  left_join(occurrnces_summary, by = "cell_ID")
+
+# Add SSB data
+combined_data_SSB <- combined_data  |>
+  left_join(ssb_lookup, by = "cell_ID")
+
+# Replace NA values in occurrencce counts with 0
+combined_data_SSB <- combined_data_SSB |>
+  mutate(n_occurrences = ifelse(is.na(n_occurrences), 0, n_occurrences),
+         n_species = ifelse(is.na(n_species), 0, n_species))
+
+
+# 8. ADD LAND COVER CHANGE CLASSIFICATIONS -------------------------------------
