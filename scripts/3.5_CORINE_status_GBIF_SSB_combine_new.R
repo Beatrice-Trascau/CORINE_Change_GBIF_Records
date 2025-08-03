@@ -152,3 +152,42 @@ if(length(multiple_assignments) > 0){
 } else {
   cat("Good: Each cell assigned to exactly one SSB ID\n")
 }
+
+# 6. SUMMARISE OCCURRENCES BY CELL AND TIME PERIOD -----------------------------
+
+## 6.1. Add time period classification to occurrences --------------------------
+
+# Convert occurrences back to normal df from spatial object
+occurrences_df <- occurrences_sf_valid |>
+  st_drop_geometry()
+
+# All the before periods (avoids overlap)
+occurrences_before <- occurrences_df |>
+  filter(year %in% c(2000:2003, 2006:2009, 2012:2015))|>
+  mutate(time_period = case_when(year %in% 2000:2003 ~ "before_2000_2006",
+                                 year %in% 2006:2009 ~ "before_2006_2012",
+                                 year %in% 2012:2015 ~ "before_2012_2018",
+                                 TRUE ~ NA_character_)) |>
+  filter(!is.na(time_period))
+
+# All the after periods (avoids overlap)
+occurrences_after <- occurrences_df |>
+  filter(year %in% c(2003:2006, 2009:2012, 2015:2018))|>
+  mutate(time_period = case_when(year %in% 2003:2006 ~ "after_2000_2006",
+                                 year %in% 2009:2012 ~ "after_2006_2012",
+                                 year %in% 2015:2018 ~ "after_2012_2018",
+                                 TRUE ~ NA_character_)) |>
+  filter(!is.na(time_period))
+
+# Combine before and after
+occurrences_df_periods <- bind_rows(occurrences_before, occurrences_after)
+
+# Summarise occurrences by cell and time period
+occurrnces_summary <- occurrences_df_periods |>
+  group_by(cell_ID, time_period) |>
+  summarise(n_occurrences = n(),
+            n_species = length(unique(species)),
+            species_list = list(unique(species)),
+            .groups = "drop")
+
+# 7. COMBINE ALL DATA USING CELL_ID AS KEY -------------------------------------
