@@ -182,13 +182,34 @@ occurrences_after <- occurrences_df |>
 # Combine before and after
 occurrences_df_periods <- bind_rows(occurrences_before, occurrences_after)
 
-# Summarise occurrences by cell and time period
-occurrnces_summary <- occurrences_df_periods |>
+## 6.2. Create complete summary including cells with 0 occurrences -------------
+
+# Create complete grid of all possible cell_ID + time_period combinations
+all_cells <- unique(lc_df$cell_ID)
+all_time_periods <- c("before_2000_2006", "after_2000_2006",
+                      "before_2006_2012", "after_2006_2012", 
+                      "before_2012_2018", "after_2012_2018")
+complete_grid <- expand_grid(cell_ID = all_cells, 
+                             time_period = all_time_periods)
+
+# Calculate occurrences (only for cells that have any)
+occurrences_summary_non0 <- occurrences_df_periods |>
   group_by(cell_ID, time_period) |>
   summarise(n_occurrences = n(),
             n_species = length(unique(species)),
             species_list = list(unique(species)),
             .groups = "drop")
+
+# Join with complete grid to include cells with 0 occurrences
+occurrences_summary <- complete_grid |>
+  left_join(occurrences_summary_non0, by = c("cell_ID", "time_period")) |>
+  mutate(n_occurrences = ifelse(is.na(n_occurrences), 0, n_occurrences),
+         n_species = ifelse(is.na(n_species), 0, n_species),
+         species_list = ifelse(is.na(species_list), list(character(0)), species_list))
+
+# Check how many cells  have occurrences and how many do not
+cat("Cells with zero occurrences:", sum(occurrences_summary$n_occurrences == 0), "\n")
+cat("Cells with occurrences:", sum(occurrences_summary$n_occurrences > 0), "\n")
 
 # 7. COMBINE ALL DATA USING CELL_ID AS KEY -------------------------------------
 
@@ -199,7 +220,7 @@ combined_data <- lc_df
 
 # Add occurrence data
 combined_data <- combined_data |>
-  left_join(occurrnces_summary, by = "cell_ID")
+  left_join(occurrences_summary, by = "cell_ID")
 
 # Add SSB data
 combined_data_SSB <- combined_data  |>
@@ -414,3 +435,172 @@ modeling_data_combined_corine_gbif_ssb_august2025 <- final_modeling_data |>
 save(modeling_data_combined_corine_gbif_ssb_august2025,
      file = here("data", "derived_data",
                  "modeling_data_combined_corine_gbif_ssb_august2025.rda"))
+
+# 9. CHECK DATA WAS CREATED CORRECTLY ------------------------------------------
+
+## 9.1. Check for duplicates in final datasets ---------------------------------
+
+# Check for duplicates in the combined dataset - we expect one row per cell_ID + time_period
+combined_duplicates <- combined_corine_gbif_ssb_august2025 |>
+  group_by(cell_ID, time_period) |>  
+  summarise(count = n(), .groups = "drop") |>
+  filter(count > 1)
+
+if(nrow(combined_duplicates) > 0) {
+  cat("❌ WARNING: Found", nrow(combined_duplicates), "duplicate cell_ID/time_period combinations in combined dataset!\n")
+} else {
+  cat("✅ GOOD: No duplicate cell_ID/time_period combinations in combined dataset\n")
+} # GOOD: No duplicate cell_ID/time_period combinations in combined dataset
+
+# Check for duplicates in the modeling data
+modeling_duplicates <- modeling_data_combined_corine_gbif_ssb_august2025 |>
+  group_by(cell_ID, time_period) |>
+  summarise(count = n(), .groups = "drop") |>
+  filter(count > 1)
+
+if(nrow(modeling_duplicates) > 0) {
+  cat("❌ WARNING: Found", nrow(modeling_duplicates), "duplicate cell_ID/time_period combinations in modeling dataset!\n")
+  print(head(modeling_duplicates))
+} else {
+  cat("✅ GOOD: No duplicate cell_ID/time_period combinations in modeling dataset\n")
+} # No duplicate cell_ID/time_period combinations in modeling dataset
+
+## 9.2. Check data consistency across each processing step ---------------------
+
+# Check that cell_IDs are consistent across datasets
+cells_in_combined <- unique(combined_corine_gbif_ssb_august2025$cell_ID)
+cells_in_modeling <- unique(modeling_data_combined_corine_gbif_ssb_august2025$cell_ID)
+cells_gained <- setdiff(cells_in_modeling, cells_in_combined)
+
+
+if(length(cells_gained) > 0) {
+  cat("❌ WARNING:", length(cells_gained), "cells in modeling data that weren't in combined data\n")
+} else {
+  cat("✅ GOOD: No unexpected cells gained in modeling dataset\n")
+} #GOOD: No unexpected cells gained in modeling dataset
+
+# Check that land cover values are consistent
+lc_check <- modeling_data_combined_corine_gbif_ssb_august2025 |>
+  select(cell_ID, land_cover_start, land_cover_end, cover_change) |>
+  mutate(calculated_change = ifelse(land_cover_start == land_cover_end, "N", "Y"),
+         change_consistent = (calculated_change == cover_change) | is.na(cover_change))
+
+inconsistent_changes <- sum(!lc_check$change_consistent, na.rm = TRUE)
+if(inconsistent_changes > 0) {
+  cat("❌ WARNING:", inconsistent_changes, "rows with inconsistent land cover change calculations\n")
+} else {
+  cat("✅ GOOD: All land cover change calculations are consistent\n")
+} #GOOD: All land cover change calculations are consistent
+
+## 9.3. Check occurrence data integrity ----------------------------------------
+
+# Check for negative occurrence counts
+negative_counts <- modeling_data_combined_corine_gbif_ssb_august2025 |>
+  filter(n_occurrences < 0 | n_species < 0)
+
+if(nrow(negative_counts) > 0) {
+  cat("❌ WARNING: Found", nrow(negative_counts), "rows with negative occurrence/species counts\n")
+} else {
+  cat("✅ GOOD: No negative occurrence or species counts\n")
+} #GOOD: No negative occurrence or species counts
+
+# Check that n_species <= n_occurrences (you can't have more species than occurrences)
+species_count_issues <- modeling_data_combined_corine_gbif_ssb_august2025 |>
+  filter(n_species > n_occurrences & n_occurrences > 0)
+
+if(nrow(species_count_issues) > 0) {
+  cat("❌ WARNING: Found", nrow(species_count_issues), "rows where n_species > n_occurrences\n")
+} else {
+  cat("✅ GOOD: Species counts are consistent with occurrence counts\n")
+} #GOOD: Species counts are consistent with occurrence counts
+
+# Check for cells with species lists but zero species count
+species_list_inconsistency <- modeling_data_combined_corine_gbif_ssb_august2025 |>
+  filter(n_species == 0 & !is.na(species_list) & lengths(species_list) > 0)
+
+if(nrow(species_list_inconsistency) > 0) {
+  cat("❌ WARNING: Found", nrow(species_list_inconsistency), "rows with species lists but zero species count\n")
+} else {
+  cat("✅ GOOD: Species lists are consistent with species counts\n")
+} #GOOD: Species lists are consistent with species counts
+
+## 9.4. Check spatial data integrity -------------------------------------------
+
+# Check for missing SSB IDs
+missing_ssb <- sum(is.na(modeling_data_combined_corine_gbif_ssb_august2025$SSBID))
+total_rows <- nrow(modeling_data_combined_corine_gbif_ssb_august2025)
+ssb_coverage <- (total_rows - missing_ssb) / total_rows * 100
+
+cat("SSB ID coverage:", sprintf("%.2f%%", ssb_coverage), 
+    sprintf("(%d of %d rows)\n", total_rows - missing_ssb, total_rows)) #SSB ID coverage: 100.00% (726136 of 726136 rows)
+
+if(ssb_coverage < 90) {
+  cat("❌ WARNING: Low SSB ID coverage - may indicate spatial matching issues\n")
+} else {
+  cat("✅ GOOD: High SSB ID coverage\n")
+} #GOOD: High SSB ID coverage
+
+# Check for impossible cell_ID values (should be between 1 and max valid cells)
+max_valid_cells <- length(valid_cells)
+invalid_cell_ids <- modeling_data_combined_corine_gbif_ssb_august2025 |>
+  filter(as.numeric(as.character(cell_ID)) < 1 | as.numeric(as.character(cell_ID)) > max_valid_cells)
+
+if(nrow(invalid_cell_ids) > 0) {
+  cat("❌ WARNING: Found", nrow(invalid_cell_ids), "rows with invalid cell_ID values\n")
+} else {
+  cat("✅ GOOD: All cell_ID values are within valid range\n")
+} #GOOD: All cell_ID values are within valid range
+
+## 9.5. Check time period assignments ------------------------------------------
+
+# Check that each analysis period has both before and after data
+time_period_check <- modeling_data_combined_corine_gbif_ssb_august2025 |>
+  group_by(analysis_period) |>
+  summarise(has_before = any(grepl("before", time_period)),
+            has_after = any(grepl("after", time_period)),
+            n_rows = n(),
+            .groups = "drop")
+
+incomplete_periods <- time_period_check |>
+  filter(!has_before | !has_after)
+
+if(nrow(incomplete_periods) > 0) {
+  cat("❌ WARNING: Some analysis periods missing before or after data:\n")
+  print(incomplete_periods)
+} else {
+  cat("✅ GOOD: All analysis periods have both before and after data\n")
+} #GOOD: All analysis periods have both before and after data
+
+# Show time period distribution
+cat("\nTime period distribution:\n")
+print(table(modeling_data_combined_corine_gbif_ssb_august2025$time_period, 
+            modeling_data_combined_corine_gbif_ssb_august2025$analysis_period))
+
+## 9.6. Final summary statistics -----------------------------------------------
+
+cat("\n--- FINAL SUMMARY STATISTICS ---\n")
+cat("Combined dataset:\n")
+cat("  - Total cells:", nrow(combined_corine_gbif_ssb_august2025), "\n")
+cat("  - Cells with occurrences:", sum(combined_corine_gbif_ssb_august2025$n_occurrences > 0, na.rm = TRUE), "\n")
+cat("  - Total occurrences:", sum(combined_corine_gbif_ssb_august2025$n_occurrences, na.rm = TRUE), "\n")
+
+cat("\nModeling dataset:\n")
+cat("  - Total rows:", nrow(modeling_data_combined_corine_gbif_ssb_august2025), "\n")
+cat("  - Unique cells:", length(unique(modeling_data_combined_corine_gbif_ssb_august2025$cell_ID)), "\n")
+cat("  - Rows with occurrences:", sum(modeling_data_combined_corine_gbif_ssb_august2025$n_occurrences > 0), "\n")
+cat("  - Total occurrences:", sum(modeling_data_combined_corine_gbif_ssb_august2025$n_occurrences), "\n")
+
+# Check occurrence retention from original data
+original_occurrences <- nrow(occurrences_sf_valid)
+final_occurrences <- sum(modeling_data_combined_corine_gbif_ssb_august2025$n_occurrences)
+retention_rate_final <- final_occurrences / original_occurrences * 100
+
+cat("  - Occurrence retention rate:", sprintf("%.2f%%", retention_rate_final), "\n")
+
+if(retention_rate_final < 50) {
+  cat("❌ WARNING: Low occurrence retention rate - check time period filters\n")
+} else {
+  cat("✅ GOOD: Reasonable occurrence retention rate\n")
+} #GOOD: Reasonable occurrence retention rate
+
+# END OF SCRIPT ----------------------------------------------------------------
