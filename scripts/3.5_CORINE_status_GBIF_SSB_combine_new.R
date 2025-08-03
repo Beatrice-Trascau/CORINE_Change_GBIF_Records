@@ -106,7 +106,7 @@ lc_df <- as.data.frame(combined_stack, cells = TRUE) |>
   filter(!is.na(cell_id)) |>
   select(-cell) |>
   rename(cell_ID = cell_id,
-         land_cover_2000 = U2006_CLC2000_V2020_20u1,
+         land_cover2000 = U2006_CLC2000_V2020_20u1,
          land_cover2006 = U2012_CLC2006_V2020_20u1,
          land_cover2012 = U2018_CLC2012_V2020_20u1,
          land_cover2018 = U2018_CLC2018_V2020_20u1)
@@ -192,6 +192,8 @@ occurrnces_summary <- occurrences_df_periods |>
 
 # 7. COMBINE ALL DATA USING CELL_ID AS KEY -------------------------------------
 
+## 7.1. Add land cover & SSB ID ------------------------------------------------
+
 # Add land cover data
 combined_data <- lc_df
 
@@ -209,4 +211,206 @@ combined_data_SSB <- combined_data_SSB |>
          n_species = ifelse(is.na(n_species), 0, n_species))
 
 
-# 8. ADD LAND COVER CHANGE CLASSIFICATIONS -------------------------------------
+## 7.2. Add land cover change classifications ----------------------------------
+
+# Convert numeric land cover codes to their names
+combined_data_SSB_lc_names <- combined_data_SSB |>
+  mutate(land_cover2000_name = case_when(land_cover2000 == 1 ~ "urban",
+                                         land_cover2000 == 80 ~ "complex_agri",
+                                         land_cover2000 == 103 ~ "agri_sig_veg",
+                                         land_cover2000 == 250 ~ "forests",
+                                         land_cover2000 == 380 ~ "moors_heath_grass",
+                                         land_cover2000 == 590 ~ "woodland_shrub",
+                                         land_cover2000 == 711 ~ "sparse_veg",
+                                         is.na(land_cover2000) ~ "other"),
+         land_cover2006_name = case_when(land_cover2006 == 1 ~ "urban",
+                                         land_cover2006 == 80 ~ "complex_agri",
+                                         land_cover2006 == 103 ~ "agri_sig_veg",
+                                         land_cover2006 == 250 ~ "forests",
+                                         land_cover2006 == 380 ~ "moors_heath_grass",
+                                         land_cover2006 == 590 ~ "woodland_shrub",
+                                         land_cover2006 == 711 ~ "sparse_veg",
+                                         is.na(land_cover2006) ~ "other"),
+         land_cover2012_name = case_when(land_cover2012 == 1 ~ "urban",
+                                         land_cover2012 == 80 ~ "complex_agri",
+                                         land_cover2012 == 103 ~ "agri_sig_veg",
+                                         land_cover2012 == 250 ~ "forests", 
+                                         land_cover2012 == 380 ~ "moors_heath_grass",
+                                         land_cover2012 == 590 ~ "woodland_shrub",
+                                         land_cover2012 == 711 ~ "sparse_veg",
+                                         is.na(land_cover2012) ~ "other"),
+         land_cover2018_name = case_when(land_cover2018 == 1 ~ "urban",
+                                         land_cover2018 == 80 ~ "complex_agri",
+                                         land_cover2018 == 103 ~ "agri_sig_veg",
+                                         land_cover2018 == 250 ~ "forests",
+                                         land_cover2018 == 380 ~ "moors_heath_grass", 
+                                         land_cover2018 == 590 ~ "woodland_shrub",
+                                         land_cover2018 == 711 ~ "sparse_veg",
+                                         is.na(land_cover2018) ~ "other"))
+
+# Calculate Y/N land cover change indicators
+combined_data_SSB_lc_yn <- combined_data_SSB_lc_names |>
+  mutate(cover_change_2000_2006 = ifelse(!is.na(land_cover2000) & !is.na(land_cover2006),
+                                         ifelse(land_cover2000 == land_cover2006, "N", "Y"),
+                                         NA_character_),
+         cover_change_2006_2012 = ifelse(!is.na(land_cover2006) & !is.na(land_cover2012),
+                                        ifelse(land_cover2006 == land_cover2012, "N", "Y"), 
+                                        NA_character_),
+         cover_change_2012_2018 = ifelse(!is.na(land_cover2012) & !is.na(land_cover2018),
+                                         ifelse(land_cover2012 == land_cover2018, "N", "Y"),
+                                         NA_character_))
+
+# Create transition categories
+combined_data_SSB_lc_transitions <- combined_data_SSB_lc_yn |>
+  unite("transition_2000_2006", land_cover2000_name, land_cover2006_name, 
+        sep = "_to_", remove = FALSE) |>
+  unite("transition_2006_2012", land_cover2006_name, land_cover2012_name,
+        sep = "_to_", remove = FALSE) |>
+  unite("transition_2012_2018", land_cover2012_name, land_cover2018_name,
+        sep = "_to_", remove = FALSE)
+
+# Create intensification/extensification categories
+combined_data_SSB_lc_intens_extens <- combined_data_SSB_lc_transitions |>
+  mutate(change_value_2000_2006 = land_cover2000 - land_cover2006,
+         change_value_2006_2012 = land_cover2006 - land_cover2012,
+         change_value_2012_2018 = land_cover2012 - land_cover2018,
+         intens_extens_2000_2006 = case_when(change_value_2000_2006 %in% c(79, 102, 249, 
+                                                                           379, 589, 710,
+                                                                           23, 147, 170, 
+                                                                           608, 631, -102,
+                                                                           -79, 487, 510, 
+                                                                           277, 300, -340,
+                                                                           -331, -461, -130) ~ "Intensification",
+                                             change_value_2000_2006 %in% c(-249, -379, -589, 
+                                                                           -170, -300, -510,
+                                                                           -147, -277, -487, 
+                                                                           130, -210, 461, 
+                                                                           331,121, 340, 
+                                                                           -23, -710, -121, 
+                                                                           -608) ~ "Extensification",
+                                             change_value_2000_2006 == 0 ~ "No_change",
+                                             TRUE ~ NA_character_),
+         intens_extens_2006_2012 = case_when(change_value_2006_2012 %in% c(79, 102, 249, 
+                                                                           379, 589, 710,
+                                                                           23, 147, 170, 
+                                                                           608, 631, -102,
+                                                                           -79, 487, 510, 
+                                                                           277, 300, -340,
+                                                                           -331, -461, -130) ~ "Intensification",
+                                             change_value_2006_2012 %in% c(-249, -379, -589, 
+                                                                           -170, -300, -510,
+                                                                           -147, -277, -487, 
+                                                                           130, -210, 461, 
+                                                                           331,121, 340, 
+                                                                           -23, -710, -121, 
+                                                                           -608) ~ "Extensification",
+                                             change_value_2006_2012 == 0 ~ "No_change",
+                                             TRUE ~ NA_character_),
+         intens_extens_2012_2018 = case_when(change_value_2012_2018 %in% c(79, 102, 249, 
+                                                                           379, 589, 710,
+                                                                           23, 147, 170, 
+                                                                           608, 631, -102,
+                                                                           -79, 487, 510, 
+                                                                           277, 300, -340,
+                                                                           -331, -461, -130) ~ "Intensification",
+                                             change_value_2012_2018 %in% c(-249, -379, -589, 
+                                                                           -170, -300, -510,
+                                                                           -147, -277, -487, 
+                                                                           130, -210, 461, 
+                                                                           331,121, 340, 
+                                                                           -23, -710, -121, 
+                                                                           -608) ~ "Extensification",
+                                             change_value_2012_2018 == 0 ~ "No_change",
+                                             TRUE ~ NA_character_))
+
+# Save combined dataset
+combined_corine_gbif_ssb_august2025 <- combined_data_SSB_lc_intens_extens
+save(combined_corine_gbif_ssb_august2025, 
+     file = here("data", "derived_data",
+                 "combined_corine_gbif_ssb_august2025.rda"))
+
+# 8. RESTRUCTURE DATA FOR MODELING ---------------------------------------------
+
+## 8.1. Create separate dfs for each period of analysis ------------------------
+
+# Current df has one row per cell with occurrence data for multiple time periods
+# For models, we need to have separate before/after observations
+
+# Period 1: 2000-2006
+data_2000_2006 <- combined_data_SSB_lc_intens_extens |>
+  filter(!is.na(cover_change_2000_2006)) |>
+  select(cell_ID, SSBID, 
+         land_cover2000, land_cover2006, land_cover2000_name, land_cover2006_name,
+         cover_change_2000_2006, transition_2000_2006, intens_extens_2000_2006,
+         time_period, n_occurrences, n_species, species_list) |>
+  filter(time_period %in% c("before_2000_2006", "after_2000_2006")) |>
+  mutate(analysis_period = "2000_2006")
+
+# Period 2: 2006-2012 analysis  
+data_2006_2012 <- combined_data_SSB_lc_intens_extens |>
+  filter(!is.na(cover_change_2006_2012)) |>
+  select(cell_ID, SSBID,
+         land_cover2006, land_cover2012, land_cover2006_name, land_cover2012_name, 
+         cover_change_2006_2012, transition_2006_2012, intens_extens_2006_2012,
+         time_period, n_occurrences, n_species, species_list) |>
+  filter(time_period %in% c("before_2006_2012", "after_2006_2012")) |>
+  mutate(analysis_period = "2006_2012")
+
+# Period 3: 2012-2018 analysis
+data_2012_2018 <- combined_data_SSB_lc_intens_extens |>
+  filter(!is.na(cover_change_2012_2018)) |>
+  select(cell_ID, SSBID,
+         land_cover2012, land_cover2018, land_cover2012_name, land_cover2018_name,
+         cover_change_2012_2018, transition_2012_2018, intens_extens_2012_2018, 
+         time_period, n_occurrences, n_species, species_list) |>
+  filter(time_period %in% c("before_2012_2018", "after_2012_2018")) |>
+  mutate(analysis_period = "2012_2018")
+
+## 8.2. Standardise column names across periods --------------------------------
+
+# Rename columns across all period dfs
+data_2000_2006 <- data_2000_2006 |>
+  rename(land_cover_start = land_cover2000,
+         land_cover_end = land_cover2006,
+         land_cover_start_name = land_cover2000_name,
+         land_cover_end_name = land_cover2006_name,
+         cover_change = cover_change_2000_2006,
+         transition_type = transition_2000_2006,
+         intens_extens = intens_extens_2000_2006)
+
+data_2006_2012 <- data_2006_2012 |>
+  rename(land_cover_start = land_cover2006,
+         land_cover_end = land_cover2012,
+         land_cover_start_name = land_cover2006_name, 
+         land_cover_end_name = land_cover2012_name,
+         cover_change = cover_change_2006_2012,
+         transition_type = transition_2006_2012,
+         intens_extens = intens_extens_2006_2012)
+
+data_2012_2018 <- data_2012_2018 |>
+  rename(land_cover_start = land_cover2012,
+         land_cover_end = land_cover2018,
+         land_cover_start_name = land_cover2012_name,
+         land_cover_end_name = land_cover2018_name,
+         cover_change = cover_change_2012_2018,
+         transition_type = transition_2012_2018,
+         intens_extens = intens_extens_2012_2018)
+
+## 8.3. Combine all periods to create final dataset ----------------------------
+
+# Combine all period dfs into a single one
+final_modeling_data <- bind_rows(data_2000_2006, data_2006_2012, data_2012_2018)
+
+# Convert factors for modeling
+modeling_data_combined_corine_gbif_ssb_august2025 <- final_modeling_data |>
+  mutate(cell_ID = as.factor(cell_ID),
+         SSBID = as.factor(SSBID),
+         cover_change = as.factor(cover_change),
+         intens_extens = as.factor(intens_extens),
+         analysis_period = as.factor(analysis_period),
+         time_period = as.factor(time_period))
+
+# Save final dataset
+save(modeling_data_combined_corine_gbif_ssb_august2025,
+     file = here("data", "derived_data",
+                 "modeling_data_combined_corine_gbif_ssb_august2025.rda"))
