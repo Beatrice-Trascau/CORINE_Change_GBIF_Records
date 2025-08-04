@@ -19,15 +19,16 @@ Sys.setenv(GBIF_EMAIL = "my_email")
 download_key <- occ_download(
   pred("gadm", "NOR"), # Norway
   pred_gte("year", 1997), # Greater than or equal to year 1950
-  pred_lte("year", 2018), # Lower than or equal to 2018
+  pred_lte("year", 2021), # Lower than or equal to 2018
   pred("hasCoordinate", TRUE), 
   format = "DWCA") # Download as a Darwin Core Archive file
 
 # Check progress
 occ_download_wait(download_key)
 
-# Download key: 0016426-240626123714530
-# Download link: https://api.gbif.org/v1/occurrence/download/request/0016426-240626123714530.zip
+# Download key: 0009294-250802193616735
+# Download link: https://api.gbif.org/v1/occurrence/download/request/0009294-250802193616735.zip
+# DOI: 10.15468/dl.tcgps5
 
 # 3. IMPORT GBIF DOWNLOAD AND SAVE ---------------------------------------------
 
@@ -36,6 +37,6 @@ occurrence <- occ_download_get(download_key) |>
   occ_download_import()
 
 # Save to file
-save(occurrence, file = here::here("data","raw_data","occurrence.txt"))
+save(occurrence, file = here::here("data","raw_data","occurrence_redownload_August2025.txt"))
 
 # END OF SCRIPT ----------------------------------------------------------------
