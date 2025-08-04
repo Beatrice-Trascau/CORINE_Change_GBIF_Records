@@ -82,7 +82,7 @@ clean_occurrences5 <- clean_occurrences4 |>
            is.na(coordinateUncertaintyInMeters))
 
 # Check how many records are left 
-nrow(clean_occurrences5)
+nrow(clean_occurrences5) # 10 546 354
 
 # 3. PREP DF FOR ANALYSIS ------------------------------------------------------
 
