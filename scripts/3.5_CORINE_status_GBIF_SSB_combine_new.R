@@ -483,7 +483,7 @@ if(nrow(modeling_duplicates) > 0) {
   print(head(modeling_duplicates))
 } else {
   cat("✅ GOOD: No duplicate cell_ID/time_period combinations in modeling dataset\n")
-} # No duplicate cell_ID/time_period combinations in modeling dataset
+} # GOOD: No duplicate cell_ID/time_period combinations in modeling dataset
 
 ## 9.2. Check data consistency across each processing step ---------------------
 
@@ -613,7 +613,7 @@ if(actual_combinations == expected_combinations) {
 } else {
   extra_combinations <- actual_combinations - expected_combinations  
   cat("❌ WARNING:", extra_combinations, "unexpected extra cell/time_period combinations\n")
-}
+} # WARNING: 18114 missing cell/time_period combinations - is expected
 
 # Check zero occurrence distribution
 zero_occ_count <- sum(modeling_data_combined_corine_gbif_ssb_august2025$n_occurrences == 0)
@@ -628,7 +628,7 @@ if(zero_percentage < 50) {
   cat("   This might indicate that zero cells weren't properly included\n")
 } else {
   cat("✅ GOOD: High percentage of zero-occurrence cells (expected for biodiversity data)\n")
-}
+} # GOOD: High percentage of zero-occurrence cells (expected for biodiversity data)
 
 # Check that zero cells are distributed across land cover change categories
 zero_by_change <- modeling_data_combined_corine_gbif_ssb_august2025 |>
@@ -656,21 +656,21 @@ if(all(unlist(zero_species_list_check))) {
   cat("✅ GOOD: Zero-occurrence cells have consistent empty lists for all variables\n")
 } else {
   cat("❌ WARNING: Some zero-occurrence cells have inconsistent list data\n")
-}
+} # GOOD: Zero-occurrence cells have consistent empty lists for all variables
 
 ## 9.7. Final summary statistics -----------------------------------------------
 
 cat("\n--- FINAL SUMMARY STATISTICS ---\n")
 cat("Combined dataset:\n")
-cat("  - Total cells:", nrow(combined_corine_gbif_ssb_august2025), "\n")
-cat("  - Cells with occurrences:", sum(combined_corine_gbif_ssb_august2025$n_occurrences > 0, na.rm = TRUE), "\n")
-cat("  - Total occurrences:", sum(combined_corine_gbif_ssb_august2025$n_occurrences, na.rm = TRUE), "\n")
+cat("  - Total cells:", nrow(combined_corine_gbif_ssb_august2025), "\n") # Total cells: 157536024 
+cat("  - Cells with occurrences:", sum(combined_corine_gbif_ssb_august2025$n_occurrences > 0, na.rm = TRUE), "\n") # Cells with occurrences: 874412
+cat("  - Total occurrences:", sum(combined_corine_gbif_ssb_august2025$n_occurrences, na.rm = TRUE), "\n") # Cells with occurrences: 874412
 
 cat("\nModeling dataset:\n")
-cat("  - Total rows:", nrow(modeling_data_combined_corine_gbif_ssb_august2025), "\n")
-cat("  - Unique cells:", length(unique(modeling_data_combined_corine_gbif_ssb_august2025$cell_ID)), "\n")
-cat("  - Rows with occurrences:", sum(modeling_data_combined_corine_gbif_ssb_august2025$n_occurrences > 0), "\n")
-cat("  - Total occurrences:", sum(modeling_data_combined_corine_gbif_ssb_august2025$n_occurrences), "\n")
+cat("  - Total rows:", nrow(modeling_data_combined_corine_gbif_ssb_august2025), "\n") # Total rows: 157517910
+cat("  - Unique cells:", length(unique(modeling_data_combined_corine_gbif_ssb_august2025$cell_ID)), "\n") # Unique cells: 26253800
+cat("  - Rows with occurrences:", sum(modeling_data_combined_corine_gbif_ssb_august2025$n_occurrences > 0), "\n") # Rows with occurrences: 874299
+cat("  - Total occurrences:", sum(modeling_data_combined_corine_gbif_ssb_august2025$n_occurrences), "\n") # Total occurrences: 8737693
 
 # Check occurrence retention from original data
 original_occurrences <- nrow(occurrences_sf_valid)
@@ -683,6 +683,6 @@ if(retention_rate_final < 50) {
   cat("❌ WARNING: Low occurrence retention rate - check time period filters\n")
 } else {
   cat("✅ GOOD: Reasonable occurrence retention rate\n")
-}
+} # GOOD: Reasonable occurrence retention rate
 
 # END OF SCRIPT ----------------------------------------------------------------
