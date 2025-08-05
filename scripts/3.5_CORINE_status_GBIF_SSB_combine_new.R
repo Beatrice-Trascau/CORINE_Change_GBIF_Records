@@ -23,7 +23,7 @@ unzip(here("data", "raw_data", "SSB050KM.zip"),
       exdir = here("data", "raw_data"))
 
 # Cleaned occurrences
-drive_download(as_id("1cOiUATYaZO3eQXGz2BoXpIMtX8hcbDlI"),
+drive_download(as_id("1pbI26-2VFHPl1A7LsBZHmexC8tguFtv3"),
                path = here("data", "derived_data", "cleaned_occurrences_feb17_25.rda"))
 
 ## 1.2. Read in data -----------------------------------------------------------
@@ -37,7 +37,7 @@ ssb_grids <- vect(here("data", "raw_data",
                        "SSB050KM", "ssb50km.shp"))
 
 # Cleaned occurrence records
-load(here("data", "derived_data","cleaned_occurrences_feb17_25.rda"))
+load(here("data", "derived_data","clened_occurrences_redownloaded_August2025.rda"))
 occurrences_norway <- clean_occurrences
 
 # 2. CREATE SPATIAL REFERENCE GRID ---------------------------------------------
@@ -163,19 +163,19 @@ occurrences_df <- occurrences_sf_valid |>
 
 # All the before periods (avoids overlap)
 occurrences_before <- occurrences_df |>
-  filter(year %in% c(2000:2003, 2006:2009, 2012:2015))|>
-  mutate(time_period = case_when(year %in% 2000:2003 ~ "before_2000_2006",
-                                 year %in% 2006:2009 ~ "before_2006_2012",
-                                 year %in% 2012:2015 ~ "before_2012_2018",
+  filter(year %in% c(1997:2000, 2003:2006, 2009:2012))|>
+  mutate(time_period = case_when(year %in% 1997:2000 ~ "before_2000_2006",
+                                 year %in% 2003:2006 ~ "before_2006_2012",
+                                 year %in% 2009:2012 ~ "before_2012_2018",
                                  TRUE ~ NA_character_)) |>
   filter(!is.na(time_period))
 
 # All the after periods (avoids overlap)
 occurrences_after <- occurrences_df |>
-  filter(year %in% c(2003:2006, 2009:2012, 2015:2018))|>
-  mutate(time_period = case_when(year %in% 2003:2006 ~ "after_2000_2006",
-                                 year %in% 2009:2012 ~ "after_2006_2012",
-                                 year %in% 2015:2018 ~ "after_2012_2018",
+  filter(year %in% c(2006:2009, 2012:2015, 2018:2021))|>
+  mutate(time_period = case_when(year %in% 2006:2009 ~ "after_2000_2006",
+                                 year %in% 2012:2015 ~ "after_2006_2012",
+                                 year %in% 2018:2021 ~ "after_2012_2018",
                                  TRUE ~ NA_character_)) |>
   filter(!is.na(time_period))
 
@@ -198,6 +198,13 @@ occurrences_summary_non0 <- occurrences_df_periods |>
   summarise(n_occurrences = n(),
             n_species = length(unique(species)),
             species_list = list(unique(species)),
+            kingdom_list = list(unique(kingdom)),
+            phylum_list = list(unique(phylum)),
+            class_list = list(unique(class)),
+            order_list = list(unique(order)),
+            family_list = list(unique(family)),
+            publisher_list = list(unique(publisher)),
+            datasetName_list = list(unique(datasetName)),
             .groups = "drop")
 
 # Join with complete grid to include cells with 0 occurrences
@@ -205,7 +212,14 @@ occurrences_summary <- complete_grid |>
   left_join(occurrences_summary_non0, by = c("cell_ID", "time_period")) |>
   mutate(n_occurrences = ifelse(is.na(n_occurrences), 0, n_occurrences),
          n_species = ifelse(is.na(n_species), 0, n_species),
-         species_list = ifelse(is.na(species_list), list(character(0)), species_list))
+         species_list = ifelse(is.na(species_list), list(character(0)), species_list)
+         kingdom_list = ifelse(is.na(kingdom_list), list(character(0)), kingdom_list),
+         phylum_list = ifelse(is.na(phylum_list), list(character(0)), phylum_list),
+         class_list = ifelse(is.na(class_list), list(character(0)), class_list),
+         order_list = ifelse(is.na(order_list), list(character(0)), order_list),
+         family_list = ifelse(is.na(family_list), list(character(0)), family_list),
+         publisher_list = ifelse(is.na(publisher_list), list(character(0)), publisher_list),
+         datasetName_list = ifelse(is.na(datasetName_list), list(character(0)), datasetName_list))
 
 # Check how many cells  have occurrences and how many do not
 cat("Cells with zero occurrences:", sum(occurrences_summary$n_occurrences == 0), "\n")
@@ -576,7 +590,69 @@ cat("\nTime period distribution:\n")
 print(table(modeling_data_combined_corine_gbif_ssb_august2025$time_period, 
             modeling_data_combined_corine_gbif_ssb_august2025$analysis_period))
 
-## 9.6. Final summary statistics -----------------------------------------------
+## 9.6. Check cells with zero occurrences are handled correctly ----------------
+
+# Check that every cell appears in every relevant time period
+expected_combinations <- length(unique(combined_corine_gbif_ssb_august2025$cell_ID)) * 6  # 6 time periods
+actual_combinations <- nrow(modeling_data_combined_corine_gbif_ssb_august2025)
+
+cat("Expected cell/time_period combinations:", expected_combinations, "\n")
+cat("Actual cell/time_period combinations:", actual_combinations, "\n")
+
+if(actual_combinations == expected_combinations) {
+  cat("✅ GOOD: All cells appear in all time periods\n")
+} else if(actual_combinations < expected_combinations) {
+  missing_combinations <- expected_combinations - actual_combinations
+  cat("❌ WARNING:", missing_combinations, "missing cell/time_period combinations\n")
+} else {
+  extra_combinations <- actual_combinations - expected_combinations  
+  cat("❌ WARNING:", extra_combinations, "unexpected extra cell/time_period combinations\n")
+}
+
+# Check zero occurrence distribution
+zero_occ_count <- sum(modeling_data_combined_corine_gbif_ssb_august2025$n_occurrences == 0)
+total_rows <- nrow(modeling_data_combined_corine_gbif_ssb_august2025)
+zero_percentage <- zero_occ_count / total_rows * 100
+
+cat("Cells with zero occurrences:", zero_occ_count, sprintf("(%.1f%%)\n", zero_percentage))
+
+# This should be a high percentage - most cells don't have occurrence data
+if(zero_percentage < 50) {
+  cat("❌ WARNING: Unexpectedly low percentage of zero-occurrence cells\n")
+  cat("   This might indicate that zero cells weren't properly included\n")
+} else {
+  cat("✅ GOOD: High percentage of zero-occurrence cells (expected for biodiversity data)\n")
+}
+
+# Check that zero cells are distributed across land cover change categories
+zero_by_change <- modeling_data_combined_corine_gbif_ssb_august2025 |>
+  filter(n_occurrences == 0) |>
+  group_by(cover_change) |>
+  summarise(count = n(), .groups = "drop")
+
+cat("Zero-occurrence cells by land cover change:\n")
+print(zero_by_change)
+
+# Verify that cells with zero occurrences have appropriate species_list structure
+zero_species_list_check <- modeling_data_combined_corine_gbif_ssb_august2025 |>
+  filter(n_occurrences == 0) |>
+  summarise(all_zero_species = all(n_species == 0),
+            all_empty_species_lists = all(lengths(species_list) == 0),
+            all_empty_kingdom_lists = all(lengths(kingdom_list) == 0),
+            all_empty_phylum_lists = all(lengths(phylum_list) == 0),
+            all_empty_class_lists = all(lengths(class_list) == 0),
+            all_empty_order_lists = all(lengths(order_list) == 0),
+            all_empty_family_lists = all(lengths(family_list) == 0),
+            all_empty_publisher_lists = all(lengths(publisher_list) == 0),
+            all_empty_datasetName_lists = all(lengths(datasetName_list) == 0))
+
+if(all(unlist(zero_species_list_check))) {
+  cat("✅ GOOD: Zero-occurrence cells have consistent empty lists for all variables\n")
+} else {
+  cat("❌ WARNING: Some zero-occurrence cells have inconsistent list data\n")
+}
+
+## 9.7. Final summary statistics -----------------------------------------------
 
 cat("\n--- FINAL SUMMARY STATISTICS ---\n")
 cat("Combined dataset:\n")
@@ -601,6 +677,6 @@ if(retention_rate_final < 50) {
   cat("❌ WARNING: Low occurrence retention rate - check time period filters\n")
 } else {
   cat("✅ GOOD: Reasonable occurrence retention rate\n")
-} #GOOD: Reasonable occurrence retention rate
+}
 
 # END OF SCRIPT ----------------------------------------------------------------
