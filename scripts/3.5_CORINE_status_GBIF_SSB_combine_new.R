@@ -212,7 +212,7 @@ occurrences_summary <- complete_grid |>
   left_join(occurrences_summary_non0, by = c("cell_ID", "time_period")) |>
   mutate(n_occurrences = ifelse(is.na(n_occurrences), 0, n_occurrences),
          n_species = ifelse(is.na(n_species), 0, n_species),
-         species_list = ifelse(is.na(species_list), list(character(0)), species_list)
+         species_list = ifelse(is.na(species_list), list(character(0)), species_list),
          kingdom_list = ifelse(is.na(kingdom_list), list(character(0)), kingdom_list),
          phylum_list = ifelse(is.na(phylum_list), list(character(0)), phylum_list),
          class_list = ifelse(is.na(class_list), list(character(0)), class_list),
@@ -377,7 +377,9 @@ data_2000_2006 <- combined_data_SSB_lc_intens_extens |>
   select(cell_ID, SSBID, 
          land_cover2000, land_cover2006, land_cover2000_name, land_cover2006_name,
          cover_change_2000_2006, transition_2000_2006, intens_extens_2000_2006,
-         time_period, n_occurrences, n_species, species_list) |>
+         time_period, n_occurrences, n_species, species_list,
+         kingdom_list, phylum_list, class_list, order_list, family_list,
+         publisher_list, datasetName_list) |>
   filter(time_period %in% c("before_2000_2006", "after_2000_2006")) |>
   mutate(analysis_period = "2000_2006")
 
@@ -387,7 +389,9 @@ data_2006_2012 <- combined_data_SSB_lc_intens_extens |>
   select(cell_ID, SSBID,
          land_cover2006, land_cover2012, land_cover2006_name, land_cover2012_name, 
          cover_change_2006_2012, transition_2006_2012, intens_extens_2006_2012,
-         time_period, n_occurrences, n_species, species_list) |>
+         time_period, n_occurrences, n_species, species_list,
+         kingdom_list, phylum_list, class_list, order_list, family_list,
+         publisher_list, datasetName_list) |>
   filter(time_period %in% c("before_2006_2012", "after_2006_2012")) |>
   mutate(analysis_period = "2006_2012")
 
@@ -397,7 +401,9 @@ data_2012_2018 <- combined_data_SSB_lc_intens_extens |>
   select(cell_ID, SSBID,
          land_cover2012, land_cover2018, land_cover2012_name, land_cover2018_name,
          cover_change_2012_2018, transition_2012_2018, intens_extens_2012_2018, 
-         time_period, n_occurrences, n_species, species_list) |>
+         time_period, n_occurrences, n_species, species_list,
+         kingdom_list, phylum_list, class_list, order_list, family_list,
+         publisher_list, datasetName_list) |>
   filter(time_period %in% c("before_2012_2018", "after_2012_2018")) |>
   mutate(analysis_period = "2012_2018")
 
