@@ -22,7 +22,7 @@ package_vec <- c("here", "terra", "sf", "geodata", "mapview",
                  "tidyterra", "patchwork", "styler", "scales",
                  "plotly", "lme4", "DHARMa", "glmmTMB", "mgcv",
                  "tidyterra", "ggspatial", "htmlwidgets",
-                 "htmltools", "patchwork", "webshot2",
+                 "htmltools", "patchwork", "webshot2", "RColorBrewer",
                  "rgbif", "CoordinateCleaner", "DHARMa",
                  "writexl", "bbmle", "kableExtra", "googledrive") # specify packages
 
@@ -63,7 +63,7 @@ create_project_structure
 # 3. FUNCTION TO DOWNLOAD FILES FROM GOOGLE DRIVE ------------------------------
 
 # Authenticate with Google - will open a new browser window
-drive_auth()
+#drive_auth()
 # When running this for the first time:
   # 1. New browser window will open
   # 2. You will be asked to sign in to your Google account (you will need one)
@@ -72,30 +72,30 @@ drive_auth()
   # 5. A success message should appear in R
 
 # Check that authentication worked
-drive_user() # this should show your google account info
+#drive_user() # this should show your google account info
 
 # The function will only download the files that are not already in the folders
-download_gdrive_files <- function(file_ids, filenames, dir = here("data", "raw_data")) {
-  if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
-  
-  # Authenticate (will use cached credentials after first time)
-  drive_auth()
-  
-  for (i in seq_along(file_ids)) {
-    file_path <- file.path(dir, filenames[i])
-    
-    if (!file.exists(file_path)) {
-      cat("Downloading:", filenames[i], "to", dir, "\n")
-      drive_download(as_id(file_ids[i]), path = file_path, overwrite = FALSE)
-      
-      # Check file size to confirm successful download
-      file_size <- file.size(file_path)
-      cat("Downloaded", round(file_size/1024/1024, 1), "MB\n")
-    } else {
-      cat("File already exists:", filenames[i], "\n")
-    }
-  }
-}
+# download_gdrive_files <- function(file_ids, filenames, dir = here("data", "raw_data")) {
+#   if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
+#   
+#   # Authenticate (will use cached credentials after first time)
+#   drive_auth()
+#   
+#   for (i in seq_along(file_ids)) {
+#     file_path <- file.path(dir, filenames[i])
+#     
+#     if (!file.exists(file_path)) {
+#       cat("Downloading:", filenames[i], "to", dir, "\n")
+#       drive_download(as_id(file_ids[i]), path = file_path, overwrite = FALSE)
+#       
+#       # Check file size to confirm successful download
+#       file_size <- file.size(file_path)
+#       cat("Downloaded", round(file_size/1024/1024, 1), "MB\n")
+#     } else {
+#       cat("File already exists:", filenames[i], "\n")
+#     }
+#   }
+# }
 
 # 4. FUNCTION TO READ RASTERS --------------------------------------------------
 
