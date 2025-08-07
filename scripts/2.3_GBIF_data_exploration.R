@@ -102,11 +102,26 @@ top_publishers <- occurrences_df_periods |>
   slice_head(n = 10) |>
   pull(publisher)
 
-# Calculate counts and proportions by period and dataset publishers
+# Map original publisher names to something that makes more sense
+publisher_name_mapping <- c("The Norwegian Biodiversity Information Centre (NBIC)" = "NBIC",
+                            "Miljølære.no" = "Miljølære.no",
+                            "Cornell Lab of Ornithology"= "Cornell Ornithology",
+                            "Norwegian Institute for Nature Research" = "NINA",
+                            "Biofokus" = "Biofokus",
+                            "University of Oslo" = "UiO",
+                            "Norwegian University of Science and Technology" = "NTNU",
+                            "Biolog J.B. Jordal AS" = "Biolog J.B. Jordal",
+                            "Norwegian University of Life Sciences (NMBU)" = "NMBU",
+                            "Norwegian Environment Agency" = "Norwegian Environment Agency")
+
+# Calculate counts and proportions by period and dataset name
 publisher_summary <- occurrences_df_periods |>
   filter(!is.na(time_period)) |>
-  mutate(publisher_group = ifelse(publisher %in% top_publishers, publisher, "Other")) |>
-  group_by(time_period, publisher) |>
+  mutate(publisher_group = case_when(publisher == "" ~ "No name provided",
+                                     publisher %in% names(publisher_name_mapping) ~ publisher_name_mapping[publisher],
+                                     publisher %in% top_publishers ~ publisher,
+                                     TRUE ~ "Other")) |>
+  group_by(time_period, publisher_group) |>
   summarise(count = n(), .groups = "drop") |>
   group_by(time_period) |>
   mutate(total = sum(count), proportion = count / total) |>
@@ -116,13 +131,18 @@ publisher_summary <- occurrences_df_periods |>
 publisher_summary <- publisher_summary |>
   mutate(time_period = factor(time_period, levels = period_order))
 
+# Create the mapped names for the top datasets
+top_publisher_mapped <- case_when(top_publishers == "" ~ "No name provided",
+                                  top_publishers %in% names(publisher_name_mapping) ~ publisher_name_mapping[top_publishers],
+                                 TRUE ~ top_publishers)
+
 # Create colour pallete
-publisher_colours <- c(brewer.pal(10, "Spectral"), "Other" = "#CCCCCC")
-names(publisher_colours)[1:10] <- top_publishers
+publisher_colours <- c(brewer.pal(length(top_publisher_mapped), "Spectral"), "Other" = "#CCCCCC")
+names(publisher_colours)[1:length(top_publisher_mapped)] <- top_publisher_mapped
 
 # Create stacked barplot
 publisher_plot <- ggplot(publisher_summary,
-                         aes(x = time_period, y = proportion, fill = publisher)) +
+                         aes(x = time_period, y = proportion, fill = publisher_group)) +
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(values = publisher_colours) +
   scale_x_discrete(labels = period_labels) +
@@ -132,13 +152,13 @@ publisher_plot <- ggplot(publisher_summary,
         axis.text.y = element_text(size = 14, color = "black"),
         axis.title.x = element_text(size = 14, color = "black"),
         axis.title.y = element_text(size = 14, face = "bold", margin = margin(r = 10)),
-        legend.position = "right",
+        legend.position = "bottom",
         legend.title = element_text(size = 14, face = "bold"),
         legend.text = element_text(size = 14))
 
 # Save figure as .png
 ggsave(filename = here("figures", "SupplementaryFigure2_publihser_composition_across_periods.png"),
-       width = 10, height = 8, dpi = 300)
+       width = 12, height = 10, dpi = 300)
 
 # Create table of all publishers broken down by period
 publisher_table <- occurrences_df_periods |>
