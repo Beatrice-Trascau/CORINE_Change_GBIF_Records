@@ -32,7 +32,7 @@ sapply(package_vec, install_load_package)
 # 2. CREATE NECESSARY FILE STRUCTURE -------------------------------------------
 
 # Function to create the file structure needed to run the analysis smoothly
-create_project_structure <- function(base_path = "boreal_arctic_trait_space") {
+create_project_structure <- function(base_path = "CORINE_Change_GBIF_Records") {
   # Define the directory structure
   dirs <- c(
     file.path(base_path),
@@ -58,7 +58,7 @@ create_project_structure <- function(base_path = "boreal_arctic_trait_space") {
 }
 
 # Run function
-create_project_structure
+create_project_structure()
 
 # 3. FUNCTION TO DOWNLOAD FILES FROM GOOGLE DRIVE ------------------------------
 
