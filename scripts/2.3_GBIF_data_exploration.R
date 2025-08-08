@@ -246,7 +246,7 @@ dataset_plot <- ggplot(dataset_summary,
         axis.text.y = element_text(size = 14, color = "black"),
         axis.title.x = element_text(size = 14, color = "black"),
         axis.title.y = element_text(size = 14, face = "bold", margin = margin(r = 10)),
-        legend.position = "right",
+        legend.position = "bottom",
         legend.title = element_text(size = 14, face = "bold"),
         legend.text = element_text(size = 14))
 
