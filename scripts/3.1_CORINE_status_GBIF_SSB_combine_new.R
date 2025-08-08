@@ -9,6 +9,12 @@
 
 ## 1.1. Download data (if needed) ----------------------------------------------
 
+# Authenticate with Google - will open a new browser window
+drive_auth()
+
+# Check that authentication worked
+drive_user() # this should show your google account info
+
 # CORINE Status Layers
 drive_download(as_id("1TEUH2UUEXsdT-4eeWGSVornzu1paQjZW"),
                path = here("data", "derived_data", 
