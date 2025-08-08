@@ -1,6 +1,6 @@
 ##----------------------------------------------------------------------------##
 # PAPER 1: CORINE LAND COVER CHANGES AND GBIF BIODIVERSITY RECORDS
-# 3.5_CORINE_status_GBIF_SSB_combine_new
+# 3.1_CORINE_status_GBIF_SSB_combine_new
 # This script contains code which combines the CORINE land cover status layers
 # with the SSB administrative grids and GBIF occurrences for future analyses
 ##----------------------------------------------------------------------------##
