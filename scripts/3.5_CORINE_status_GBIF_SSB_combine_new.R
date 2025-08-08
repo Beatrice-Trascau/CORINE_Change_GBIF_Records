@@ -24,7 +24,7 @@ unzip(here("data", "raw_data", "SSB050KM.zip"),
 
 # Cleaned occurrences
 drive_download(as_id("1pbI26-2VFHPl1A7LsBZHmexC8tguFtv3"),
-               path = here("data", "derived_data", "cleaned_occurrences_feb17_25.rda"))
+               path = here("data", "derived_data", "clened_occurrences_redownloaded_August2025.rda"))
 
 ## 1.2. Read in data -----------------------------------------------------------
 
