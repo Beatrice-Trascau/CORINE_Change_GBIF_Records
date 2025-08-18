@@ -41,7 +41,7 @@ create_project_structure <- function(base_path = "CORINE_Change_GBIF_Records") {
     file.path(base_path, "figure"),
     file.path(base_path, "data", "raw_data"),
     file.path(base_path, "data", "derived_data"),
-    file.path(base_path, "data", "raw_data", "biomes")
+    file.path(base_path, "data", "raw_data", "raw_norway_shapefile")
   )
   
   # Create directories if they don't exist
