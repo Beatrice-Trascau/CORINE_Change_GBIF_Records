@@ -457,8 +457,116 @@ modeling_data_combined_corine_gbif_ssb_august2025 <- final_modeling_data |>
          analysis_period = as.factor(analysis_period),
          time_period = as.factor(time_period))
 
+## 8.4. Filter dataset for unneccessary cells ----------------------------------
+
+# Need to remove cells with 0 occurrences across alll time periods and cells that
+  # have NA values for land cover changes
+
+# Check why cover changes are NA and validate calculations
+na_investigation <- modeling_data_combined_corine_gbif_ssb_august2025 |>
+  filter(is.na(cover_change)) |>
+  select(cell_ID, analysis_period, land_cover_start, land_cover_end, cover_change) |>
+  mutate(start_is_na = is.na(land_cover_start),
+         end_is_na = is.na(land_cover_end)) |>
+  group_by(analysis_period, start_is_na, end_is_na) |>
+  summarise(count = n(), .groups = "drop")
+
+# Check output
+print(na_investigation)
+
+# Validate all cover_change calculations
+validation_check <- modeling_data_combined_corine_gbif_ssb_august2025 |>
+  select(cell_ID, analysis_period, land_cover_start, land_cover_end, cover_change) |>
+  mutate(expected_change = case_when(is.na(land_cover_start) | is.na(land_cover_end) ~ NA_character_,
+                                     land_cover_start == land_cover_end ~ "N",
+                                     land_cover_start != land_cover_end ~ "Y",
+                                     TRUE ~ NA_character_),
+         calculation_correct = case_when(is.na(cover_change) & is.na(expected_change) ~ TRUE,
+                                         is.na(cover_change) & !is.na(expected_change) ~ FALSE,
+                                         !is.na(cover_change) & is.na(expected_change) ~ FALSE,
+                                         cover_change == expected_change ~ TRUE,
+                                         TRUE ~ FALSE))
+
+# Check for calculation errors
+calculation_errors <- validation_check |>
+  filter(!calculation_correct)
+
+# Display issues if there are any
+if(nrow(calculation_errors) > 0){
+  cat("❌ WARNING: Found", nrow(calculation_errors), "rows with incorrect cover_change calculations\n")
+  cat("Examples of errors:\n")
+  print(head(calculation_errors, 10))
+  # show summary of the errors
+  error_summary <- calculation_errors |>
+    group_by(analysis_period, start_na = is.na(land_cover_start),
+             end_na = is.na(land_cover_end), actual_change = cover_change,
+             expected_change) |>
+    summarise(count = n(), .groups = "drop")
+  # print summary
+  print(error_summary)
+} else {
+  cat("✅ GOOD: All cover_change calculations are correct\n")
+}
+
+# Remove cells with cover_change = NA and cells with 0 occurrences across all time periods
+modeling_data_filtered <- modeling_data_combined_corine_gbif_ssb_august2025 |>
+  # remove cover_change = NA
+  filter(!is.na(cover_change)) |>
+  # keep only cells with at least 1 occurrence across any time period
+  group_by(cell_ID) |>
+  filter(sum(n_occurrences, na.rm = TRUE) > 0) |>
+  ungroup()
+
+# Check the results 
+cat("\n--- FILTERING RESULTS ---\n")
+cat("Original dataset:\n")
+cat("  - Total rows:", nrow(modeling_data_combined_corine_gbif_ssb_august2025), "\n")
+cat("  - Unique cells:", length(unique(modeling_data_combined_corine_gbif_ssb_august2025$cell_ID)), "\n")
+cat("\nFiltered dataset:\n")
+cat("  - Total rows:", nrow(modeling_data_filtered), "\n")
+cat("  - Unique cells:", length(unique(modeling_data_filtered$cell_ID)), "\n")
+cat("  - Rows with occurrences:", sum(modeling_data_filtered$n_occurrences > 0), "\n")
+cat("  - Total occurrences:", sum(modeling_data_filtered$n_occurrences), "\n")
+
+# Calculate how many rows were removed from dataframe
+reduction_percentage <- (1 - nrow(modeling_data_filtered) / nrow(modeling_data_combined_corine_gbif_ssb_august2025)) * 100
+cat("  - Dataset size reduction:", sprintf("%.1f%%", reduction_percentage), "\n")
+
+# Verify that filtering removed only intended things
+# Check 1: No cells with 0 occurrences across all periods are present in the dataframe
+zero_check <- modeling_data_filtered |>
+  group_by(cell_ID) |>
+  summarise(total_occurrences = sum(n_occurrences, na.rm = TRUE)) |>
+  filter(total_occurrences == 0)
+if(nrow(zero_check) == 0) {
+  cat("✅ GOOD: No cells with 0 occurrences across all periods\n")
+} else {
+  cat("❌ WARNING: Found", nrow(zero_check), "cells with 0 occurrences across all periods\n")
+}
+
+# Check 2: No cells with cover_change = NA
+na_check <- sum(is.na(modeling_data_filtered$cover_change))
+if(na_check == 0) {
+  cat("✅ GOOD: No NA values in cover_change\n")
+} else {
+  cat("❌ WARNING: Found", na_check, "NA values in cover_change\n")
+}
+
+# Check 3: All cells appear in the relevant time periods
+expected_rows_per_cell <- modeling_data_filtered |>
+  group_by(cell_ID) |>
+  summarise(n_periods = n()) |>
+  pull(n_periods) |>
+  unique()
+if(length(expected_rows_per_cell) == 1 && expected_rows_per_cell == 6) {
+  cat("✅ GOOD: All cells appear in exactly 6 time periods\n")
+} else {
+  cat("❌ WARNING: Cells don't appear consistently across time periods\n")
+  cat("Number of periods per cell:", paste(expected_rows_per_cell, collapse = ", "), "\n")
+}
+
 # Save final dataset
-save(modeling_data_combined_corine_gbif_ssb_august2025,
+save(modeling_data_filtered,
      file = here("data", "derived_data",
                  "modeling_data_combined_corine_gbif_ssb_august2025.rda"))
 
@@ -479,7 +587,7 @@ if(nrow(combined_duplicates) > 0) {
 } # GOOD: No duplicate cell_ID/time_period combinations in combined dataset
 
 # Check for duplicates in the modeling data
-modeling_duplicates <- modeling_data_combined_corine_gbif_ssb_august2025 |>
+modeling_duplicates <- modeling_data_filtered |>
   group_by(cell_ID, time_period) |>
   summarise(count = n(), .groups = "drop") |>
   filter(count > 1)
@@ -505,18 +613,6 @@ if(length(cells_gained) > 0) {
   cat("✅ GOOD: No unexpected cells gained in modeling dataset\n")
 } #GOOD: No unexpected cells gained in modeling dataset
 
-# Check that land cover values are consistent
-lc_check <- modeling_data_combined_corine_gbif_ssb_august2025 |>
-  select(cell_ID, land_cover_start, land_cover_end, cover_change) |>
-  mutate(calculated_change = ifelse(land_cover_start == land_cover_end, "N", "Y"),
-         change_consistent = (calculated_change == cover_change) | is.na(cover_change))
-
-inconsistent_changes <- sum(!lc_check$change_consistent, na.rm = TRUE)
-if(inconsistent_changes > 0) {
-  cat("❌ WARNING:", inconsistent_changes, "rows with inconsistent land cover change calculations\n")
-} else {
-  cat("✅ GOOD: All land cover change calculations are consistent\n")
-} #GOOD: All land cover change calculations are consistent
 
 ## 9.3. Check occurrence data integrity ----------------------------------------
 
