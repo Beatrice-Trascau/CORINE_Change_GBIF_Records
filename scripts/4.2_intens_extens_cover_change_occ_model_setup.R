@@ -6,415 +6,178 @@
 # occurrences in a pixel
 ##----------------------------------------------------------------------------##
 
-# 1. LOAD AND PREPARE DATA FOR ANALYSIS ----------------------------------------
+# Define function
+install_load_package <- function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, repos = "http://cran.us.r-project.org")
+  }
+  require(x, character.only = TRUE)
+}
+
+# Define list of packages
+package_vec <- c("here", "terra", "sf", "geodata", "mapview",
+                 "tidyverse", "dplyr", "ggplot2", "ggalluvial",
+                 "networkD3", "gt", "cowplot", "data.table",
+                 "tidyterra", "patchwork", "styler", "scales",
+                 "plotly", "lme4", "DHARMa", "glmmTMB", "mgcv",
+                 "tidyterra", "ggspatial", "htmlwidgets",
+                 "htmltools", "patchwork", "webshot2",
+                 "rgbif", "CoordinateCleaner", "DHARMa",
+                 "writexl", "bbmle", "kableExtra", "googledrive") # specify packages
+
+# Execute the function
+sapply(package_vec, install_load_package)
+
+# 1. LOAD AND PREPARE DATA -----------------------------------------------------
 
 # Load data
 load(here("data","derived_data", 
-          "occurrences_SSB_municipalities_land_cover.rda"))
-
-# Rename df (to make it easier to work with)
-occ_SSB_land_cover <- occurrence_municipalities_df
-
-# 2. CALCULATE NUMBER OF RECORDS FOR EACH PERIOD -------------------------------
-
-# Change column names for easier df manipulation
-occ_SSB_land_cover <- occ_SSB_land_cover |>
-  rename(land_cover2000 = U2006_CLC2000_V2020_20u1,
-         land_cover2006 = U2012_CLC2006_V2020_20u1,
-         land_cover2012 = U2018_CLC2012_V2020_20u1,
-         land_cover2018 = U2018_CLC2018_V2020_20u1)
-
-## 2.1. First period of change: 2000-2006 --------------------------------------
-
-### 2.1.1. Before land cover change --------------------------------------------
-
-# Prepare data for the period 2006-2009
-occ_df_before_2000.2006 <- occ_SSB_land_cover |>
-  select(gbifID, year, species, land_cover2000, land_cover2006, 
-         SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2000) & !is.na(land_cover2006)) |>
-  filter(year >= 1997 & year <= 2000) |>
-  mutate(cover_change = land_cover2000 - land_cover2006) |>
-  mutate(cover_change = case_when(
-    cover_change %in% c(79, 102, 249, 379, 589, 710,
-                        23, 147, 170, 608, 631, -102,
-                        -79, 487, 510, 277, 300, -340,
-                        -331, -461, -130) ~ "Intensification",
-    cover_change %in% c(-249, -379, -589, -170, -300, -510,
-                        -147, -277, -487, 130, -210, 461, 331,
-                        121, 340, -23, -710, -121, -608) ~ "Extensification",
-    cover_change == 0 ~ "No_change"))
-
-# Calculate number of records for the period 2006-2009
-occ_df_before_2000.2006_records <- occ_df_before_2000.2006 |>
-  group_by(cell_ID) |>
-  summarise(
-    ocurrences_before = n(),
-    land_cover2000 = first(land_cover2000),
-    land_cover2006 = first(land_cover2006),
-    cover_change = first(cover_change),
-    SSBID = first(SSBID),
-    NAME_2 = first(NAME_2),
-    gbifID = first(gbifID)) |>
-  mutate(time_period = "2000-2006") |>
-  select(-c(land_cover2000, land_cover2006))
-
-### 2.1.2. After land cover change ---------------------------------------------
-
-# Prepare data for the period 2006-2009
-occ_df_after_2000.2006 <- occ_SSB_land_cover |>
-  select(gbifID, year, species, land_cover2000, land_cover2006, 
-         SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2000) & !is.na(land_cover2006)) |>
-  filter(year >= 2006 & year <= 2009) |>
-  mutate(cover_change = land_cover2000 - land_cover2006) |>
-  mutate(cover_change = case_when(
-    cover_change %in% c(79, 102, 249, 379, 589, 710,
-                        23, 147, 170, 608, 631, -102,
-                        -79, 487, 510, 277, 300, -340,
-                        -331, -461, -130) ~ "Intensification",
-    cover_change %in% c(-249, -379, -589, -170, -300, -510,
-                        -147, -277, -487, 130, -210, 461, 331,
-                        121, 340, -23, -710, -121, -608) ~ "Extensification",
-    cover_change == 0 ~ "No_change"))
-
-# Calculate number of records for the period 2006-2009
-occ_df_after_2000.2006_records <- occ_df_after_2000.2006 |>
-  group_by(cell_ID) |>
-  summarise(
-    ocurrences_after = n(),
-    land_cover2000 = first(land_cover2000),
-    land_cover2006 = first(land_cover2006),
-    cover_change = first(cover_change),
-    SSBID = first(SSBID),
-    NAME_2 = first(NAME_2),
-    gbifID = first(gbifID)) |>
-  mutate(time_period = "2000-2006") |>
-  select(-c(land_cover2000, land_cover2006))
-
-## 2.2. Second period of change: 2006 - 2012 -----------------------------------
-
-### 2.2.1. Before land cover change --------------------------------------------
-
-# Prepare data for the period 2003-2006
-occ_df_before_2006.2012 <- occ_SSB_land_cover |>
-  select(gbifID, year, species, land_cover2006, land_cover2012, 
-         SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2006) & !is.na(land_cover2012)) |>
-  filter(year >= 2003 & year <= 2006) |>
-  mutate(cover_change = land_cover2006 - land_cover2012) |>
-  mutate(cover_change = case_when(
-    cover_change %in% c(79, 102, 249, 379, 589, 710,
-                        23, 147, 170, 608, 631, -102,
-                        -79, 487, 510, 277, 300, -340,
-                        -331, -461, -130) ~ "Intensification",
-    cover_change %in% c(-249, -379, -589, -170, -300, -510,
-                        -147, -277, -487, 130, -210, 461, 331,
-                        121, 340, -23, -710, -121, -608) ~ "Extensification",
-    cover_change == 0 ~ "No_change"))
-
-# Calculate number of records for the period 2003-2006
-occ_df_before_2006.2012_records <- occ_df_before_2006.2012 |>
-  group_by(cell_ID) |>
-  summarise(
-    ocurrences_before = n(),
-    land_cover2006 = first(land_cover2006),
-    land_cover2012 = first(land_cover2012),
-    cover_change = first(cover_change),
-    SSBID = first(SSBID),
-    NAME_2 = first(NAME_2),
-    gbifID = first(gbifID)) |>
-  mutate(time_period = "2006-2012") |>
-  select(-c(land_cover2006, land_cover2012))
-
-### 2.2.2. After land cover change ---------------------------------------------
-
-# Prepare data for the period 2012-2015
-occ_df_after_2006.2012 <- occ_SSB_land_cover |>
-  select(gbifID, year, species, land_cover2006, land_cover2012, 
-         SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2006) & !is.na(land_cover2012)) |>
-  filter(year >= 2012 & year <= 2015) |>
-  mutate(cover_change = land_cover2006 - land_cover2012) |>
-  mutate(cover_change = case_when(
-    cover_change %in% c(79, 102, 249, 379, 589, 710,
-                        23, 147, 170, 608, 631, -102,
-                        -79, 487, 510, 277, 300, -340,
-                        -331, -461, -130) ~ "Intensification",
-    cover_change %in% c(-249, -379, -589, -170, -300, -510,
-                        -147, -277, -487, 130, -210, 461, 331,
-                        121, 340, -23, -710, -121, -608) ~ "Extensification",
-    cover_change == 0 ~ "No_change"))
-
-# Calculate number of records for the period 2012-2015
-occ_df_after_2006.2012_records <- occ_df_after_2006.2012 |>
-  group_by(cell_ID) |>
-  summarise(
-    ocurrences_after = n(),
-    land_cover2006 = first(land_cover2006),
-    land_cover2012 = first(land_cover2012),
-    cover_change = first(cover_change),
-    SSBID = first(SSBID),
-    NAME_2 = first(NAME_2),
-    gbifID = first(gbifID)) |>
-  mutate(time_period = "2006-2012") |>
-  select(-c(land_cover2006, land_cover2012))
-
-## 2.3. Third period of change: 2012 - 2018 ------------------------------------
-
-### 2.3.1. Before land cover change --------------------------------------------
-
-# Prepare data for the period 2009-2012
-occ_df_before_2012.2018 <- occ_SSB_land_cover |>
-  select(gbifID, year, species, land_cover2012, land_cover2018, 
-         SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2012) & !is.na(land_cover2018)) |>
-  filter(year >= 2009 & year <= 2012) |>
-  mutate(cover_change = land_cover2012 - land_cover2018) |>
-  mutate(cover_change = case_when(
-    cover_change %in% c(79, 102, 249, 379, 589, 710,
-                        23, 147, 170, 608, 631, -102,
-                        -79, 487, 510, 277, 300, -340,
-                        -331, -461, -130) ~ "Intensification",
-    cover_change %in% c(-249, -379, -589, -170, -300, -510,
-                        -147, -277, -487, 130, -210, 461, 331,
-                        121, 340, -23, -710, -121, -608) ~ "Extensification",
-    cover_change == 0 ~ "No_change"))
-
-# Calculate number of records for the period 1997-2000
-occ_df_before_2012.2018_records <- occ_df_before_2012.2018 |>
-  group_by(cell_ID) |>
-  summarise(
-    ocurrences_before = n(),
-    land_cover2012 = first(land_cover2012),
-    land_cover2018 = first(land_cover2018),
-    cover_change = first(cover_change),
-    SSBID = first(SSBID),
-    NAME_2 = first(NAME_2),
-    gbifID = first(gbifID)) |>
-  mutate(time_period = "2012-2018") |>
-  select(-c(land_cover2012, land_cover2018))
-
-### 2.3.2. After land cover change ---------------------------------------------
-
-# Prepare data for the period 2015-2018
-occ_df_after_2012.2018 <- occ_SSB_land_cover |>
-  select(gbifID, year, species, land_cover2012, land_cover2018, 
-         SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2012) & !is.na(land_cover2018)) |>
-  filter(year >= 2015 & year <= 2018) |>
-  mutate(cover_change = land_cover2012 - land_cover2018) |>
-  mutate(cover_change = case_when(
-    cover_change %in% c(79, 102, 249, 379, 589, 710,
-                        23, 147, 170, 608, 631, -102,
-                        -79, 487, 510, 277, 300, -340,
-                        -331, -461, -130) ~ "Intensification",
-    cover_change %in% c(-249, -379, -589, -170, -300, -510,
-                        -147, -277, -487, 130, -210, 461, 331,
-                        121, 340, -23, -710, -121, -608) ~ "Extensification",
-    cover_change == 0 ~ "No_change"))
-
-# Calculate number of records for the period 1997-2000
-occ_df_after_2012.2018_records <- occ_df_after_2012.2018 |>
-  group_by(cell_ID) |>
-  summarise(
-    ocurrences_after = n(),
-    land_cover2012 = first(land_cover2012),
-    land_cover2018 = first(land_cover2018),
-    cover_change = first(cover_change),
-    SSBID = first(SSBID),
-    NAME_2 = first(NAME_2),
-    gbifID = first(gbifID)) |>
-  mutate(time_period = "2012-2018") |>
-  select(-c(land_cover2012, land_cover2018))
-
-# 3. COMBINE DATAFRAMES  -------------------------------------------------------
-
-## 3.1. Combine before and after dfs -------------------------------------------
-
-# Before land cover change
-occ_df_before_records <- bind_rows(occ_df_before_2000.2006_records,
-                                   occ_df_before_2006.2012_records,
-                                   occ_df_before_2012.2018_records) |>
-  select(-NAME_2)
-
-# After land cover change
-occ_intens_extens_after_records_for_model <- bind_rows(occ_df_after_2000.2006_records,
-                                                       occ_df_after_2006.2012_records,
-                                                       occ_df_after_2012.2018_records) |>
-  select(-NAME_2)
+          "modeling_data_combined_corine_gbif_ssb_august2025.rda"))
 
 
-## 3.2. Check for SSBID differences --------------------------------------------
-
-cell_ssbid_mapping <- full_join(
-  select(occ_df_before_records, cell_ID, time_period, SSBID_before = SSBID),
-  select(occ_intens_extens_after_records_for_model, cell_ID, time_period, SSBID_after = SSBID),
-  by = c("cell_ID", "time_period")) |>
-  # Flag cells with actual discrepancies (both values present but different)
-  mutate(has_discrepancy = !is.na(SSBID_before) & !is.na(SSBID_after) & 
-           SSBID_before != SSBID_after)
-
-# Extract only the truly discrepant cells
-discrepant_cells <- cell_ssbid_mapping |>
-  filter(has_discrepancy) |>
-  select(cell_ID, time_period)
-
-# Count discrepancies for documentation
-n_discrepant_cells <- nrow(discrepant_cells)
-message("Removing ", n_discrepant_cells, " cell/time_period combinations with inconsistent SSBID assignments")
-
-# Remove only the discrepant cells
-occ_df_before_records_consistent <- occ_df_before_records |>
-  anti_join(discrepant_cells, by = c("cell_ID", "time_period"))
-
-occ_df_after_records_consistent <- occ_intens_extens_after_records_for_model |>
-  anti_join(discrepant_cells, by = c("cell_ID", "time_period"))
-
-## 3.3. Join datasets ----------------------------------------------------------
-
-# Join datasets using only essential identifiers
-occ_df_before_after <- full_join(
-  occ_df_before_records_consistent,
-  occ_df_after_records_consistent,
-  by = c("cell_ID", "time_period", "SSBID"))
-
-# Process the joined dataset to create final model-ready data
-occ_intens_extens_before_after_for_model <- occ_df_before_after |>
+# Convert data from long to wide format for modeling
+modeling_data_wide <- modeling_data_combined_corine_gbif_ssb_august2025 |>
+  # Select the variables we need for modeling
+  select(cell_ID, SSBID, land_cover_start, land_cover_end, land_cover_start_name, 
+         land_cover_end_name, cover_change, transition_type, intens_extens,
+         time_period, n_occurrences, n_species, analysis_period,
+         # Include the taxonomic/metadata lists if you want them in the final model data
+         species_list, kingdom_list, phylum_list, class_list, order_list, 
+         family_list, publisher_list, datasetName_list) |>
+  
+  # Reshape from long to wide format
+  pivot_wider(
+    id_cols = c(cell_ID, SSBID, land_cover_start, land_cover_end, 
+                land_cover_start_name, land_cover_end_name, cover_change, 
+                transition_type, intens_extens, analysis_period),
+    names_from = time_period,
+    values_from = c(n_occurrences, n_species, species_list, kingdom_list, 
+                    phylum_list, class_list, order_list, family_list, 
+                    publisher_list, datasetName_list),
+    names_sep = "_"
+  ) |>
+  
+  # Create the before/after columns needed for your model
   mutate(
-    # Reconcile cover_change values
-    cover_change = case_when(
-      !is.na(cover_change.x) & !is.na(cover_change.y) ~ cover_change.x, 
-      !is.na(cover_change.x) & is.na(cover_change.y) ~ cover_change.x,
-      is.na(cover_change.x) & !is.na(cover_change.y) ~ cover_change.y,
-      TRUE ~ NA_character_),
+    # Extract before occurrences (works for all three analysis periods)
+    occurrences_before = case_when(
+      analysis_period == "2000_2006" ~ n_occurrences_before_2000_2006,
+      analysis_period == "2006_2012" ~ n_occurrences_before_2006_2012,
+      analysis_period == "2012_2018" ~ n_occurrences_before_2012_2018,
+      TRUE ~ NA_real_
+    ),
     
-    # Handle occurrence counts
-    ocurrences_before = ifelse(is.na(ocurrences_before), 0, ocurrences_before),
-    ocurrences_after = ifelse(is.na(ocurrences_after), 0, ocurrences_after),
+    # Extract after occurrences (works for all three analysis periods)  
+    occurrences_after = case_when(
+      analysis_period == "2000_2006" ~ n_occurrences_after_2000_2006,
+      analysis_period == "2006_2012" ~ n_occurrences_after_2006_2012,
+      analysis_period == "2012_2018" ~ n_occurrences_after_2012_2018,
+      TRUE ~ NA_real_
+    ),
     
-    # Consolidate gbifID
-    gbifID = coalesce(gbifID.x, gbifID.y),
-    
-    # Convert to factors for modeling
+    # Create a simplified time_period variable for the model
+    time_period = case_when(
+      analysis_period == "2000_2006" ~ "2000_2006",
+      analysis_period == "2006_2012" ~ "2006_2012", 
+      analysis_period == "2012_2018" ~ "2012_2018",
+      TRUE ~ NA_character_
+    )
+  ) |>
+  
+  # Remove rows with missing before/after data (shouldn't happen but just in case)
+  filter(!is.na(occurrences_before) & !is.na(occurrences_after)) |>
+  
+  # Convert factors back for modeling
+  mutate(
+    cell_ID = as.factor(cell_ID),
     SSBID = as.factor(SSBID),
-    cell_ID = as.factor(cell_ID)) |>
-  # Remove redundant columns
-  select(-matches("\\.x$|\\.y$"))
+    cover_change = as.factor(cover_change),
+    intens_extens = as.factor(intens_extens),
+    time_period = as.factor(time_period)
+  )
 
-# Verify no duplicates exist in the final dataset
-duplicate_check <- occ_intens_extens_before_after_for_model |>
-  group_by(cell_ID, time_period) |>
-  summarise(count = n(), .groups = "drop") |>
-  filter(count > 1)
-
-if(nrow(duplicate_check) > 0) {
-  warning("Duplicate cell_ID/time_period combinations found in final dataset!")
-  print(head(duplicate_check))
-} else {
-  message("Verified: No duplicate cell_ID/time_period combinations in final dataset")
-}
-
-# Write dataframe to file
-save(occ_intens_extens_before_after_for_model,
-     file = here::here("data", "derived_data",
-                       "occ_intens_extens_before_after_for_model.rda"))
-
-# 4. MODEL 2: OCC ~ COVER CHANGE + OFFSET --------------------------------------
+# 2. MODEL 1: OCC ~ COVER CHANGE + OFFSET --------------------------------------
 
 # Relevel cover_change to have 'No_change' as the reference
-occ_intens_extens_before_after_for_model$cover_change <- as.factor(occ_intens_extens_before_after_for_model$cover_change)
-occ_intens_extens_before_after_for_model$cover_change <- relevel(occ_intens_extens_before_after_for_model$cover_change, 
-                                                                 ref = "No_change")
+modeling_data_wide$intens_extens <- relevel(modeling_data_wide$intens_extens,
+                                            ref = "No_change")
 
-## 4.1. N binomial glmmTMB, nbinom 2, SSBID + Interaction ----------------------
+## 2.1. N binomial glmmTMB, nbinom 2, SSBID + Interaction ----------------------
+
+# IntensExtens_model1 <- glmmTMB(occurrences_after ~ intens_extens * time_period +
+#                            offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+#                          zi = ~intens_extens + time_period,
+#                          family = nbinom2,
+#                          data = modeling_data_wide)
+
+
+# Save model output to file to save time next time
+# save(IntensExtens_model1, file = here::here("data", "models",
+#                                             "IntensExtens_model1_zero_inflated_interaction.RData"))
+# 
+
+## 2.2. Zero inflated no interaction -------------------------------------------
 
 # Run model
-IntensExtens_model1_SSB_interaction <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.001)) + (1 | SSBID),
-                                               family = nbinom2,
-                                               data = occ_intens_extens_before_after_for_model)
+# IntensExtens_model2 <- glmmTMB(occurrences_after ~ intens_extens + time_period + 
+#                             offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+#                           zi = ~intens_extens + time_period, 
+#                           family = nbinom2,
+#                           data = modeling_data_wide)
 
-# Save model output to file to save time next time
-save(IntensExtens_model1_SSB_interaction, file = here::here("data", "models",
-                                                            "IntensExtens_model1_SSB_interaction.RData"))
+# Save model output to file 
+# save(IntensExtens_model2, file = here::here("data", "models",
+#                                        "IntensExtens_model2_zero_inflated_no_interaction.RData"))
 
-
-## 4.2. N binomial glmmTMB, nbinom 2, SSBID, no interaction --------------------
-
-# Run model
-IntensExtens_model2_SSB_no_interaction <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.001)) + (1 | SSBID),
-                                                  family = nbinom2,
-                                                  data = occ_intens_extens_before_after_for_model)
-
-# Save model output to file to save time next time
-save(IntensExtens_model2_SSB_no_interaction, file = here::here("data", "models",
-                                                               "IntensExtens_model2_SSB_no_interaction.RData"))
-
-## 4.3. Compare models ------------------------------------------------------------
-
-# Offset
-# AICctab(IntensExtens_model1_SSB_interaction, IntensExtens_model2_SSB_no_interaction, 
-#         base = TRUE)
-#deltaAIC = 
-
-# 5. CHECK MARGINAL VALUE IMPACT -----------------------------------------------
-
-## 5.1 Model with 0.1 offset ---------------------------------------------------
+## 2.3. Zero inflated - more complex structure ---------------------------------
 
 # Run model
-IntensExtens_model3_SSB_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
-                                              family = nbinom2,
-                                              data = occ_intens_extens_before_after_for_model)
+IntensExtens_model3 <- glmmTMB(occurrences_after ~ intens_extens * time_period + 
+                            offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+                          zi = ~intens_extens * time_period + (1 | SSBID), 
+                          family = nbinom2,
+                          data = modeling_data_wide)
 
-# Save model output to file to save time next time
-save(IntensExtens_model3_SSB_0.1_offset, file = "IntensExtens_model3_SSB_0.1_offset.RData")
+# Save model output to file 
+save(IntensExtens_model3, file = here::here("data", "models",
+                                       "IntensExtens_model3_zero_inflated_interaction.RData"))
 
-## 5.2 Model with 0.01 offset --------------------------------------------------
-
-# Run negative binomial model
-IntensExtens_model4_SSB_0.01_offset <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.01)) + (1 | SSBID),
-                                               family = nbinom2,
-                                               data = occ_intens_extens_before_after_for_model)
-
-# Save model output to file to save time next time
-save(IntensExtens_model4_SSB_0.01_offset, file = "IntensExtens_model4_SSB_0.01_offset.RData")
-
-## 5.3. Model with 0.1 offset and no interaction -------------------------------
+## 2.4. Zero inflated - complex structure + interaction ------------------------
 
 # Run model
-IntensExtens_model5_SSB_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
-                                                             family = nbinom2,
-                                                             data = occ_intens_extens_before_after_for_model)
+IntensExtens_model4 <- glmmTMB(occurrences_after ~ intens_extens + time_period + 
+                            offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+                          zi = ~intens_extens * time_period + (1 | SSBID), 
+                          family = nbinom2,
+                          data = modeling_data_wide)
 
-# Save model output to file to save time next time
-save(IntensExtens_model5_SSB_no_interaction_0.1_offset, file = here::here("data", "models", 
-                                                                          "IntensExtens_model5_SSB_no_interaction_0.1_offset.RData"))
+# Save model output to file 
+save(IntensExtens_model4, file = here::here("data", "models",
+                                       "IntensExtens_model4_zero_inflated_nointeraction.RData"))
 
-# 6. ZERO-INFLATED MODELS ------------------------------------------------------
+## 2.5. Logged occurrences after + interaction ---------------------------------
 
-## 6.1. Zero inflated interaction ----------------------------------------------
+# Log transform the occurrences after
+modeling_data_wide$log_occurrences_after <- log(modeling_data_wide$occurrences_after + 1)
 
-IntensExtens_model6_zero_inflated_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change * time_period + 
-                                                                      offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
-                                                                    zi = ~cover_change + time_period, 
-                                                                    family = nbinom2,
-                                                                    data = occ_intens_extens_before_after_for_model)
+# Run model
+IntensExtens_model5 <- glmmTMB(log_occurrences_after ~ intens_extens * time_period + 
+                           offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+                         family = gaussian,
+                         data = modeling_data_wide)
 
-# Save model output to file to save time next time
-save(IntensExtens_model6_zero_inflated_interaction_0.1_offset, file = here::here("data", "models",
-                                                                                 "IntensExtens_model6_zero_inflated_interaction_0.1_offset.RData"))
+# Save model output
+save(IntensExtens_model5, file = here::here("data", "models",
+                                      "IntensExtens_model5_logged_interaction.RData"))
 
-## 6.2. Zero inflated no interaction -------------------------------------------
+## 2.6. Logges occurrences after no interaction --------------------------------
 
-IntensExtens_model7_zero_inflated_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change + time_period + 
-                                                                         offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
-                                                                       zi = ~cover_change + time_period, 
-                                                                       family = nbinom2,
-                                                                       data = occ_y_n_cover_change_before_after_for_modell)
+# Run model
+IntensExtens_model6 <- glmmTMB(log_occurrences_after ~ intens_extens + time_period + 
+                           offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+                         family = gaussian,
+                         data = modeling_data_wide)
 
-# Save model output to file to save time next time
-save(IntensExtens_model7_zero_inflated_no_interaction_0.1_offset, file = here::here("data", "models",
-                                                                                    "IntensExtens_model7_zero_inflated_no_interaction_0.1_offset.RData"))
-
-
-# END OF SCRIPT ----------------------------------------------------------------
+# Save model output
+save(IntensExtens_model6, file = here::here("data", "models",
+                                      "IntensExtens_model6_logged_nointeraction.RData"))
