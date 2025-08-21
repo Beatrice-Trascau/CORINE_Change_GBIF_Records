@@ -125,10 +125,10 @@ lc_df <- as.data.frame(combined_stack, cells = TRUE) |>
 ssb_grid_sf <- st_as_sf(ssb_grids)
 
 # Check if the SSB grid has a CRS and set it manually if it doesn't
-if(is.na(st_crs(ssb_grid_sf))){
-  st_crs(ssb_grid_sf) <- crs(reference_grid)
-  cat("SSB grid CRS was missing - set to match reference grid\n")
-}
+# if(is.na(st_crs(ssb_grid_sf))){
+#   st_crs(ssb_grid_sf) <- crs(reference_grid)
+#   cat("SSB grid CRS was missing - set to match reference grid\n")
+# }
 
 # Reproject SSB grid to match reference grid CRS
 ssb_grid_reprojected <- st_transform(ssb_grid_sf, crs(reference_grid))
@@ -365,10 +365,10 @@ combined_data_SSB_lc_intens_extens <- combined_data_SSB_lc_transitions |>
                                              TRUE ~ NA_character_))
 
 # Save combined dataset
-combined_corine_gbif_ssb_august2025 <- combined_data_SSB_lc_intens_extens
-save(combined_corine_gbif_ssb_august2025, 
-     file = here("data", "derived_data",
-                 "combined_corine_gbif_ssb_august2025.rda"))
+# combined_corine_gbif_ssb_august2025 <- combined_data_SSB_lc_intens_extens
+# save(combined_corine_gbif_ssb_august2025,
+#      file = here("data", "derived_data",
+#                  "combined_corine_gbif_ssb_august2025.rda"))
 
 # 8. RESTRUCTURE DATA FOR MODELING ---------------------------------------------
 
@@ -564,6 +564,20 @@ if(length(expected_rows_per_cell) == 1 && expected_rows_per_cell == 6) {
   cat("❌ WARNING: Cells don't appear consistently across time periods\n")
   cat("Number of periods per cell:", paste(expected_rows_per_cell, collapse = ", "), "\n")
 }
+
+## 8.5. Add cell centroid coordinates ------------------------------------------
+
+# Add x y coordinates 
+modeling_data_filtered <- modeling_data_filtered |>
+  mutate(cell_ID_numeric = as.numeric(as.character(cell_ID))) |>
+  left_join(grid_df |> select(cell_id, x, y), 
+            by = c("cell_ID_numeric" = "cell_id")) |>
+  select(-cell_ID_numeric)
+
+# Check that coordinates were added successfully
+cat("Coordinates added successfully:", 
+    sum(!is.na(modeling_data_filtered$x)), "of", nrow(modeling_data_filtered), 
+    "rows have coordinates\n")
 
 # Save final dataset
 save(modeling_data_filtered,
