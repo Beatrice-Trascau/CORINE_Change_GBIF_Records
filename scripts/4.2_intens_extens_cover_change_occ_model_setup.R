@@ -36,7 +36,7 @@ load(here("data","derived_data",
 
 
 # Convert data from long to wide format for modeling
-modeling_data_wide <- modeling_data_combined_corine_gbif_ssb_august2025 |>
+modeling_data_wide <- modeling_data_filtered |>
   # Select the variables we need for modeling
   select(cell_ID, SSBID, land_cover_start, land_cover_end, land_cover_start_name, 
          land_cover_end_name, cover_change, transition_type, intens_extens,
@@ -104,30 +104,30 @@ modeling_data_wide$intens_extens <- relevel(modeling_data_wide$intens_extens,
 
 ## 2.1. N binomial glmmTMB, nbinom 2, SSBID + Interaction ----------------------
 
-# IntensExtens_model1 <- glmmTMB(occurrences_after ~ intens_extens * time_period +
-#                            offset(log(occurrences_before + 0.1)) + (1 | SSBID),
-#                          zi = ~intens_extens + time_period,
-#                          family = nbinom2,
-#                          data = modeling_data_wide)
+IntensExtens_model1 <- glmmTMB(occurrences_after ~ intens_extens * time_period +
+                           offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+                         zi = ~intens_extens + time_period,
+                         family = nbinom2,
+                         data = modeling_data_wide)
 
 
 # Save model output to file to save time next time
-# save(IntensExtens_model1, file = here::here("data", "models",
-#                                             "IntensExtens_model1_zero_inflated_interaction.RData"))
-# 
+save(IntensExtens_model1, file = here::here("data", "models",
+                                            "IntensExtens_model1_zero_inflated_interaction.RData"))
+
 
 ## 2.2. Zero inflated no interaction -------------------------------------------
 
 # Run model
-# IntensExtens_model2 <- glmmTMB(occurrences_after ~ intens_extens + time_period + 
-#                             offset(log(occurrences_before + 0.1)) + (1 | SSBID),
-#                           zi = ~intens_extens + time_period, 
-#                           family = nbinom2,
-#                           data = modeling_data_wide)
+IntensExtens_model2 <- glmmTMB(occurrences_after ~ intens_extens + time_period +
+                            offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+                          zi = ~intens_extens + time_period,
+                          family = nbinom2,
+                          data = modeling_data_wide)
 
 # Save model output to file 
-# save(IntensExtens_model2, file = here::here("data", "models",
-#                                        "IntensExtens_model2_zero_inflated_no_interaction.RData"))
+save(IntensExtens_model2, file = here::here("data", "models",
+                                       "IntensExtens_model2_zero_inflated_no_interaction.RData"))
 
 ## 2.3. Zero inflated - more complex structure ---------------------------------
 
