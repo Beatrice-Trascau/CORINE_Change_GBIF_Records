@@ -37,64 +37,47 @@ load(here("data","derived_data",
 
 # Convert data from long to wide format for modeling
 modeling_data_wide <- modeling_data_filtered |>
-  # Select the variables we need for modeling
+  # select the variables we need for modeling
   select(cell_ID, SSBID, land_cover_start, land_cover_end, land_cover_start_name, 
          land_cover_end_name, cover_change, transition_type, intens_extens,
          time_period, n_occurrences, n_species, analysis_period,
-         # Include the taxonomic/metadata lists if you want them in the final model data
+         # include the taxonomic/metadata lists if you want them in the final model data
          species_list, kingdom_list, phylum_list, class_list, order_list, 
          family_list, publisher_list, datasetName_list) |>
   
-  # Reshape from long to wide format
-  pivot_wider(
-    id_cols = c(cell_ID, SSBID, land_cover_start, land_cover_end, 
+  # reshape from long to wide format
+  pivot_wider(id_cols = c(cell_ID, SSBID, land_cover_start, land_cover_end, 
                 land_cover_start_name, land_cover_end_name, cover_change, 
                 transition_type, intens_extens, analysis_period),
-    names_from = time_period,
-    values_from = c(n_occurrences, n_species, species_list, kingdom_list, 
+              names_from = time_period,
+              values_from = c(n_occurrences, n_species, species_list, kingdom_list, 
                     phylum_list, class_list, order_list, family_list, 
                     publisher_list, datasetName_list),
-    names_sep = "_"
-  ) |>
+              names_sep = "_") |>
   
-  # Create the before/after columns needed for your model
-  mutate(
-    # Extract before occurrences (works for all three analysis periods)
-    occurrences_before = case_when(
-      analysis_period == "2000_2006" ~ n_occurrences_before_2000_2006,
-      analysis_period == "2006_2012" ~ n_occurrences_before_2006_2012,
-      analysis_period == "2012_2018" ~ n_occurrences_before_2012_2018,
-      TRUE ~ NA_real_
-    ),
-    
-    # Extract after occurrences (works for all three analysis periods)  
-    occurrences_after = case_when(
-      analysis_period == "2000_2006" ~ n_occurrences_after_2000_2006,
-      analysis_period == "2006_2012" ~ n_occurrences_after_2006_2012,
-      analysis_period == "2012_2018" ~ n_occurrences_after_2012_2018,
-      TRUE ~ NA_real_
-    ),
-    
-    # Create a simplified time_period variable for the model
-    time_period = case_when(
-      analysis_period == "2000_2006" ~ "2000_2006",
-      analysis_period == "2006_2012" ~ "2006_2012", 
-      analysis_period == "2012_2018" ~ "2012_2018",
-      TRUE ~ NA_character_
-    )
-  ) |>
+  # create the before/after columns needed for your model
+  mutate(occurrences_before = case_when(analysis_period == "2000_2006" ~ n_occurrences_before_2000_2006,
+                                        analysis_period == "2006_2012" ~ n_occurrences_before_2006_2012,
+                                        analysis_period == "2012_2018" ~ n_occurrences_before_2012_2018,
+                                        TRUE ~ NA_real_),
+         occurrences_after = case_when(analysis_period == "2000_2006" ~ n_occurrences_after_2000_2006,
+                                       analysis_period == "2006_2012" ~ n_occurrences_after_2006_2012,
+                                       analysis_period == "2012_2018" ~ n_occurrences_after_2012_2018,
+                                       TRUE ~ NA_real_),
+         time_period = case_when(analysis_period == "2000_2006" ~ "2000_2006",
+                                 analysis_period == "2006_2012" ~ "2006_2012", 
+                                 analysis_period == "2012_2018" ~ "2012_2018",
+                                 TRUE ~ NA_character_)) |>
   
-  # Remove rows with missing before/after data (shouldn't happen but just in case)
+  # remove rows with missing before/after data (shouldn't happen but just in case)
   filter(!is.na(occurrences_before) & !is.na(occurrences_after)) |>
   
-  # Convert factors back for modeling
-  mutate(
-    cell_ID = as.factor(cell_ID),
-    SSBID = as.factor(SSBID),
-    cover_change = as.factor(cover_change),
-    intens_extens = as.factor(intens_extens),
-    time_period = as.factor(time_period)
-  )
+  # convert factors back for modeling
+  mutate(cell_ID = as.factor(cell_ID),
+         SSBID = as.factor(SSBID),
+         cover_change = as.factor(cover_change),
+         intens_extens = as.factor(intens_extens),
+         time_period = as.factor(time_period))
 
 # 2. MODEL 1: OCC ~ COVER CHANGE + OFFSET --------------------------------------
 
@@ -145,7 +128,7 @@ save(IntensExtens_model3, file = here::here("data", "models",
 Intens_Extens_simulationOutput3 <- simulateResiduals(fittedModel = IntensExtens_model3)
 
 # Set up file output
-png(here("figures", "IntensExtens_model3_DHARMA_validation.png"),
+png(here("figures", "FigureS8_IntensExtens_model3_DHARMA_validation.png"),
     width = 12, height = 6, units = "in", res = 300)
 
 # Set up side-by-side layout
@@ -196,7 +179,7 @@ AICtab(IntensExtens_model3, IntensExtens_model4, base = TRUE)
 # save(IntensExtens_model5, file = here::here("data", "models",
 #                                       "IntensExtens_model5_logged_interaction.RData"))
 
-## 2.6. Logges occurrences after no interaction --------------------------------
+## 2.6. Logged occurrences after no interaction --------------------------------
 
 # Run model
 # IntensExtens_model6 <- glmmTMB(log_occurrences_after ~ intens_extens + time_period + 
@@ -207,3 +190,222 @@ AICtab(IntensExtens_model3, IntensExtens_model4, base = TRUE)
 # Save model output
 # save(IntensExtens_model6, file = here::here("data", "models",
 #                                       "IntensExtens_model6_logged_nointeraction.RData"))
+
+# 3. SUMMARY STATISTICS --------------------------------------------------------
+
+## 3.1. Summary statistics table -----------------------------------------------
+
+# Calculate summary statistics for all periods combined
+all_periods_stats <- modeling_data_wide |>
+  group_by(intens_extens) |>
+  summarise(Count = n(),
+            Zeros = sum(occurrences_after == 0),
+            `% Zeros` = round((sum(occurrences_after == 0) / n()) * 100, 1),
+            `Total Occurrences` = sum(occurrences_before + occurrences_after),
+            Median = median(occurrences_after),
+            `75th Percentile` = quantile(occurrences_after, 0.75),
+            `90th Percentile` = quantile(occurrences_after, 0.90),
+            Maximum = max(occurrences_after),
+            .groups = "drop") |>
+  mutate(`Time Period` = "All Periods") |>
+  select(`Time Period`, `Intens/Extens` = intens_extens, Count, Zeros, `% Zeros`, 
+         `Total Occurrences`, Median, `75th Percentile`, `90th Percentile`, Maximum)
+
+# Calculate summary statistics for 2000-2006 period
+period_2000_2006_stats <- modeling_data_wide |>
+  filter(time_period == "2000_2006") |>
+  group_by(intens_extens) |>
+  summarise(Count = n(),
+            Zeros = sum(occurrences_after == 0),
+            `% Zeros` = round((sum(occurrences_after == 0) / n()) * 100, 1),
+            `Total Occurrences` = sum(occurrences_before + occurrences_after),
+            Median = median(occurrences_after),
+            `75th Percentile` = quantile(occurrences_after, 0.75),
+            `90th Percentile` = quantile(occurrences_after, 0.90),
+            Maximum = max(occurrences_after),
+            .groups = "drop") |>
+  mutate(`Time Period` = "2000-2006") |>
+  select(`Time Period`, `Intens/Extens` = intens_extens, Count, Zeros, `% Zeros`, 
+         `Total Occurrences`, Median, `75th Percentile`, `90th Percentile`, Maximum)
+
+# Calculate summary statistics for 2006-2012 period
+period_2006_2012_stats <- modeling_data_wide |>
+  filter(time_period == "2006_2012") |>
+  group_by(intens_extens) |>
+  summarise(Count = n(),
+            Zeros = sum(occurrences_after == 0),
+            `% Zeros` = round((sum(occurrences_after == 0) / n()) * 100, 1),
+            `Total Occurrences` = sum(occurrences_before + occurrences_after),
+            Median = median(occurrences_after),
+            `75th Percentile` = quantile(occurrences_after, 0.75),
+            `90th Percentile` = quantile(occurrences_after, 0.90),
+            Maximum = max(occurrences_after),
+            .groups = "drop") |>
+  mutate(`Time Period` = "2006-2012") |>
+  select(`Time Period`, `Intens/Extens` = intens_extens, Count, Zeros, `% Zeros`, 
+         `Total Occurrences`, Median, `75th Percentile`, `90th Percentile`, Maximum)
+
+# Calculate summary statistics for 2012-2018 period
+period_2012_2018_stats <- modeling_data_wide |>
+  filter(time_period == "2012_2018") |>
+  group_by(intens_extens) |>
+  summarise(Count = n(),
+            Zeros = sum(occurrences_after == 0),
+            `% Zeros` = round((sum(occurrences_after == 0) / n()) * 100, 1),
+            `Total Occurrences` = sum(occurrences_after),
+            Median = median(occurrences_after),
+            `75th Percentile` = quantile(occurrences_after, 0.75),
+            `90th Percentile` = quantile(occurrences_after, 0.90),
+            Maximum = max(occurrences_after),
+            .groups = "drop") |>
+  mutate(`Time Period` = "2012-2018") |>
+  select(`Time Period`, `Intens/Extens` = intens_extens, Count, Zeros, `% Zeros`, 
+         `Total Occurrences`, Median, `75th Percentile`, `90th Percentile`, Maximum)
+
+# Combine all statistics into one table
+summary_table_complete_intens_extens <- bind_rows(all_periods_stats, period_2000_2006_stats,
+                                                  period_2006_2012_stats, period_2012_2018_stats) |>
+  arrange(factor(`Time Period`, levels = c("All Periods", "2000_2006", "2006_2012", "2012_2018")),
+          `Intens/Extens`)
+
+# Print the table
+print(summary_table_complete_intens_extens)
+
+## 3.2. Summary statistics for text --------------------------------------------
+
+# Extract the statistics for "All Periods" from summary table
+all_periods_stats_only <- summary_table_complete_intens_extens |>
+  filter(`Time Period` == "All Periods")
+
+# Extract stats for pixels with Extensification
+extens_stats <- all_periods_stats_only |> filter(`Intens/Extens` == "Extensification")
+cat("Pixels with EXTENSIFICATION:\n")
+cat("- Total pixels:", format(extens_stats$Count, big.mark = ","), "\n")
+cat("- Total occurrences:", format(extens_stats$Count * extens_stats$Median, big.mark = ","), "* \n")
+cat("- Median:", extens_stats$Median, "\n")
+cat("- 75th percentile:", extens_stats$`75th Percentile`, "\n") 
+cat("- 90th percentile:", extens_stats$`90th Percentile`, "\n\n")
+
+# Extract stats for pixels with Intensification  
+intens_stats <- all_periods_stats_only |> filter(`Intens/Extens` == "Intensification")
+cat("Pixels with INTENSIFICATION:\n")
+cat("- Total pixels:", format(intens_stats$Count, big.mark = ","), "\n")
+cat("- Total occurrences:", format(intens_stats$Count * intens_stats$Median, big.mark = ","), "* \n")
+cat("- Median:", intens_stats$Median, "\n")
+cat("- 75th percentile:", intens_stats$`75th Percentile`, "\n")
+cat("- 90th percentile:", intens_stats$`90th Percentile`, "\n\n")
+
+# Extract stats for pixels with No Change
+no_change_stats <- all_periods_stats_only |> filter(`Intens/Extens` == "No_change")
+cat("Pixels with NO CHANGE:\n")
+cat("- Total pixels:", format(no_change_stats$Count, big.mark = ","), "\n")
+cat("- Total occurrences:", format(no_change_stats$Count * no_change_stats$Median, big.mark = ","), "* \n")
+cat("- Median:", no_change_stats$Median, "\n")
+cat("- 75th percentile:", no_change_stats$`75th Percentile`, "\n")
+cat("- 90th percentile:", no_change_stats$`90th Percentile`, "\n\n")
+
+cat("* Note: This is an approximation using median × count. For exact total occurrences, calculate sum directly.\n\n")
+
+# Calculate the exact number of occurrences:
+exact_totals <- modeling_data_wide |>
+  mutate(total_occurrences = occurrences_before + occurrences_after) |>
+  group_by(intens_extens) |>
+  summarise(total_pixels = n(),
+            total_occurrences = sum(total_occurrences, na.rm = TRUE),
+            .groups = "drop")
+
+# Display results
+cat("=== EXACT TOTALS ===\n")
+exact_extens <- exact_totals |> filter(intens_extens == "Extensification")
+exact_intens <- exact_totals |> filter(intens_extens == "Intensification")
+exact_no_change <- exact_totals |> filter(intens_extens == "No_change")
+
+cat("EXACT total occurrences for pixels with EXTENSIFICATION:", format(exact_extens$total_occurrences, big.mark = ","), "\n")
+cat("EXACT total occurrences for pixels with INTENSIFICATION:", format(exact_intens$total_occurrences, big.mark = ","), "\n")
+cat("EXACT total occurrences for pixels with NO CHANGE:", format(exact_no_change$total_occurrences, big.mark = ","), "\n")
+
+# 4. VIOLIN PLOTS --------------------------------------------------------------
+
+# First, create a combined dataset with total occurrences
+modeling_data_for_violin <- modeling_data_wide |>
+  mutate(total_occurrences = occurrences_before + occurrences_after) |>
+  filter(!is.na(intens_extens))
+
+# Create violin plot for occurrences_after (log-transformed)
+q1 <- ggplot(modeling_data_for_violin, 
+             aes(x = time_period, y = total_occurrences + 0.1, 
+                 fill = intens_extens)) +
+  geom_violin(position = position_dodge(width = 0.7)) +
+  # add points with transparency and jitter
+  geom_jitter(position = position_jitterdodge(jitter.width = 0.2,
+                                              dodge.width = 0.7),
+              alpha = 0.1, size = 0.5) + 
+  scale_y_log10() +
+  scale_fill_manual(values = c("No_change" = "#66c2a5", 
+                               "Intensification" = "sienna", 
+                               "Extensification" = "#8da0cb"),
+                    labels = c("No change", "Intensification", "Extensification")) +
+  scale_x_discrete(labels = c("2000_2006" = "2000-2006", 
+                              "2006_2012" = "2006-2012", 
+                              "2012_2018" = "2012-2018")) +
+  labs(x = "Time Period",
+       y = "Total Number of Occurrences (log scale)",
+       fill = "Land Use Change") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+        axis.text.y = element_text(size = 14),
+        axis.title.x = element_text(size = 16),
+        axis.title.y = element_text(size = 16),
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 14))
+
+
+# Violin plot with original data, zoomed to see detail
+q2 <- ggplot(modeling_data_for_violin, 
+             aes(x = time_period, y = total_occurrences, 
+                 fill = intens_extens)) +
+  geom_violin(position = position_dodge(width = 0.7)) +
+  scale_fill_manual(values = c("No_change" = "#66c2a5", 
+                               "Intensification" = "sienna", 
+                               "Extensification" = "#8da0cb"),
+                    labels = c("No change", "Intensification", "Extensification")) +
+  scale_x_discrete(labels = c("2000_2006" = "2000-2006", 
+                              "2006_2012" = "2006-2012", 
+                              "2012_2018" = "2012-2018")) +
+  labs(x = "Time Period",
+       y = "Total Number of Occurrences",
+       fill = "Land Use Change") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+        axis.text.y = element_text(size = 14),
+        axis.title.x = element_text(size = 16),
+        axis.title.y = element_text(size = 16),
+        legend.position = "none")
+
+# Combine plots using cowplot
+combined_plot_intens_extens <- plot_grid(q2, q1, labels = c('A)', 'B)'), ncol = 2)
+
+# Save combined figure
+ggsave(here("figures", "FigureS7_occs_in_intens_extens_change.png"),
+       plot = combined_plot_intens_extens, width = 16, height = 8, dpi = 300)
+
+# 5. MODEL SUMMARY REPORTING FOR MANUSCRIPT ------------------------------------
+
+# Extract the coefficient for cover change
+cover_change_coef <- -1.25606  # Get it from the table
+
+# Calculate the Incidence Rate Ratio (IRR)
+irr <- exp(cover_change_coef)
+cat("Incidence Rate Ratio (IRR):", round(irr, 3), "\n")
+
+# Calculate percentage change
+percent_change <- (irr - 1) * 100
+cat("Percentage change:", round(percent_change, 1), "%\n")
+
+# Calculate confidence intervals using standard error from the model summary
+se <- 0.01004
+ci_lower <- exp(cover_change_coef - 1.96 * se)
+ci_upper <- exp(cover_change_coef + 1.96 * se)
+cat("95% CI for IRR:", round(ci_lower, 3), "to", round(ci_upper, 3), "\n")
+
+# END OF SCRIPT ----------------------------------------------------------------
