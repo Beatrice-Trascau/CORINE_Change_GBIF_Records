@@ -104,30 +104,30 @@ modeling_data_wide$intens_extens <- relevel(modeling_data_wide$intens_extens,
 
 ## 2.1. N binomial glmmTMB, nbinom 2, SSBID + Interaction ----------------------
 
-IntensExtens_model1 <- glmmTMB(occurrences_after ~ intens_extens * time_period +
-                           offset(log(occurrences_before + 0.1)) + (1 | SSBID),
-                         zi = ~intens_extens + time_period,
-                         family = nbinom2,
-                         data = modeling_data_wide)
+# IntensExtens_model1 <- glmmTMB(occurrences_after ~ intens_extens * time_period +
+#                            offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+#                          zi = ~intens_extens + time_period,
+#                          family = nbinom2,
+#                          data = modeling_data_wide)
 
 
 # Save model output to file to save time next time
-save(IntensExtens_model1, file = here::here("data", "models",
-                                            "IntensExtens_model1_zero_inflated_interaction.RData"))
+# save(IntensExtens_model1, file = here::here("data", "models",
+#                                             "IntensExtens_model1_zero_inflated_interaction.RData"))
 
 
 ## 2.2. Zero inflated no interaction -------------------------------------------
 
 # Run model
-IntensExtens_model2 <- glmmTMB(occurrences_after ~ intens_extens + time_period +
-                            offset(log(occurrences_before + 0.1)) + (1 | SSBID),
-                          zi = ~intens_extens + time_period,
-                          family = nbinom2,
-                          data = modeling_data_wide)
+# IntensExtens_model2 <- glmmTMB(occurrences_after ~ intens_extens + time_period +
+#                             offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+#                           zi = ~intens_extens + time_period,
+#                           family = nbinom2,
+#                           data = modeling_data_wide)
 
 # Save model output to file 
-save(IntensExtens_model2, file = here::here("data", "models",
-                                       "IntensExtens_model2_zero_inflated_no_interaction.RData"))
+# save(IntensExtens_model2, file = here::here("data", "models",
+#                                        "IntensExtens_model2_zero_inflated_no_interaction.RData"))
 
 ## 2.3. Zero inflated - more complex structure ---------------------------------
 
@@ -141,6 +141,25 @@ IntensExtens_model3 <- glmmTMB(occurrences_after ~ intens_extens * time_period +
 # Save model output to file 
 save(IntensExtens_model3, file = here::here("data", "models",
                                        "IntensExtens_model3_zero_inflated_interaction.RData"))
+# Check model fit
+Intens_Extens_simulationOutput3 <- simulateResiduals(fittedModel = IntensExtens_model3)
+
+# Set up file output
+png(here("figures", "IntensExtens_model3_DHARMA_validation.png"),
+    width = 12, height = 6, units = "in", res = 300)
+
+# Set up side-by-side layout
+par(mfrow = c(1, 2))
+
+# Create the plots
+plotQQunif(Intens_Extens_simulationOutput3, testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(Intens_Extens_simulationOutput3, quantreg = FALSE)
+
+# Close the file
+dev.off()
+
+# Reset layout
+par(mfrow = c(1, 1))
 
 ## 2.4. Zero inflated - complex structure + interaction ------------------------
 
@@ -155,29 +174,36 @@ IntensExtens_model4 <- glmmTMB(occurrences_after ~ intens_extens + time_period +
 save(IntensExtens_model4, file = here::here("data", "models",
                                        "IntensExtens_model4_zero_inflated_nointeraction.RData"))
 
+# Compare AIC between Model 3 and Model 4
+AICtab(IntensExtens_model3, IntensExtens_model4, base = TRUE) 
+# Model3 preffered dAIC = 154
+# AIC     dAIC    df
+# IntensExtens_model3 5649691       0 21
+# IntensExtens_model4 5649845     154 17
+
 ## 2.5. Logged occurrences after + interaction ---------------------------------
 
 # Log transform the occurrences after
-modeling_data_wide$log_occurrences_after <- log(modeling_data_wide$occurrences_after + 1)
+# modeling_data_wide$log_occurrences_after <- log(modeling_data_wide$occurrences_after + 1)
 
 # Run model
-IntensExtens_model5 <- glmmTMB(log_occurrences_after ~ intens_extens * time_period + 
-                           offset(log(occurrences_before + 0.1)) + (1 | SSBID),
-                         family = gaussian,
-                         data = modeling_data_wide)
+# IntensExtens_model5 <- glmmTMB(log_occurrences_after ~ intens_extens * time_period + 
+#                            offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+#                          family = gaussian,
+#                          data = modeling_data_wide)
 
 # Save model output
-save(IntensExtens_model5, file = here::here("data", "models",
-                                      "IntensExtens_model5_logged_interaction.RData"))
+# save(IntensExtens_model5, file = here::here("data", "models",
+#                                       "IntensExtens_model5_logged_interaction.RData"))
 
 ## 2.6. Logges occurrences after no interaction --------------------------------
 
 # Run model
-IntensExtens_model6 <- glmmTMB(log_occurrences_after ~ intens_extens + time_period + 
-                           offset(log(occurrences_before + 0.1)) + (1 | SSBID),
-                         family = gaussian,
-                         data = modeling_data_wide)
+# IntensExtens_model6 <- glmmTMB(log_occurrences_after ~ intens_extens + time_period + 
+#                            offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+#                          family = gaussian,
+#                          data = modeling_data_wide)
 
 # Save model output
-save(IntensExtens_model6, file = here::here("data", "models",
-                                      "IntensExtens_model6_logged_nointeraction.RData"))
+# save(IntensExtens_model6, file = here::here("data", "models",
+#                                       "IntensExtens_model6_logged_nointeraction.RData"))
