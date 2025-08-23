@@ -163,7 +163,7 @@ save(YN_ZINB_model3, file = here::here("data", "models",
 simulationOutput3 <- simulateResiduals(fittedModel = YN_ZINB_model3)
 
 # Set up file output
-png(here("figures", "YN_model3_DHARMA_validation.png"),
+png(here("figures", "FigureS6_YN_model3_DHARMA_validation.png"),
     width = 12, height = 6, units = "in", res = 300)
 
 # Set up side-by-side layout
@@ -310,6 +310,7 @@ all_periods_stats <- modeling_data_wide |>
   summarise(Count = n(),
             Zeros = sum(occurrences_after == 0),
             `% Zeros` = round((sum(occurrences_after == 0) / n()) * 100, 1),
+            `Total Occurrences` = sum(occurrences_before + occurrences_after),
             Median = median(occurrences_after),
             `75th Percentile` = quantile(occurrences_after, 0.75),
             `90th Percentile` = quantile(occurrences_after, 0.90),
@@ -317,7 +318,7 @@ all_periods_stats <- modeling_data_wide |>
             .groups = "drop") |>
   mutate(`Time Period` = "All Periods") |>
   select(`Time Period`, `Cover Change` = cover_change, Count, Zeros, `% Zeros`, 
-         Median, `75th Percentile`, `90th Percentile`, Maximum)
+         `Total Occurrences`, Median, `75th Percentile`, `90th Percentile`, Maximum)
 
 # Calculate summary statistics for 2000-2006 period
 period_2000_2006_stats <- modeling_data_wide |>
@@ -326,6 +327,7 @@ period_2000_2006_stats <- modeling_data_wide |>
   summarise(Count = n(),
             Zeros = sum(occurrences_after == 0),
             `% Zeros` = round((sum(occurrences_after == 0) / n()) * 100, 1),
+            `Total Occurrences` = sum(occurrences_before + occurrences_after),
             Median = median(occurrences_after),
             `75th Percentile` = quantile(occurrences_after, 0.75),
             `90th Percentile` = quantile(occurrences_after, 0.90),
@@ -333,7 +335,7 @@ period_2000_2006_stats <- modeling_data_wide |>
             .groups = "drop") |>
   mutate(`Time Period` = "2000-2006") |>
   select(`Time Period`, `Cover Change` = cover_change, Count, Zeros, `% Zeros`, 
-         Median, `75th Percentile`, `90th Percentile`, Maximum)
+         `Total Occurrences`, Median, `75th Percentile`, `90th Percentile`, Maximum)
 
 # Calculate summary statistics for 2006-2012 period
 period_2006_2012_stats <- modeling_data_wide |>
@@ -342,6 +344,7 @@ period_2006_2012_stats <- modeling_data_wide |>
   summarise(Count = n(),
             Zeros = sum(occurrences_after == 0),
             `% Zeros` = round((sum(occurrences_after == 0) / n()) * 100, 1),
+            `Total Occurrences` = sum(occurrences_before + occurrences_after),
             Median = median(occurrences_after),
             `75th Percentile` = quantile(occurrences_after, 0.75),
             `90th Percentile` = quantile(occurrences_after, 0.90),
@@ -349,7 +352,7 @@ period_2006_2012_stats <- modeling_data_wide |>
             .groups = "drop") |>
   mutate(`Time Period` = "2006-2012") |>
   select(`Time Period`, `Cover Change` = cover_change, Count, Zeros, `% Zeros`, 
-         Median, `75th Percentile`, `90th Percentile`, Maximum)
+         `Total Occurrences`, Median, `75th Percentile`, `90th Percentile`, Maximum)
 
 # Calculate summary statistics for 2012-2018 period
 period_2012_2018_stats <- modeling_data_wide |>
@@ -358,6 +361,7 @@ period_2012_2018_stats <- modeling_data_wide |>
   summarise(Count = n(),
             Zeros = sum(occurrences_after == 0),
             `% Zeros` = round((sum(occurrences_after == 0) / n()) * 100, 1),
+            `Total Occurrences` = sum(occurrences_before + occurrences_after),
             Median = median(occurrences_after),
             `75th Percentile` = quantile(occurrences_after, 0.75),
             `90th Percentile` = quantile(occurrences_after, 0.90),
@@ -365,7 +369,7 @@ period_2012_2018_stats <- modeling_data_wide |>
             .groups = "drop") |>
   mutate(`Time Period` = "2012-2018") |>
   select(`Time Period`, `Cover Change` = cover_change, Count, Zeros, `% Zeros`, 
-         Median, `75th Percentile`, `90th Percentile`, Maximum)
+         `Total Occurrences`, Median, `75th Percentile`, `90th Percentile`, Maximum)
 
 # Combine all statistics into one table
 summary_table_complete <- bind_rows(all_periods_stats, period_2000_2006_stats,
@@ -425,8 +429,6 @@ cat("EXACT total occurrences for pixels WITHOUT cover change:", format(exact_no_
 modeling_data_for_violin <- modeling_data_wide |>
   mutate(total_occurrences = occurrences_before + occurrences_after)
 
-## 5.1. Violin plot with log-transformed values --------------------------------
-
 # Create violin plot for occurrences_after (log-transformed)
 p1 <- ggplot(modeling_data_for_violin, 
              aes(x = time_period, y = total_occurrences + 0.1, 
@@ -452,8 +454,6 @@ p1 <- ggplot(modeling_data_for_violin,
         legend.text = element_text(size = 14),
         legend.title = element_text(size = 14))
 
-## 5.2. Violin plot with original values (zoomed) ------------------------------
-
 # Violin plot with original data, zoomed to see detail
 p2 <- ggplot(modeling_data_for_violin, 
              aes(x = time_period, y = total_occurrences, 
@@ -478,7 +478,7 @@ p2 <- ggplot(modeling_data_for_violin,
 combined_plot <- plot_grid(p2, p1, labels = c('A)', 'B)'), ncol = 2)
 
 # Save combined figure
-ggsave(here("figures", "SupplementaryFigure5_occs_in_YN_cover_change.png"),
+ggsave(here("figures", "FigureS5_occs_in_YN_cover_change.png"),
        plot = combined_plot, width = 16, height = 8, dpi = 300)
 
 # 6. MODEL SUMMARY REPORTING FOR MANUSCRIPT ------------------------------------
