@@ -5,406 +5,499 @@
 # of land cover change (Y/N) on the number of occurrences in a pixel
 ##----------------------------------------------------------------------------##
 
+# Define function
+install_load_package <- function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, repos = "http://cran.us.r-project.org")
+  }
+  require(x, character.only = TRUE)
+}
+
+# Define list of packages
+package_vec <- c("here", "terra", "sf", "geodata", "mapview",
+                 "tidyverse", "dplyr", "ggplot2", "ggalluvial",
+                 "networkD3", "gt", "cowplot", "data.table",
+                 "tidyterra", "patchwork", "styler", "scales",
+                 "plotly", "lme4", "DHARMa", "glmmTMB", "mgcv",
+                 "tidyterra", "ggspatial", "htmlwidgets",
+                 "htmltools", "patchwork", "webshot2",
+                 "rgbif", "CoordinateCleaner", "DHARMa",
+                 "writexl", "bbmle", "kableExtra", "googledrive") # specify packages
+
+# Execute the function
+sapply(package_vec, install_load_package)
+
+
 # 1. LOAD AND PREPARE DATA FOR ANALYSIS ----------------------------------------
 
 # Load data
 load(here("data","derived_data", 
-          "occurrences_SSB_municipalities_land_cover.rda"))
-
-# Rename df (to make it easier to work with)
-occ_SSB_land_cover <- occurrence_municipalities_df
-
-# 2. CALCULATE NUMBER OF RECORDS FOR EACH PERIOD -------------------------------
-
-# Change column names for easier df manipulation
-occ_SSB_land_cover <- occ_SSB_land_cover |>
-  rename(land_cover2000 = U2006_CLC2000_V2020_20u1,
-         land_cover2006 = U2012_CLC2006_V2020_20u1,
-         land_cover2012 = U2018_CLC2012_V2020_20u1,
-         land_cover2018 = U2018_CLC2018_V2020_20u1)
-
-## 2.1. First period of change: 2000-2006 --------------------------------------
-
-### 2.1.1. Before land cover change --------------------------------------------
-
-# Prepare data for the period 1997-2000
-occ_df_before_2000.2006 <- occ_SSB_land_cover |>
-  select(gbifID, year, species, land_cover2000, land_cover2006, 
-         SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2000) & !is.na(land_cover2006)) |>
-  filter(year >= 1997 & year <= 2000) |>
-  mutate(cover_change = if_else(land_cover2000 == land_cover2006, "N", "Y"))
-
-# Calculate number of records for the period 1997-2000
-occ_df_before_2000.2006_records <- occ_df_before_2000.2006 |>
-  group_by(cell_ID) |>
-  summarise(
-    ocurrences_before = n(),
-    land_cover2000 = first(land_cover2000),
-    land_cover2006 = first(land_cover2006),
-    cover_change = first(cover_change),
-    SSBID = first(SSBID),
-    NAME_2 = first(NAME_2),
-    gbifID = first(gbifID)) |>
-  mutate(time_period = "2000-2006") |>
-  select(-c(land_cover2000, land_cover2006))
-
-### 2.1.2. After land cover change ---------------------------------------------
-
-# Prepare data for the period 2006-2009
-occ_df_after_2000.2006 <- occ_SSB_land_cover |>
-  select(gbifID, year, species, land_cover2000, land_cover2006, 
-         SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2000) & !is.na(land_cover2006)) |>
-  filter(year >= 2006 & year <= 2009) |>
-  mutate(cover_change = if_else(land_cover2000 == land_cover2006, "N", "Y"))
-
-# Calculate number of records for the period 2006-2009
-occ_df_after_2000.2006_records <- occ_df_after_2000.2006 |>
-  group_by(cell_ID) |>
-  summarise(
-    ocurrences_after = n(),
-    land_cover2000 = first(land_cover2000),
-    land_cover2006 = first(land_cover2006),
-    cover_change = first(cover_change),
-    SSBID = first(SSBID),
-    NAME_2 = first(NAME_2),
-    gbifID = first(gbifID)) |>
-  mutate(time_period = "2000-2006") |>
-  select(-c(land_cover2000, land_cover2006))
-
-## 2.2. Second period of change: 2006 - 2012 -----------------------------------
-
-### 2.2.1. Before land cover change --------------------------------------------
-
-# Prepare data for the period 2003-2006
-occ_df_before_2006.2012 <- occ_SSB_land_cover |>
-  select(gbifID, year, species, land_cover2006, land_cover2012, 
-         SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2006) & !is.na(land_cover2012)) |>
-  filter(year >= 2003 & year <= 2006) |>
-  mutate(cover_change = if_else(land_cover2006 == land_cover2012, "N", "Y"))
-
-# Calculate number of records for the period 2003-2006
-occ_df_before_2006.2012_records <- occ_df_before_2006.2012 |>
-  group_by(cell_ID) |>
-  summarise(
-    ocurrences_before = n(),
-    land_cover2006 = first(land_cover2006),
-    land_cover2012 = first(land_cover2012),
-    cover_change = first(cover_change),
-    SSBID = first(SSBID),
-    NAME_2 = first(NAME_2),
-    gbifID = first(gbifID)) |>
-  mutate(time_period = "2006-2012") |>
-  select(-c(land_cover2006, land_cover2012))
-
-### 2.2.2. After land cover change ---------------------------------------------
-
-# Prepare data for the period 2012-2015
-occ_df_after_2006.2012 <- occ_SSB_land_cover |>
-  select(gbifID, year, species, land_cover2006, land_cover2012, 
-         SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2006) & !is.na(land_cover2012)) |>
-  filter(year >= 2012 & year <= 2015) |>
-  mutate(cover_change = if_else(land_cover2006 == land_cover2012, "N", "Y"))
-
-# Calculate number of records for the period 2012-2015
-occ_df_after_2006.2012_records <- occ_df_after_2006.2012 |>
-  group_by(cell_ID) |>
-  summarise(
-    ocurrences_after = n(),
-    land_cover2006 = first(land_cover2006),
-    land_cover2012 = first(land_cover2012),
-    cover_change = first(cover_change),
-    SSBID = first(SSBID),
-    NAME_2 = first(NAME_2),
-    gbifID = first(gbifID)) |>
-  mutate(time_period = "2006-2012") |>
-  select(-c(land_cover2006, land_cover2012))
-
-## 2.3. Third period of change: 2012 - 2018 ------------------------------------
-
-### 2.3.1. Before land cover change --------------------------------------------
-
-# Prepare data for the period 2009-2012
-occ_df_before_2012.2018 <- occ_SSB_land_cover |>
-  select(gbifID, year, species, land_cover2012, land_cover2018, 
-         SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2012) & !is.na(land_cover2018)) |>
-  filter(year >= 2009 & year <= 2012) |>
-  mutate(cover_change = if_else(land_cover2012 == land_cover2018, "N", "Y"))
-
-# Calculate number of records for the period 1997-2000
-occ_df_before_2012.2018_records <- occ_df_before_2012.2018 |>
-  group_by(cell_ID) |>
-  summarise(
-    ocurrences_before = n(),
-    land_cover2012 = first(land_cover2012),
-    land_cover2018 = first(land_cover2018),
-    cover_change = first(cover_change),
-    SSBID = first(SSBID),
-    NAME_2 = first(NAME_2),
-    gbifID = first(gbifID)) |>
-  mutate(time_period = "2012-2018") |>
-  select(-c(land_cover2012, land_cover2018))
-
-### 2.3.2. After land cover change ---------------------------------------------
-
-# Prepare data for the period 2015-2018
-occ_df_after_2012.2018 <- occ_SSB_land_cover |>
-  select(gbifID, year, species, land_cover2012, land_cover2018, 
-         SSBID, cell_ID, NAME_2) |>
-  filter(!is.na(land_cover2012) & !is.na(land_cover2018)) |>
-  filter(year >= 2015 & year <= 2018) |>
-  mutate(cover_change = if_else(land_cover2012 == land_cover2018, "N", "Y"))
-
-# Calculate number of records for the period 1997-2000
-occ_df_after_2012.2018_records <- occ_df_after_2012.2018 |>
-  group_by(cell_ID) |>
-  summarise(
-    ocurrences_after = n(),
-    land_cover2012 = first(land_cover2012),
-    land_cover2018 = first(land_cover2018),
-    cover_change = first(cover_change),
-    SSBID = first(SSBID),
-    NAME_2 = first(NAME_2),
-    gbifID = first(gbifID)) |>
-  mutate(time_period = "2012-2018") |>
-  select(-c(land_cover2012, land_cover2018))
-
-# 3. COMBINE DATAFRAMES  -------------------------------------------------------
-
-## 3.1. Combine before and after dfs -------------------------------------------
-
-# Before land cover change
-occ_df_before_records <- bind_rows(occ_df_before_2000.2006_records,
-                                   occ_df_before_2006.2012_records,
-                                   occ_df_before_2012.2018_records) |>
-  select(-NAME_2)
-
-
-# After land cover change
-occ_df_after_records <- bind_rows(occ_df_after_2000.2006_records,
-                                  occ_df_after_2006.2012_records,
-                                  occ_df_after_2012.2018_records) |>
-  select(-NAME_2)
-
-## 3.2. Check for SSBID differences --------------------------------------------
-
-cell_ssbid_mapping <- full_join(
-  select(occ_df_before_records, cell_ID, time_period, SSBID_before = SSBID),
-  select(occ_df_after_records, cell_ID, time_period, SSBID_after = SSBID),
-  by = c("cell_ID", "time_period")) |>
-  # Flag cells with actual discrepancies (both values present but different)
-  mutate(has_discrepancy = !is.na(SSBID_before) & !is.na(SSBID_after) & 
-           SSBID_before != SSBID_after)
-
-# Extract only the truly discrepant cells
-discrepant_cells <- cell_ssbid_mapping |>
-  filter(has_discrepancy) |>
-  select(cell_ID, time_period)
-
-# Count discrepancies for documentation
-n_discrepant_cells <- nrow(discrepant_cells)
-message("Removing ", n_discrepant_cells, " cell/time_period combinations with inconsistent SSBID assignments")
-
-# Remove only the discrepant cells
-occ_df_before_records_consistent <- occ_df_before_records |>
-  anti_join(discrepant_cells, by = c("cell_ID", "time_period"))
-
-occ_df_after_records_consistent <- occ_df_after_records |>
-  anti_join(discrepant_cells, by = c("cell_ID", "time_period"))
-
-## 3.3. Join datasets ----------------------------------------------------------
-
-# Join datasets using only essential identifiers
-occ_df_before_after <- full_join(
-  occ_df_before_records_consistent,
-  occ_df_after_records_consistent,
-  by = c("cell_ID", "time_period", "SSBID"))
-
-# Process the joined dataset to create final model-ready data
-occ_y_n_cover_change_before_after_for_modell <- occ_df_before_after |>
-  mutate(
-    # Reconcile cover_change values
-    cover_change = case_when(
-      !is.na(cover_change.x) & !is.na(cover_change.y) ~ cover_change.x, 
-      !is.na(cover_change.x) & is.na(cover_change.y) ~ cover_change.x,
-      is.na(cover_change.x) & !is.na(cover_change.y) ~ cover_change.y,
-      TRUE ~ NA_character_),
-    
-    # Handle occurrence counts
-    ocurrences_before = ifelse(is.na(ocurrences_before), 0, ocurrences_before),
-    ocurrences_after = ifelse(is.na(ocurrences_after), 0, ocurrences_after),
-    
-    # Consolidate gbifID
-    gbifID = coalesce(gbifID.x, gbifID.y),
-    
-    # Convert to factors for modeling
-    SSBID = as.factor(SSBID),
-    cell_ID = as.factor(cell_ID)) |>
-  # Remove redundant columns
-  select(-matches("\\.x$|\\.y$"))
-
-# Verify no duplicates exist in the final dataset
-duplicate_check <- occ_y_n_cover_change_before_after_for_modell |>
-  group_by(cell_ID, time_period) |>
-  summarise(count = n(), .groups = "drop") |>
-  filter(count > 1)
-
-if(nrow(duplicate_check) > 0) {
-  warning("Duplicate cell_ID/time_period combinations found in final dataset!")
-  print(head(duplicate_check))
-} else {
-  message("Verified: No duplicate cell_ID/time_period combinations in final dataset")
-}
-
-# Write dataframe to file
-save(occ_y_n_cover_change_before_after_for_modell,
-     file = here::here("data", "derived_data",
-                       "occ_y_n_cover_change_before_after_for_modell.rda"))
-
-
-# 4. MODEL 1: OCC ~ COVER CHANGE + OFFSET --------------------------------------
-
-## 4.1. N binomial glmmTMB, nbinom2, SSBID -------------------------------------
-
-# Run negative binomial model
-YN_model1_SSB_interaction <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.001)) + (1 | SSBID),
-                                     family = nbinom2,
-                                     data = occ_y_n_cover_change_before_after_for_modell)
-
-# Save model output to file to save time next time
-save(YN_model1_SSB_interaction, file = here::here("data", "models", 
-                                                  "YN_model1_SSB_interaction.RData"))
-
-## 4.2. N binomial glmmTMB, nbinom2, SSBID, no interactio  ---------------------
-
-# Run negative binomial model
-YN_model2_SSB_no_interaction <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.001)) + (1 | SSBID),
-                                        family = nbinom2,
-                                        data = occ_y_n_cover_change_before_after_for_modell)
-
-# Save model output to file to save time next time
-save(YN_model2_SSB_no_interaction, file = here::here("data", "models", 
-                                                     "YN_model2_SSB_no_interaction.RData"))
-
-## 4.3. Compare models ---------------------------------------------------------
-
-# Get AIC table
-#AICctab(YN_model1_SSB_interaction, YN_model2_SSB_no_interaction, base = TRUE)
-#deltaAIC = 
-
-# 5. CHECK MARGINAL VALUE IMPACT -----------------------------------------------
-
-## 5.1 Model with 0.1 offset ---------------------------------------------------
-
-# Run negative binomial model
-YN_model3_SSB_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
-                                                family = nbinom2,
-                                                data = occ_y_n_cover_change_before_after_for_modell)
-
-# Save model output to file to save time next time
-save(YN_model3_SSB_interaction_0.1_offset, file = here::here("data", "models", 
-                                                             "YN_model3_SSB_interaction_0.1_offset.RData"))
-
-## 5.2 Model with 0.01 offset --------------------------------------------------
-
-# Run negative binomial model
-YN_model4_SSB_interaction_0.01_offset <- glmmTMB(ocurrences_after ~ cover_change * time_period + offset(log(ocurrences_before + 0.01)) + (1 | SSBID),
-                                                 family = nbinom2,
-                                                 data = occ_y_n_cover_change_before_after_for_modell)
-
-# Save model output to file to save time next time
-save(YN_model4_SSB_interaction_0.01_offset, file = here::here("data", "models", 
-                                                              "YN_model4_SSB_interaction_0.01_offset.RData"))
-
-## 5.3. Model with 0.1 offset and no interaction -------------------------------
-
-# Run negative binomial model
-YN_model5_SSB_no_interaction_0.1_offset <- glmmTMB(ocurrences_after ~ cover_change + time_period + offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
-                                                   family = nbinom2,
-                                                   data = occ_y_n_cover_change_before_after_for_modell)
-
-# Save model output to file to save time next time
-save(YN_model5_SSB_no_interaction_0.1_offset, file = here::here("data", "models",
-                                                                "YN_model5_SSB_no_interaction_0.1_offset.RData"))
-
-# 6. ZERO-INFLATED MODELS ------------------------------------------------------
-
-## 6.1. Zero inflated interaction ----------------------------------------------
-
-YN_ZINB_model <- glmmTMB(ocurrences_after ~ cover_change * time_period + 
-                           offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
-                         zi = ~cover_change + time_period, 
-                         family = nbinom2,
-                         data = occ_y_n_cover_change_before_after_for_modell)
-
-# Save model output to file to save time next time
-save(YN_ZINB_model, file = here::here("data", "models",
-                                      "YN_model6_zero_inflated_interaction_0.1_offset.RData"))
-
-## 6.2. Zero inflated no interaction -------------------------------------------
-
-YN_ZINB_model_no_interaction <- glmmTMB(ocurrences_after ~ cover_change + time_period + 
-                                          offset(log(ocurrences_before + 0.1)) + (1 | SSBID),
-                                        zi = ~cover_change + time_period, 
-                                        family = nbinom2,
-                                        data = occ_y_n_cover_change_before_after_for_modell)
-
-# Save model output to file to save time next time
-save(YN_ZINB_model_no_interaction, file = here::here("data", "models",
-                                                     "YN_model7_zero_inflated_no_interaction_0.1_offset.RData"))
-
-
-# 7. EXPLORATORY FIGURES OF DF USED IN MODELS ----------------------------------
-
-## 7.1. Violin plot with log-transformed values --------------------------------
-
-p1 <- ggplot(occ_y_n_cover_change_before_after_for_modell, 
-             aes(x = time_period, y = ocurrences_after, 
+          "modeling_data_combined_corine_gbif_ssb_august2025.rda"))
+
+
+# Convert data from long to wide format for modeling
+modeling_data_wide <- modeling_data_filtered |>
+  # select the variables we need for modeling
+  select(cell_ID, SSBID, x, y,  # <- ADD x and y here
+         land_cover_start, land_cover_end, land_cover_start_name, 
+         land_cover_end_name, cover_change, transition_type, intens_extens,
+         time_period, n_occurrences, n_species, analysis_period,
+         species_list, kingdom_list, phylum_list, class_list, order_list, 
+         family_list, publisher_list, datasetName_list) |>
+  # reshape from long to wide format
+  pivot_wider(id_cols = c(cell_ID, SSBID, x, y, land_cover_start, land_cover_end,
+                          land_cover_start_name, land_cover_end_name, cover_change,
+                          transition_type, intens_extens, analysis_period),
+              names_from = time_period,
+              values_from = c(n_occurrences, n_species, species_list, kingdom_list,
+                              phylum_list, class_list, order_list, family_list,
+                              publisher_list, datasetName_list),
+              names_sep = "_") |>
+  # create the before/after columns needed for your model
+  mutate(occurrences_before = case_when(analysis_period == "2000_2006" ~ n_occurrences_before_2000_2006,
+                                        analysis_period == "2006_2012" ~ n_occurrences_before_2006_2012,
+                                        analysis_period == "2012_2018" ~ n_occurrences_before_2012_2018,
+                                        TRUE ~ NA_real_),
+         occurrences_after = case_when(analysis_period == "2000_2006" ~ n_occurrences_after_2000_2006,
+                                       analysis_period == "2006_2012" ~ n_occurrences_after_2006_2012,
+                                       analysis_period == "2012_2018" ~ n_occurrences_after_2012_2018,
+                                       TRUE ~ NA_real_),
+         time_period = case_when(analysis_period == "2000_2006" ~ "2000_2006",
+                                 analysis_period == "2006_2012" ~ "2006_2012",
+                                 analysis_period == "2012_2018" ~ "2012_2018",
+                                 TRUE ~ NA_character_)) |>
+  # remove rows with missing before/after data (shouldn't happen but just in case)
+  filter(!is.na(occurrences_before) & !is.na(occurrences_after)) |>
+  # convert factors back for modeling
+  mutate(cell_ID = as.factor(cell_ID), 
+         SSBID = as.factor(SSBID),
+         cover_change = as.factor(cover_change),
+         intens_extens = as.factor(intens_extens),
+         time_period = as.factor(time_period),
+         x_coord = x,
+         y_coord = y)
+
+# 2. RUN ZERO-INFLATED MODELS --------------------------------------------------
+
+## 2.1. Zero inflated interaction ----------------------------------------------
+
+# Run model
+# YN_ZINB_model <- glmmTMB(occurrences_after ~ cover_change * time_period +
+#                            offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+#                          zi = ~cover_change + time_period,
+#                          family = nbinom2,
+#                          data = modeling_data_wide)
+
+# Save model output to file
+# save(YN_ZINB_model, file = here::here("data", "models",
+#                                       "YN_model1_zero_inflated_interaction_0.1_offset.RData"))
+
+# Check model summary
+# summary(YN_ZINB_model)
+
+# Check model fit
+# simulationOutput <- simulateResiduals(fittedModel = YN_ZINB_model)
+
+# Plot residual diagnostics
+# plot(simulationOutput)
+
+# Use bootstrap for outlier testing
+# testOutliers(simulationOutput, type = "bootstrap")
+
+# Other useful DHARMa tests for your models:
+# testDispersion(simulationOutput)
+# testZeroInflation(simulationOutput)
+# testTemporalAutocorrelation(simulationOutput, time = modeling_data_wide$time_period)
+
+# Extract residuals
+# residuals1 <- residuals(YN_ZINB_model, type = "pearson")
+
+# Create both plots side by side
+# par(mfrow = c(1, 2))
+
+# QQ plot
+# qqnorm(residuals1, main = "Normal Q-Q Plot")
+# qqline(residuals1, col = "red")
+
+# Residuals vs Fitted
+# plot(fitted(YN_ZINB_model), residuals1, 
+#      xlab = "Fitted", ylab = "Residuals",
+#      main = "Residuals vs Fitted", pch = 16, cex = 0.6)
+# abline(h = 0, col = "red", lty = 2)
+# 
+# par(mfrow = c(1, 1))  # reset layout
+
+## 2.2. Zero inflated no interaction -------------------------------------------
+
+# Run model
+# YN_ZINB_model2 <- glmmTMB(occurrences_after ~ cover_change + time_period + 
+#                            offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+#                          zi = ~cover_change + time_period, 
+#                          family = nbinom2,
+#                          data = modeling_data_wide)
+
+# Save model output to file 
+# save(YN_ZINB_model2, file = here::here("data", "models",
+#                                       "YN_model2_zero_inflated_interaction.RData"))
+
+# Check model fit
+# simulationOutput2 <- simulateResiduals(fittedModel = YN_ZINB_model2)
+
+# Plot residual diagnostics
+# plot(simulationOutput2)
+
+## 2.3. Zero inflated - more complex structure ---------------------------------
+
+# Run model
+YN_ZINB_model3 <- glmmTMB(occurrences_after ~ cover_change * time_period +
+                            offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+                          zi = ~cover_change * time_period + (1 | SSBID),
+                          family = nbinom2,
+                          data = modeling_data_wide)
+
+# Save model output to file 
+save(YN_ZINB_model3, file = here::here("data", "models",
+                                       "YN_model3_zero_inflated_interaction.RData"))
+
+# Check model fit
+simulationOutput3 <- simulateResiduals(fittedModel = YN_ZINB_model3)
+
+# Set up file output
+png(here("figures", "YN_model3_DHARMA_validation.png"),
+    width = 12, height = 6, units = "in", res = 300)
+
+# Set up side-by-side layout
+par(mfrow = c(1, 2))
+
+# Create the plots
+plotQQunif(simulationOutput3, testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(simulationOutput3, quantreg = FALSE)
+
+# Close the file
+dev.off()
+
+# Reset layout
+par(mfrow = c(1, 1))
+
+## 2.4. Zero inflated - complex structure + interaction ------------------------
+
+# Run model
+YN_ZINB_model4 <- glmmTMB(occurrences_after ~ cover_change + time_period +
+                            offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+                          zi = ~cover_change * time_period + (1 | SSBID),
+                          family = nbinom2,
+                          data = modeling_data_wide)
+
+# Save model output to file 
+save(YN_ZINB_model4, file = here::here("data", "models",
+                                       "YN_model4_zero_inflated_nointeraction.RData"))
+
+# Compare AIC between Model 3 and Model 4
+AICtab(YN_ZINB_model3, YN_ZINB_model4, base = TRUE)
+# Model3 preffered dAIC = 154
+#                 AIC       dAIC      df
+# YN_ZINB_model3 5649829.7       0.0 15
+# YN_ZINB_model4 5649879.8      50.1 13
+
+
+# Check model fit
+# simulationOutput4 <- simulateResiduals(fittedModel = YN_ZINB_model4)
+
+# Plot residual diagnostics
+# plot(simulationOutput4)
+
+## 2.5. Logged occurrences after + interaction ---------------------------------
+
+# Log transform the occurrences after
+# modeling_data_wide$log_occurrences_after <- log(modeling_data_wide$occurrences_after + 1)
+
+# Run model
+# YN_log_model5 <- glmmTMB(log_occurrences_after ~ cover_change * time_period + 
+#                           offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+#                         family = gaussian,
+#                         data = modeling_data_wide)
+
+# Save model output
+# save(YN_log_model5, file = here::here("data", "models",
+#                                        "YN_model5_logged_interaction.RData"))
+
+# Check model fit
+# simulationOutput5 <- simulateResiduals(fittedModel = YN_log_model5)
+
+# Plot residual diagnostics
+# plot(simulationOutput5)
+
+# Extract residuals
+# residuals <- residuals(YN_log_model5, type = "pearson")
+
+# Create both plots side by side
+# par(mfrow = c(1, 2))
+
+# QQ plot
+# qqnorm(residuals, main = "Normal Q-Q Plot")
+# qqline(residuals, col = "red")
+
+# Residuals vs Fitted
+# plot(fitted(YN_log_model5), residuals, 
+#      xlab = "Fitted", ylab = "Residuals",
+#      main = "Residuals vs Fitted", pch = 16, cex = 0.6)
+# abline(h = 0, col = "red", lty = 2)
+# 
+# par(mfrow = c(1, 1))  # reset layout
+
+## 2.6. Logges occurrences after no interaction --------------------------------
+
+# Run model
+# YN_log_model6 <- glmmTMB(log_occurrences_after ~ cover_change + time_period + 
+#                            offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+#                          family = gaussian,
+#                          data = modeling_data_wide)
+
+# Save model output
+# save(YN_log_model6, file = here::here("data", "models",
+#                                       "YN_model6_logged_nointeraction.RData"))
+
+# Check model fit
+# simulationOutput6 <- simulateResiduals(fittedModel = YN_log_model6)
+
+# Plot residual diagnostics
+# plot(simulationOutput6)
+
+# 3. GAM -----------------------------------------------------------------------
+
+## 3.1. Simple spatial smoother ------------------------------------------------
+
+# Run model
+# YN_gam_model7 <- gam(occurrences_after ~ cover_change * time_period +
+#                        offset(log(occurrences_before + 0.1)) +
+#                        s(x_coord, y_coord, bs = "tp", k = 200),
+#                      family = nb(), method = "REML", 
+#                      data = modeling_data_wide)
+
+# Save model output
+# save(YN_gam_model7, file = here::here("data", "models",
+#                                       "YN_model7_gam_interaction.RData"))
+
+# Check residuals with DHARMa
+# sim_gam <- simulateResiduals(YN_gam_model7, n = 1000)
+# plot(sim_gam)
+# gam.check(YN_gam_model7)
+
+## 3.2. Spatial smoother includes time -----------------------------------------
+
+# Run model
+# YN_gam_model8 <- gam(occurrences_after ~ cover_change * time_period +
+#                        offset(log(occurrences_before + 0.1)) + 
+#                        s(x_coord, y_coord, by = time_period, bs = "tp", k = 150),
+#                      family = nb(), method = "REML", data = modeling_data_wide)
+
+# Save model outpu
+# save(YN_gam_model8, file = here::here("data", "models",
+#                                       "YN_model8_gam_interaction.RData"))
+
+# Check residuals with DHARMa
+# sim_gam2 <- simulateResiduals(YN_gam_model8, n = 1000)
+# plot(sim_gam2)
+# gam.check(YN_gam_model8)
+
+# 4. SUMMARY STATISTICS --------------------------------------------------------
+
+## 4.1. Summary statistics table -----------------------------------------------
+
+# Calculate summary statistics for all periods combined
+all_periods_stats <- modeling_data_wide |>
+  group_by(cover_change) |>
+  summarise(Count = n(),
+            Zeros = sum(occurrences_after == 0),
+            `% Zeros` = round((sum(occurrences_after == 0) / n()) * 100, 1),
+            Median = median(occurrences_after),
+            `75th Percentile` = quantile(occurrences_after, 0.75),
+            `90th Percentile` = quantile(occurrences_after, 0.90),
+            Maximum = max(occurrences_after),
+            .groups = "drop") |>
+  mutate(`Time Period` = "All Periods") |>
+  select(`Time Period`, `Cover Change` = cover_change, Count, Zeros, `% Zeros`, 
+         Median, `75th Percentile`, `90th Percentile`, Maximum)
+
+# Calculate summary statistics for 2000-2006 period
+period_2000_2006_stats <- modeling_data_wide |>
+  filter(time_period == "2000_2006") |>
+  group_by(cover_change) |>
+  summarise(Count = n(),
+            Zeros = sum(occurrences_after == 0),
+            `% Zeros` = round((sum(occurrences_after == 0) / n()) * 100, 1),
+            Median = median(occurrences_after),
+            `75th Percentile` = quantile(occurrences_after, 0.75),
+            `90th Percentile` = quantile(occurrences_after, 0.90),
+            Maximum = max(occurrences_after),
+            .groups = "drop") |>
+  mutate(`Time Period` = "2000-2006") |>
+  select(`Time Period`, `Cover Change` = cover_change, Count, Zeros, `% Zeros`, 
+         Median, `75th Percentile`, `90th Percentile`, Maximum)
+
+# Calculate summary statistics for 2006-2012 period
+period_2006_2012_stats <- modeling_data_wide |>
+  filter(time_period == "2006_2012") |>
+  group_by(cover_change) |>
+  summarise(Count = n(),
+            Zeros = sum(occurrences_after == 0),
+            `% Zeros` = round((sum(occurrences_after == 0) / n()) * 100, 1),
+            Median = median(occurrences_after),
+            `75th Percentile` = quantile(occurrences_after, 0.75),
+            `90th Percentile` = quantile(occurrences_after, 0.90),
+            Maximum = max(occurrences_after),
+            .groups = "drop") |>
+  mutate(`Time Period` = "2006-2012") |>
+  select(`Time Period`, `Cover Change` = cover_change, Count, Zeros, `% Zeros`, 
+         Median, `75th Percentile`, `90th Percentile`, Maximum)
+
+# Calculate summary statistics for 2012-2018 period
+period_2012_2018_stats <- modeling_data_wide |>
+  filter(time_period == "2012_2018") |>
+  group_by(cover_change) |>
+  summarise(Count = n(),
+            Zeros = sum(occurrences_after == 0),
+            `% Zeros` = round((sum(occurrences_after == 0) / n()) * 100, 1),
+            Median = median(occurrences_after),
+            `75th Percentile` = quantile(occurrences_after, 0.75),
+            `90th Percentile` = quantile(occurrences_after, 0.90),
+            Maximum = max(occurrences_after),
+            .groups = "drop") |>
+  mutate(`Time Period` = "2012-2018") |>
+  select(`Time Period`, `Cover Change` = cover_change, Count, Zeros, `% Zeros`, 
+         Median, `75th Percentile`, `90th Percentile`, Maximum)
+
+# Combine all statistics into one table
+summary_table_complete <- bind_rows(all_periods_stats, period_2000_2006_stats,
+                                    period_2006_2012_stats, period_2012_2018_stats) |>
+  arrange(factor(`Time Period`, levels = c("All Periods", "2000_2006", "2006_2012", "2012_2018")),
+          `Cover Change`)
+
+# Print the table
+print(summary_table_complete)
+
+## 4.2. Summary statistics for text --------------------------------------------
+
+# Extract the statistics for "All Periods" from summary table
+all_periods_stats_only <- summary_table_complete |>
+  filter(`Time Period` == "All Periods")
+
+# Extract stats for pixels WITH cover change (Y)
+change_stats <- all_periods_stats_only |> filter(`Cover Change` == "Y")
+cat("Pixels that CHANGED their cover:\n")
+cat("- Total pixels:", format(change_stats$Count, big.mark = ","), "\n")
+cat("- Total occurrences:", format(change_stats$Count * change_stats$Median, big.mark = ","), "* \n")
+cat("- Median:", change_stats$Median, "\n")
+cat("- 75th percentile:", change_stats$`75th Percentile`, "\n") 
+cat("- 90th percentile:", change_stats$`90th Percentile`, "\n\n")
+
+# Extract stats for pixels WITHOUT cover change (N)  
+no_change_stats <- all_periods_stats_only |> filter(`Cover Change` == "N")
+cat("Pixels that did NOT change their cover:\n")
+cat("- Total pixels:", format(no_change_stats$Count, big.mark = ","), "\n")
+cat("- Total occurrences:", format(no_change_stats$Count * no_change_stats$Median, big.mark = ","), "* \n")
+cat("- Median:", no_change_stats$Median, "\n")
+cat("- 75th percentile:", no_change_stats$`75th Percentile`, "\n")
+cat("- 90th percentile:", no_change_stats$`90th Percentile`, "\n\n")
+
+cat("* Note: This is an approximation using median × count. For exact total occurrences, calculate sum directly.\n\n")
+
+# Calculate the exact number of occurrences:
+exact_totals <- modeling_data_wide |>
+  mutate(total_occurrences = occurrences_before + occurrences_after) |>
+  group_by(cover_change) |>
+  summarise(total_pixels = n(),
+            total_occurrences = sum(total_occurrences, na.rm = TRUE),
+            .groups = "drop")
+
+# Display results
+cat("=== EXACT TOTALS ===\n")
+exact_change <- exact_totals |> filter(cover_change == "Y")
+exact_no_change <- exact_totals |> filter(cover_change == "N")
+
+cat("EXACT total occurrences for pixels WITH cover change:", format(exact_change$total_occurrences, big.mark = ","), "\n")
+cat("EXACT total occurrences for pixels WITHOUT cover change:", format(exact_no_change$total_occurrences, big.mark = ","), "\n")
+
+
+# 5. VIOLIN PLOT FIGURES --------------------------------------------------------
+
+# First, create a combined dataset with total occurrences
+modeling_data_for_violin <- modeling_data_wide |>
+  mutate(total_occurrences = occurrences_before + occurrences_after)
+
+## 5.1. Violin plot with log-transformed values --------------------------------
+
+# Create violin plot for occurrences_after (log-transformed)
+p1 <- ggplot(modeling_data_for_violin, 
+             aes(x = time_period, y = total_occurrences + 0.1, 
                  fill = cover_change)) +
   geom_violin(position = position_dodge(width = 0.7)) +
-  # Add points with transparency (alpha) and slight horizontal jitter
-  geom_jitter(position = position_jitterdodge(
-    jitter.width = 0.2,  # Fix amount of horizontal jitter
-    dodge.width = 0.7),  # Match dodge with violins
-    alpha = 0.2,         # Fix transparency
-    size = 1) +          # Fix point size
+  # add points with transparency and jitter
+  geom_jitter(position = position_jitterdodge(jitter.width = 0.2,
+                                              dodge.width = 0.7),
+              alpha = 0.1, size = 0.5) + 
   scale_y_log10() +
-  scale_fill_manual(values = c("N" = "#66c2a5", "Y" = "#fc8d62")) +
+  scale_fill_manual(values = c("N" = "#66c2a5", "Y" = "sienna")) +
+  scale_x_discrete(labels = c("2000_2006" = "2000-2006", 
+                              "2006_2012" = "2006-2012", 
+                              "2012_2018" = "2012-2018")) +
   labs(x = "Time Period",
-       y = "Number of Occurrences (log)",
+       y = "Total Number of Occurrences (log scale)",
        fill = "Cover Change") +
   theme_classic() +
-  theme(axis.text.x = element_text(hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+        axis.text.y = element_text(size = 14),
+        axis.title.x = element_text(size = 16),
+        axis.title.y = element_text(size = 16),
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 14))
 
-# Save figure
-ggsave(here("figures", "occurrences_in_Y_N_cover_change_FigureS1.png"),
-       width=17, height=13)
+## 5.2. Violin plot with original values (zoomed) ------------------------------
 
-
-## 7.2. Violin plot with original values and log-transformed values ------------
-
-# Violin plot with the original data
-p2 <- ggplot(occ_y_n_cover_change_before_after_for_modell, 
-             aes(x = time_period, y = ocurrences_after, 
+# Violin plot with original data, zoomed to see detail
+p2 <- ggplot(modeling_data_for_violin, 
+             aes(x = time_period, y = total_occurrences, 
                  fill = cover_change)) +
   geom_violin(position = position_dodge(width = 0.7)) +
-  scale_fill_manual(values = c("N" = "#66c2a5", "Y" = "#fc8d62")) +
-  coord_cartesian(ylim = c(0, 100)) +  # Set the y-axis limit to 100
+  scale_fill_manual(values = c("N" = "#66c2a5", "Y" = "sienna")) +
+  scale_x_discrete(labels = c("2000_2006" = "2000-2006", 
+                              "2006_2012" = "2006-2012", 
+                              "2012_2018" = "2012-2018")) +
   labs(x = "Time Period",
-       y = "Number of Occurrences",
-       title = "Zoomed to values < 100") +
+       y = "Total Number of Occurrences",
+       fill = "Cover Change") +
   theme_classic() +
-  theme(axis.text.x = element_text(hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+        axis.text.y = element_text(size = 14),
+        axis.title.x = element_text(size = 16),
+        axis.title.y = element_text(size = 16),
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 14))
 
-# Combine the two plots
-plot_grid(p1, p2, labels = c('a)', 'b)'))
+# Combine plots using cowplot
+combined_plot <- plot_grid(p2, p1, labels = c('A)', 'B)'), ncol = 2)
 
-# Save figure
-ggsave(here("figures", "occurrences_in_Y_N_cover_change_FigureS2.png"),
-       width=17, height=13)
+# Save combined figure
+ggsave(here("figures", "SupplementaryFigure5_occs_in_YN_cover_change.png"),
+       plot = combined_plot, width = 16, height = 8, dpi = 300)
+
+# 6. MODEL SUMMARY REPORTING FOR MANUSCRIPT ------------------------------------
+
+# Extract the coefficient for cover change
+cover_change_coef <- -20.07639  # Get it from the table
+
+# Calculate the Incidence Rate Ratio (IRR)
+irr <- exp(cover_change_coef)
+cat("Incidence Rate Ratio (IRR):", round(irr, 3), "\n")
+
+# Calculate percentage change
+percent_change <- (irr - 1) * 100
+cat("Percentage change:", round(percent_change, 1), "%\n")
+
+# Calculate confidence intervals using standard error from the model summary
+se <- 56.71044
+ci_lower <- exp(cover_change_coef - 1.96 * se)
+ci_upper <- exp(cover_change_coef + 1.96 * se)
+cat("95% CI for IRR:", round(ci_lower, 3), "to", round(ci_upper, 3), "\n")
 
 # END OF SCRIPT ----------------------------------------------------------------
