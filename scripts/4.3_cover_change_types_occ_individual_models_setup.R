@@ -87,8 +87,6 @@ print(urban_data_check) # too few observations of change compared to those that 
 
 # 3. MODELS FOR COMPLEX AGRICULTURAL -------------------------------------------
 
-cat("\nRunning models for COMPLEX AGRICULTURAL land cover...\n")
-
 # Filter for complex agricultural starting land cover
 complex_agri_data <- modeling_data_wide |>
   filter(land_cover_start_name == "complex_agri")
@@ -109,12 +107,6 @@ complex_agri_data$transition_type <- relevel(complex_agri_data$transition_type,
 cat("Complex agri data: ", nrow(complex_agri_data), " observations\n")
 cat("Complex agri transitions: ", paste(levels(complex_agri_data$transition_type), collapse = ", "), "\n")
 
-# Fit negative binomial model first to test for zero-inflation
-complex_agri_nb_test <- glmmTMB(occurrences_after ~ transition_type * time_period +
-                                  offset(log(occurrences_before + 0.1)) + (1 | SSBID),
-                                family = nbinom2,
-                                data = complex_agri_data)
-
 ## 3.1. Complex Agri Model 1: With Interaction ---------------------------------
 
 # Run model 
@@ -124,8 +116,7 @@ complex_agri_model1_interaction <- glmmTMB(occurrences_after ~ transition_type *
                                 data = complex_agri_data)
 
 # Save output
-save(complex_agri_model1_interaction, 
-     here("data", "models","complex_agri_model1__interaction.RData"))
+save(complex_agri_model1_interaction, file = here("data", "models","complex_agri_model1_interaction.RData"))
 
 ## 3.2. Complex Agri Model 2: No Interaction -----------------------------------
 
@@ -137,12 +128,40 @@ complex_agri_model2_no_interaction <- glmmTMB(occurrences_after ~ transition_typ
 
 # Save output
 save(complex_agri_model2_no_interaction, 
-     here("data", "models","complex_agri_model2_no_interaction.RData"))
+     file = here("data", "models","complex_agri_model2_no_interaction.RData"))
+
+## 3.3. Compare and validate models --------------------------------------------
 
 # Compare models
 AICtab(complex_agri_model1_interaction, 
        complex_agri_model2_no_interaction, base = TRUE)
 
+# AIC      dAIC     df
+# complex_agri_model1_interaction    617198.0      0.0 16
+# complex_agri_model2_no_interaction 617204.5      6.5 9  - interaction model preferred
+
+# Check model with DHARMa
+cac_simulation <- simulateResiduals(complex_agri_model2_no_interaction)
+
+# Check DHARMa output
+plot(cac_simulation)
+
+# Set up file output
+png(here("figures", "FigureS10_CAC_DHARMA_validation.png"),
+    width = 12, height = 6, units = "in", res = 300)
+
+# Set up side-by-side layout
+par(mfrow = c(1, 2))
+
+# Create the plots
+plotQQunif(cac_simulation, testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(cac_simulation, quantreg = FALSE)
+
+# Close the file
+dev.off()
+
+# Reset layout
+par(mfrow = c(1, 1))
 
 # 4. MODELS FOR AGRICULTURE WITH SIGNIFICANT VEGETATION ------------------------
 
@@ -156,16 +175,22 @@ agri_sig_veg_data_check <- agri_sig_veg_data |>
   spread(time_period, n, fill = 0)
 
 # Check output
-print(agri_sig_veg_data_check) # looks good enough
+print(agri_sig_veg_data_check) 
  
 # Set reference level to "no change" (agri_sig_veg to agri_sig_veg)
 agri_sig_veg_data$transition_type <- relevel(agri_sig_veg_data$transition_type, 
                                              ref = "agri_sig_veg_to_agri_sig_veg")
 
-# Check number of observations
-cat("Agri sig veg data: ", nrow(agri_sig_veg_data), " observations\n")
-cat("Agri sig veg transitions: ", paste(levels(agri_sig_veg_data$transition_type), collapse = ", "), "\n")
+# Remove transitions with too few observations and very small sample sizes
+agri_sig_veg_data_filtered <- agri_sig_veg_data |>
+  group_by(transition_type) |>
+  filter(n() >= 25) |>
+  ungroup() |>
+  droplevels()
 
+# Check number of observations
+cat("Agri sig veg data: ", nrow(agri_sig_veg_data_filtered), " observations\n")
+cat("Agri sig veg transitions: ", paste(levels(agri_sig_veg_data_filtered$transition_type), collapse = ", "), "\n")
 
 ## 4.1. Agri Sig Veg Model 1: With Interaction ---------------------------------
 
@@ -173,7 +198,7 @@ cat("Agri sig veg transitions: ", paste(levels(agri_sig_veg_data$transition_type
 agri_sig_veg_model1_interaction <- glmmTMB(occurrences_after ~ transition_type * time_period +
                                   offset(log(occurrences_before + 0.1)) + (1 | SSBID),
                                 family = nbinom2,
-                                data = agri_sig_veg_data)
+                                data = agri_sig_veg_data_filtered)
 
 # Save output
 save(agri_sig_veg_model1_interaction, file = here("data", "models",
@@ -185,14 +210,47 @@ save(agri_sig_veg_model1_interaction, file = here("data", "models",
 agri_sig_veg_model2_no_interaction <- glmmTMB(occurrences_after ~ transition_type + time_period +
                                              offset(log(occurrences_before + 0.1)) + (1 | SSBID),
                                            family = nbinom2,
-                                           data = agri_sig_veg_data)
+                                           data = agri_sig_veg_data_filtered)
 
 # Save output
 save(agri_sig_veg_model2_no_interaction, file = here("data", "models",
                                                      "agri_sig_veg_model2_no_interaction.RData"))
 
+## 4.3. Compare and validate models --------------------------------------------
+
 # Compare models
-AICtab(agri_sig_veg_model1_interaction, agri_sig_veg_model2_no_interaction, base = TRUE)
+AICtab(agri_sig_veg_model1_interaction, 
+       agri_sig_veg_model2_no_interaction, base = TRUE)
+
+# AIC      dAIC     df
+# agri_sig_veg_model1_interaction    781995.2      0.0 14
+# agri_sig_veg_model2_no_interaction 782013.6     18.5 8 
+
+# Check output
+summary(agri_sig_veg_model1_interaction)
+
+# Check model with DHARMa
+asnv_simulation <- simulateResiduals(agri_sig_veg_model1_interaction)
+
+# Check DHARMa output
+plot(asnv_simulation)
+
+# Set up file output
+png(here("figures", "FigureS11_ASNV_DHARMA_validation.png"),
+    width = 12, height = 6, units = "in", res = 300)
+
+# Set up side-by-side layout
+par(mfrow = c(1, 2))
+
+# Create the plots
+plotQQunif(asnv_simulation, testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(asnv_simulation, quantreg = FALSE)
+
+# Close the file
+dev.off()
+
+# Reset layout
+par(mfrow = c(1, 1))
 
 # 5. MODELS FOR FORESTS --------------------------------------------------------
 
@@ -206,23 +264,20 @@ forests_data_check <- forests_data |>
   spread(time_period, n, fill = 0)
 
 # Check output
-print(forests_data_check) # looks good enough
+print(forests_data_check) # everything except for F -> SVA areas looks ok
 
 # Set reference level to "no change" (forests to forests)
 forests_data$transition_type <- relevel(forests_data$transition_type, 
                                         ref = "forests_to_forests")
 
+# Remove forests_to_sparse_veg transition - 
+forests_data_filtered <- forests_data |>
+  filter(transition_type != "forests_to_sparse_veg") |>
+  droplevels()
+
 # Check observations
-cat("Forests data: ", nrow(forests_data), " observations\n")
-cat("Forests transitions: ", paste(levels(forests_data$transition_type), collapse = ", "), "\n")
-
-
-# Fit simple negative binomial model first to test for zero-inflation
-forests_nb_test <- glmmTMB(occurrences_after ~ transition_type * time_period +
-                             offset(log(occurrences_before + 0.1)) + (1 | SSBID),
-                           family = nbinom2,
-                           data = forests_data)
-
+cat("Forests data: ", nrow(forests_data_filtered), " observations\n")
+cat("Forests transitions: ", paste(levels(forests_data_filtered$transition_type), collapse = ", "), "\n")
 
 ## 5.1. Forests Model 1: With Interaction ---------------------------------------
 
@@ -230,7 +285,7 @@ forests_nb_test <- glmmTMB(occurrences_after ~ transition_type * time_period +
 forests_model1_interaction <- glmmTMB(occurrences_after ~ transition_type * time_period +
                              offset(log(occurrences_before + 0.1)) + (1 | SSBID),
                            family = nbinom2,
-                           data = forests_data)
+                           data = forests_data_filtered)
 
 # Save output
 save(forests_model1_interaction, file = here("data", "models", 
@@ -242,14 +297,47 @@ save(forests_model1_interaction, file = here("data", "models",
 forests_model2_no_interaction <- glmmTMB(occurrences_after ~ transition_type + time_period +
                                         offset(log(occurrences_before + 0.1)) + (1 | SSBID),
                                       family = nbinom2,
-                                      data = forests_data)
+                                      data = forests_data_filtered)
 
 # Save output
 save(forests_model2_no_interaction, file = here("data", "models",
                                                 "forests_model2_no_interaction.RData"))
 
+## 5.3. Compare and validate models --------------------------------------------
+
 # Compare models
-AICtab(forests_model1_interaction, forests_model2_no_interaction, base = TRUE)
+AICtab(forests_model1_interaction, 
+       forests_model2_no_interaction, base = TRUE)
+
+# AIC      dAIC     df
+# forests_model1_interaction    2619915.5       0.0 20
+# forests_model2_no_interaction 2619939.3      23.7 10
+
+# Check output
+summary(forests_model1_interaction)
+
+# Check model with DHARMa
+forest_simulation <- simulateResiduals(forests_model1_interaction)
+
+# Check DHARMa output
+plot(forest_simulation)
+
+# Set up file output
+png(here("figures", "FigureS12_Forest_DHARMA_validation.png"),
+    width = 12, height = 6, units = "in", res = 300)
+
+# Set up side-by-side layout
+par(mfrow = c(1, 2))
+
+# Create the plots
+plotQQunif(forest_simulation, testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(forest_simulation, quantreg = FALSE)
+
+# Close the file
+dev.off()
+
+# Reset layout
+par(mfrow = c(1, 1))
 
 # 6. MODELS FOR MOORS, HEATHLAND AND GRASSLAND ---------------------------------
 
@@ -296,8 +384,43 @@ moors_model2_no_interaction <- glmmTMB(occurrences_after ~ transition_type + tim
 # Save output
 save(moors_model2_no_interaction, file = here("data", "models","moors_model2_no_interaction.RData"))
 
+## 6.3. Compare and validate models --------------------------------------------
+
 # Compare models
-AICtab(moors_model1_interaction, moors_model2_no_interaction, base = TRUE)
+AICtab(moors_model1_interaction, 
+       moors_model2_no_interaction, base = TRUE)
+
+# AIC      dAIC     df
+# moors_model1_interaction    374322.4      0.0 21
+# moors_model2_no_interaction 374323.6      1.2 11
+
+# Check output
+summary(moors_model1_interaction) # major model failure
+summary(moors_model2_no_interaction) # looks much better, lack of interaction term means the model pools all time periods together
+# and is better able to estimate effects, also dAIC is only 1.2
+
+# Check model with DHARMa
+moors_simulation <- simulateResiduals(moors_model2_no_interaction)
+
+# Check DHARMa output
+plot(moors_simulation)
+
+# Set up file output
+png(here("figures", "FigureS13_MHG_DHARMA_validation.png"),
+    width = 12, height = 6, units = "in", res = 300)
+
+# Set up side-by-side layout
+par(mfrow = c(1, 2))
+
+# Create the plots
+plotQQunif(moors_simulation, testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(moors_simulation, quantreg = FALSE)
+
+# Close the file
+dev.off()
+
+# Reset layout
+par(mfrow = c(1, 1))
 
 # 7. MODELS FOR TRANSITIONAL WOODLAND SHRUB ------------------------------------
 
@@ -317,9 +440,16 @@ print(woodland_data_check) # only forests look ok
 woodland_data$transition_type <- relevel(woodland_data$transition_type, 
                                          ref = "woodland_shrub_to_woodland_shrub")
 
-# Chekc the number of observations
-cat("Woodland data: ", nrow(woodland_data), " observations\n")
-cat("Woodland transitions: ", paste(levels(woodland_data$transition_type), collapse = ", "), "\n")
+# Remove transitions with too few observations
+woodland_shrub_data_filtered <- woodland_data |>
+  filter(transition_type %in% c("woodland_shrub_to_woodland_shrub",
+                                "woodland_shrub_to_forests", 
+                                "woodland_shrub_to_urban")) |>
+  droplevels()
+
+# Check the number of observations
+cat("Woodland data: ", nrow(woodland_shrub_data_filtered), " observations\n")
+cat("Woodland transitions: ", paste(levels(woodland_shrub_data_filtered$transition_type), collapse = ", "), "\n")
 
 ## 7.1. Woodland Model 1: With Interaction --------------------------------------
 
@@ -327,7 +457,7 @@ cat("Woodland transitions: ", paste(levels(woodland_data$transition_type), colla
 woodland_model1_interaction <- glmmTMB(occurrences_after ~ transition_type * time_period +
                               offset(log(occurrences_before + 0.1)) + (1 | SSBID),
                             family = nbinom2,
-                            data = woodland_data)
+                            data = woodland_shrub_data_filtered)
 
 # Save model
 save(woodland_model1_interaction, file = here("data", "models","woodland_model1_interaction.RData"))
@@ -338,14 +468,47 @@ save(woodland_model1_interaction, file = here("data", "models","woodland_model1_
 woodland_model2_no_interaction <- glmmTMB(occurrences_after ~ transition_type + time_period +
                                          offset(log(occurrences_before + 0.1)) + (1 | SSBID),
                                        family = nbinom2,
-                                       data = woodland_data)
+                                       data = woodland_shrub_data_filtered)
 
 # Save model
 save(woodland_model2_no_interaction, file = here("data", "models","woodland_model2_no_interaction.RData"))
 
 
+## 7.3. Compare and validate models --------------------------------------------
+
 # Compare models
-AICtab(woodland_model1_interaction, woodland_model2_no_interaction, base = TRUE)
+AICtab(woodland_model1_interaction, 
+       woodland_model2_no_interaction, base = TRUE)
+
+# AIC      dAIC     df
+# woodland_model2_no_interaction 127692.8      0.0 7 
+# woodland_model1_interaction    127762.6     69.8 19
+
+# Check output
+summary(woodland_model2_no_interaction)
+
+# Check model with DHARMa
+tws_simulation <- simulateResiduals(woodland_model2_no_interaction)
+
+# Check DHARMa output
+plot(tws_simulation)
+
+# Set up file output
+png(here("figures", "FigureS13_TWS_DHARMA_validation.png"),
+    width = 12, height = 6, units = "in", res = 300)
+
+# Set up side-by-side layout
+par(mfrow = c(1, 2))
+
+# Create the plots
+plotQQunif(tws_simulation, testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(tws_simulation, quantreg = FALSE)
+
+# Close the file
+dev.off()
+
+# Reset layout
+par(mfrow = c(1, 1))
 
 # 8. MODELS FOR SPARSE VEGETATION -----------------------------------------------
 
@@ -365,9 +528,16 @@ print(sparse_data_check) # only urban look ok
 sparse_data$transition_type <- relevel(sparse_data$transition_type, 
                                        ref = "sparse_veg_to_sparse_veg")
 
+# Remove transitions with too few observations
+sparse_data_filtered <- sparse_data |>
+  filter(transition_type %in% c("sparse_veg_to_sparse_veg",
+                                "sparse_veg_to_agri_sig_veg", 
+                                "sparse_veg_to_urban")) |>
+  droplevels()
+
 # Check number of observations
-cat("Sparse data: ", nrow(sparse_data), " observations\n")
-cat("Sparse transitions: ", paste(levels(sparse_data$transition_type), collapse = ", "), "\n")
+cat("Sparse data: ", nrow(sparse_data_filtered), " observations\n")
+cat("Sparse transitions: ", paste(levels(sparse_data_filtered$transition_type), collapse = ", "), "\n")
 
 ## 8.1. Sparse Model 1: With Interaction ----------------------------------------
 
@@ -375,7 +545,7 @@ cat("Sparse transitions: ", paste(levels(sparse_data$transition_type), collapse 
 sparse_model1_interaction <- glmmTMB(occurrences_after ~ transition_type * time_period +
                             offset(log(occurrences_before + 0.1)) + (1 | SSBID),
                           family = nbinom2,
-                          data = sparse_data)
+                          data = sparse_data_filtered)
 
 # Save model
 save(sparse_model1_interaction, file = here("data", "models",
@@ -388,14 +558,46 @@ save(sparse_model1_interaction, file = here("data", "models",
 sparse_model2_no_interaction <- glmmTMB(occurrences_after ~ transition_type + time_period +
                                        offset(log(occurrences_before + 0.1)) + (1 | SSBID),
                                      family = nbinom2,
-                                     data = sparse_data)
+                                     data = sparse_data_filtered)
 
 # Save model
 save(sparse_model2_no_interaction, file = here("data", "models",
                                             "sparse_model2_no_interaction.RData"))
 
+## 8.3. Compare and validate models --------------------------------------------
 
 # Compare models
-AICtab(sparse_model1_interaction, sparse_model2_no_interaction, base = TRUE)
+AICtab(sparse_model1_interaction, 
+       sparse_model2_no_interaction, base = TRUE)
+
+# AIC      dAIC     df
+#     335466.9      0.0 11
+# sparse_model2_no_interaction 335467.9      1.0 7
+
+# Check output
+summary(sparse_model1_interaction)
+
+# Check model with DHARMa
+sva_simulation <- simulateResiduals(sparse_model1_interaction)
+
+# Check DHARMa output
+plot(sva_simulation)
+
+# Set up file output
+png(here("figures", "FigureS14_SVA_DHARMA_validation.png"),
+    width = 12, height = 6, units = "in", res = 300)
+
+# Set up side-by-side layout
+par(mfrow = c(1, 2))
+
+# Create the plots
+plotQQunif(sva_simulation, testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(sva_simulation, quantreg = FALSE)
+
+# Close the file
+dev.off()
+
+# Reset layout
+par(mfrow = c(1, 1))
 
 # END OF SCRIPT ----------------------------------------------------------------
