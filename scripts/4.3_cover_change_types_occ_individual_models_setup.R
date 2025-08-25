@@ -744,9 +744,10 @@ summary_lc_types <- bind_rows(by_period, all_periods) |>
 write_csv(summary_lc_types, 
           here("figures", "TableS11_occs_land_in_cover_change_types.csv"))
 
-## 11. MODEL SUMMARY REPORTING FOR MANUSCRIPT ----------------------------------
+# 11. MODEL SUMMARY REPORTING FOR MANUSCRIPT -----------------------------------
+
 # Extract the coefficient for cover change
-cover_change_coef <- -1.25606  # Get it from the table
+cover_change_coef <- 1.48260  # Get it from the table
 
 # Calculate the Incidence Rate Ratio (IRR)
 irr <- exp(cover_change_coef)
@@ -757,7 +758,7 @@ percent_change <- (irr - 1) * 100
 cat("Percentage change:", round(percent_change, 1), "%\n")
 
 # Calculate confidence intervals using standard error from the model summary
-se <- 0.01004
+se <- 0.01522
 ci_lower <- exp(cover_change_coef - 1.96 * se)
 ci_upper <- exp(cover_change_coef + 1.96 * se)
 cat("95% CI for IRR:", round(ci_lower, 3), "to", round(ci_upper, 3), "\n")
