@@ -173,10 +173,11 @@ customize_sankey <- function(sankey, label_text) {
 }
 
 # 9. FUNCTION TO EXTRACT MODEL SUMMARIES TO DATAFRAME --------------------------
-extract_summary_as_df <- function(model) {
+extract_summary_as_df <- function(model, model_type = "transition") {
   model_summary <- summary(model)
   coefs <- as.data.frame(model_summary$coefficients$cond)  
-  coefs <- coefs |> rownames_to_column(var = "term")  
+  coefs <- coefs %>% rownames_to_column(var = "term")
+  coefs$model_type <- model_type  # add model type identifier
   return(coefs)
 }
 
