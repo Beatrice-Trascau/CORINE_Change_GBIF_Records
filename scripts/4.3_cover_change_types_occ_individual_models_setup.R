@@ -83,7 +83,45 @@ urban_data_check <- urban_data |>
   spread(time_period, n, fill = 0)
 
 # Check output
-print(urban_data_check) # too few observations of change compared to those that do not change - choosing to abandon the models
+print(urban_data_check) 
+# too few observations of change from Urban to be able to include it in a model
+
+# Run model with just time
+urban_temporal_model <- glmmTMB(occurrences_after ~ time_period +
+                                  offset(log(occurrences_before + 0.1)) + (1 | SSBID),
+                                family = nbinom2,  # or zi if needed
+                                data = urban_data)
+
+# Save model output
+save(urban_temporal_model, 
+     file = here("data", "models","urban_model1_time.RData"))
+
+# Check model output
+summary(urban_temporal_model)
+
+# Check model fit
+urban_zi_test <- simulateResiduals(urban_temporal_model)
+zi_result <- testZeroInflation(urban_zi_test) # fewer 0s than expected
+
+# Plot DHARMa output
+plot(urban_zi_test)
+
+# Set up file output
+png(here("figures", "FigureS10_UF_DHARMA_validation.png"),
+    width = 12, height = 6, units = "in", res = 300)
+
+# Set up side-by-side layout
+par(mfrow = c(1, 2))
+
+# Create the plots
+plotQQunif(urban_zi_test, testUniformity = FALSE, testOutliers = FALSE, testDispersion = FALSE)
+plotResiduals(urban_zi_test, quantreg = FALSE)
+
+# Close the file
+dev.off()
+
+# Reset layout
+par(mfrow = c(1, 1))
 
 # 3. MODELS FOR COMPLEX AGRICULTURAL -------------------------------------------
 
@@ -147,7 +185,7 @@ cac_simulation <- simulateResiduals(complex_agri_model2_no_interaction)
 plot(cac_simulation)
 
 # Set up file output
-png(here("figures", "FigureS10_CAC_DHARMA_validation.png"),
+png(here("figures", "FigureS11_CAC_DHARMA_validation.png"),
     width = 12, height = 6, units = "in", res = 300)
 
 # Set up side-by-side layout
@@ -236,7 +274,7 @@ asnv_simulation <- simulateResiduals(agri_sig_veg_model1_interaction)
 plot(asnv_simulation)
 
 # Set up file output
-png(here("figures", "FigureS11_ASNV_DHARMA_validation.png"),
+png(here("figures", "FigureS12_ASNV_DHARMA_validation.png"),
     width = 12, height = 6, units = "in", res = 300)
 
 # Set up side-by-side layout
@@ -323,7 +361,7 @@ forest_simulation <- simulateResiduals(forests_model1_interaction)
 plot(forest_simulation)
 
 # Set up file output
-png(here("figures", "FigureS12_Forest_DHARMA_validation.png"),
+png(here("figures", "FigureS13_Forest_DHARMA_validation.png"),
     width = 12, height = 6, units = "in", res = 300)
 
 # Set up side-by-side layout
@@ -406,7 +444,7 @@ moors_simulation <- simulateResiduals(moors_model2_no_interaction)
 plot(moors_simulation)
 
 # Set up file output
-png(here("figures", "FigureS13_MHG_DHARMA_validation.png"),
+png(here("figures", "FigureS14_MHG_DHARMA_validation.png"),
     width = 12, height = 6, units = "in", res = 300)
 
 # Set up side-by-side layout
@@ -494,7 +532,7 @@ tws_simulation <- simulateResiduals(woodland_model2_no_interaction)
 plot(tws_simulation)
 
 # Set up file output
-png(here("figures", "FigureS13_TWS_DHARMA_validation.png"),
+png(here("figures", "FigureS15_TWS_DHARMA_validation.png"),
     width = 12, height = 6, units = "in", res = 300)
 
 # Set up side-by-side layout
@@ -584,7 +622,7 @@ sva_simulation <- simulateResiduals(sparse_model1_interaction)
 plot(sva_simulation)
 
 # Set up file output
-png(here("figures", "FigureS14_SVA_DHARMA_validation.png"),
+png(here("figures", "FigureS16_SVA_DHARMA_validation.png"),
     width = 12, height = 6, units = "in", res = 300)
 
 # Set up side-by-side layout
@@ -599,5 +637,129 @@ dev.off()
 
 # Reset layout
 par(mfrow = c(1, 1))
+
+# 9. SUPPLEMENTARY FIGURE - VIOLINS --------------------------------------------
+
+# Create clean labels for facet order
+lc_pretty <- c("urban" = "Urban fabric", "complex_agri" = "Complex agricultural",
+               "agri_sig_veg" = "Agriculture w/ significant vegetation",
+               "forests" = "Forests", 
+               "moors_heath_grass" = "Moors, heath & grassland",
+               "woodland_shrub" = "Transitional woodland/shrub",
+               "sparse_veg" = "Sparse vegetation")
+
+# Create the panel order we want
+cover_order <- unname(lc_pretty)
+
+# Prepare dataframe for plotting
+plot_df <- modeling_data_wide |>
+  mutate(total_occurrences = occurrences_before + occurrences_after,
+         time_period = forcats::fct_recode(time_period, 
+                                           `2000-2006` = "2000_2006",
+                                           `2006-2012` = "2006_2012",
+                                           `2012-2018` = "2012_2018"),
+         initial_cover = forcats::fct_relabel(land_cover_start_name, ~ lc_pretty[.x]))
+
+# Intialise list of plot
+plot_list <- list()
+available_covers <- intersect(cover_order, unique(plot_df$initial_cover))
+
+# Loop to create violin plots for each cover category
+for (cover in available_covers) {
+  p <- plot_df |>
+    filter(initial_cover == cover) |>
+    ggplot(aes(x = time_period, y = total_occurrences + 0.1)) +
+    geom_violin(fill = "#66c2a5", color = NA, trim = TRUE) +
+    geom_jitter(width = 0.15, height = 0, alpha = 0.08, size = 0.4) +
+    scale_y_log10(breaks = scales::log_breaks(),
+                  labels = scales::label_number(big.mark = ",", trim = TRUE)) +
+    labs(x = "Time Period", y = "Total Occurrences (log)") +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 14),
+          axis.text.y = element_text(size = 12),
+          axis.title.x = element_text(size = 13),
+          axis.title.y = element_text(size = 11))
+  plot_list[[cover]] <- p
+}
+
+# Create labels for plot
+labels_panels <- c("a)", "b)", "c)", "d)", "e)", "f)", "g)")[seq_along(plot_list)]
+
+# Combine panels
+combined_violins_change_types <- plot_grid(plotlist = plot_list[available_covers],
+                                           labels = labels_panels,
+                                           ncol = 3, align = "hv")
+
+# Save plot
+ggsave(here("figures", "FigureS9_occs_in_cover_change_types.png"),
+       plot = combined_violins_change_types,
+       width = 16, height = 10, dpi = 300)
+
+# 10. SUPPLEMENTARY TABLE - SUMMARY STATISTICS ---------------------------------
+
+# Re-format dataframe to fit for the table
+tbl_df <- modeling_data_wide |>
+  mutate(total_occurrences = occurrences_before + occurrences_after,
+         time_period = forcats::fct_recode(time_period,
+                                           `2000-2006` = "2000_2006",
+                                           `2006-2012` = "2006_2012",
+                                           `2012-2018` = "2012_2018"),
+         initial_cover = recode(as.character(land_cover_start_name), !!!lc_pretty, .default = as.character(land_cover_start_name)),
+         end_cover = recode(as.character(land_cover_end_name),   !!!lc_pretty, .default = as.character(land_cover_end_name)))
+
+# Create summary statistics per period, intial land cover and end land cover
+by_period <- tbl_df |>
+  group_by(initial_cover, end_cover, time_period) |>
+  summarise(Count = n(),
+            Zeros = sum(total_occurrences == 0, na.rm = TRUE),
+            Percent_zeros = round(100 * Zeros / Count, 1),
+            Total_occurrences = sum(total_occurrences, na.rm = TRUE),
+            Median = stats::median(total_occurrences, na.rm = TRUE),
+            Pct_75 = as.numeric(stats::quantile(total_occurrences, 0.75, na.rm = TRUE)),
+            Pct_90 = as.numeric(stats::quantile(total_occurrences, 0.90, na.rm = TRUE)),
+            Maximum = max(total_occurrences, na.rm = TRUE),
+            .groups = "drop")
+
+# Summary statistics for all periods
+all_periods <- tbl_df |>
+  group_by(initial_cover, end_cover) |>
+  summarise(time_period = "All periods",
+            Count = dplyr::n(),
+            Zeros = sum(total_occurrences == 0, na.rm = TRUE),
+            Percent_zeros = round(100 * Zeros / Count, 1),
+            Total_occurrences = sum(total_occurrences, na.rm = TRUE),
+            Median = stats::median(total_occurrences, na.rm = TRUE),
+            Pct_75 = quantile(occurrences_after, 0.75),
+            Pct_90 = quantile(occurrences_after, 0.90),
+            Maximum = max(total_occurrences, na.rm = TRUE),
+            .groups = "drop")
+
+# Combine and order the tables
+summary_lc_types <- bind_rows(by_period, all_periods) |>
+  mutate(time_period = factor(time_period, 
+                              levels = c("All periods","2000-2006","2006-2012","2012-2018"))) |>
+  arrange(initial_cover, end_cover, time_period)
+
+# Save as csv
+write_csv(summary_lc_types, 
+          here("figures", "TableS11_occs_land_in_cover_change_types.csv"))
+
+## 11. MODEL SUMMARY REPORTING FOR MANUSCRIPT ----------------------------------
+# Extract the coefficient for cover change
+cover_change_coef <- -1.25606  # Get it from the table
+
+# Calculate the Incidence Rate Ratio (IRR)
+irr <- exp(cover_change_coef)
+cat("Incidence Rate Ratio (IRR):", round(irr, 3), "\n")
+
+# Calculate percentage change
+percent_change <- (irr - 1) * 100
+cat("Percentage change:", round(percent_change, 1), "%\n")
+
+# Calculate confidence intervals using standard error from the model summary
+se <- 0.01004
+ci_lower <- exp(cover_change_coef - 1.96 * se)
+ci_upper <- exp(cover_change_coef + 1.96 * se)
+cat("95% CI for IRR:", round(ci_lower, 3), "to", round(ci_upper, 3), "\n")
 
 # END OF SCRIPT ----------------------------------------------------------------
