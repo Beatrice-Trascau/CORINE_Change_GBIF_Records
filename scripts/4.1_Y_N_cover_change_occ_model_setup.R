@@ -5,29 +5,6 @@
 # of land cover change (Y/N) on the number of occurrences in a pixel
 ##----------------------------------------------------------------------------##
 
-# Define function
-install_load_package <- function(x) {
-  if (!require(x, character.only = TRUE)) {
-    install.packages(x, repos = "http://cran.us.r-project.org")
-  }
-  require(x, character.only = TRUE)
-}
-
-# Define list of packages
-package_vec <- c("here", "terra", "sf", "geodata", "mapview",
-                 "tidyverse", "dplyr", "ggplot2", "ggalluvial",
-                 "networkD3", "gt", "cowplot", "data.table",
-                 "tidyterra", "patchwork", "styler", "scales",
-                 "plotly", "lme4", "DHARMa", "glmmTMB", "mgcv",
-                 "tidyterra", "ggspatial", "htmlwidgets",
-                 "htmltools", "patchwork", "webshot2",
-                 "rgbif", "CoordinateCleaner", "DHARMa",
-                 "writexl", "bbmle", "kableExtra", "googledrive") # specify packages
-
-# Execute the function
-sapply(package_vec, install_load_package)
-
-
 # 1. LOAD AND PREPARE DATA FOR ANALYSIS ----------------------------------------
 
 # Load data
