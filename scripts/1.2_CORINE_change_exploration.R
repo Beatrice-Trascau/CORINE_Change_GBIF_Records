@@ -148,12 +148,12 @@ all_years_changes <- plot_grid(change_2000.2006, plots[[1]],
                                label_y = 0.7)
 
 # Save to file as .png
-# ggsave(here("figures", "cover_change_all_periods_Figure1.png"),
-#        width=17, height=13)
+ggsave(here("figures", "cover_change_all_periods_Figure1.png"),
+       width=17, height=13)
 
 # Save to file as .svg
-# ggsave(here("figures", "cover_change_all_periods_Figure1.svg"),
-#        width=17, height=13)
+ggsave(here("figures", "cover_change_all_periods_Figure1.svg"),
+       width=17, height=13)
 
 
 # 3. FIGURE 2 - BARPLOTS COUNTING THE TYPE OF TRANSITIONS FOR ALL YEARS --------
@@ -342,22 +342,19 @@ intens_extens_transitions <- ggplot(intens_extens_gain_loss_all_years,
                                     aes(x = focus, y = scaled_count,
                                               fill = transition_meaning))+
   geom_bar(stat="identity", position="stack", color = NA)+
-  scale_y_continuous(
-    name = bquote("Area changes"~("km"^2)),
-    sec.axis = sec_axis(~ . * scaling_factor, name = bquote("Area changes"~("km"^2)))
-  )+
+  scale_y_continuous(name = bquote("Area changes"~("km"^2)),
+                     sec.axis = sec_axis(~ . * scaling_factor, name = bquote("Area changes"~("km"^2))))+
   xlab("Land Cover Classes")+
   scale_fill_manual(values = c("lightgreen", "sienna"),
                     name = "Transition Type",
                     labels = c("Extensification", "Intensification"))+
-  scale_x_discrete(
-    limits = c("Agriculture & Vegetation", "Complex Agriculture",
-               "Moors, Heath & Grass", "Sparse Vegetation",
-               "Urban Fabric", "Forests",
-               "Transitional Woodland Shrub"),
-    labels = c("Agriculture & Vegetation", "Complex Agriculture",
-               "Moors, Heathland & Grassland", "Sparse Vegetation",
-               "Urban Fabric", "Forests", "Transitional Woodland Shrub")) +
+  scale_x_discrete(limits = c("Agriculture & Vegetation", "Complex Agriculture",
+                              "Moors, Heath & Grass", "Sparse Vegetation",
+                              "Urban Fabric", "Forests",
+                              "Transitional Woodland Shrub"),
+                   labels = c("Agriculture & Vegetation", "Complex Agriculture",
+                              "Moors, Heathland & Grassland", "Sparse Vegetation",
+                              "Urban Fabric", "Forests", "Transitional Woodland Shrub")) +
   geom_hline(yintercept = 0) +
   geom_vline(xintercept = 5.5, linetype = "dashed") +
   theme_classic()+
@@ -378,12 +375,12 @@ combined_barplot <- plot_grid(cover_transitions, intens_extens_transitions,
           align = "h")
 
 # Save to file as .png
-# ggsave(here("figures", "cover_transitions_all_periods_Figure2.png"),
-#        width=20, height=13)
+ggsave(here("figures", "cover_transitions_all_periods_Figure2.png"),
+       width=20, height=13)
 
 # Save to file as .svg
-# ggsave(here("figures", "cover_transitions_all_periods_Figure2.pdf"),
-#        width = 20, height=13)
+ggsave(here("figures", "cover_transitions_all_periods_Figure2.pdf"),
+       width = 20, height=13)
 
 
 # 4. SANKEY PLOT OF TRANSITIONS FOR ALL YEARS ----------------------------------
