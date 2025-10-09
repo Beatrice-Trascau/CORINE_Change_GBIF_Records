@@ -747,7 +747,7 @@ write_csv(summary_lc_types,
 # 11. MODEL SUMMARY REPORTING FOR MANUSCRIPT -----------------------------------
 
 # Extract the coefficient for cover change
-cover_change_coef <- 1.48260  # Get it from the table
+cover_change_coef <- 2.900857  # Get it from the table
 
 # Calculate the Incidence Rate Ratio (IRR)
 irr <- exp(cover_change_coef)
