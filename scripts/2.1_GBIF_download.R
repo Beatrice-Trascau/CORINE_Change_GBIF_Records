@@ -18,8 +18,8 @@ Sys.setenv(GBIF_EMAIL = "my_email")
 # Send download request
 download_key <- occ_download(
   pred("gadm", "NOR"), # Norway
-  pred_gte("year", 1997), # Greater than or equal to year 1950
-  pred_lte("year", 2021), # Lower than or equal to 2018
+  pred_gte("year", 1997), # Greater than or equal to year 1997
+  pred_lte("year", 2021), # Lower than or equal to 2021
   pred("hasCoordinate", TRUE), 
   format = "DWCA") # Download as a Darwin Core Archive file
 
