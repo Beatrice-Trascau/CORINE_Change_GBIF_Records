@@ -33,7 +33,7 @@ sapply(package_vec, install_load_package)
 
 # Function to create the file structure needed to run the analysis smoothly
 create_project_structure <- function(base_path = "CORINE_Change_GBIF_Records") {
-  # Define the directory structure
+  # define the directory structure
   dirs <- c(
     file.path(base_path),
     file.path(base_path, "data"),
@@ -44,7 +44,7 @@ create_project_structure <- function(base_path = "CORINE_Change_GBIF_Records") {
     file.path(base_path, "data", "raw_data", "raw_norway_shapefile")
   )
   
-  # Create directories if they don't exist
+  # create directories if they don't exist
   for (dir in dirs) {
     if (!dir.exists(dir)) {
       dir.create(dir, recursive = TRUE)
