@@ -62,14 +62,14 @@ nrow(clean_occurrences4) # 28 269 295 - there were no duplicated records!
 # 2.5. Remove flagged records --------------------------------------------------
 
 # Identify flagged records
-# coordinate_flags <- clean_coordinates(x = clean_occurrences4,
-#                                       lon = "decimalLongitude", 
-#                                       lat = "decimalLatitude",
-#                                       species = "species",
-#                                       test = c("equal", "gbif", "zeros"))
-# 
-# # Get a summary of the records
-# summary(coordinate_flags) # no flagged records
+coordinate_flags <- clean_coordinates(x = clean_occurrences4,
+                                      lon = "decimalLongitude",
+                                      lat = "decimalLatitude",
+                                      species = "species",
+                                      test = c("equal", "gbif", "zeros"))
+
+# Get a summary of the records
+summary(coordinate_flags) # no flagged records
 
 # 2.5. Remove records with specific coordinate uncertainty ---------------------
 
