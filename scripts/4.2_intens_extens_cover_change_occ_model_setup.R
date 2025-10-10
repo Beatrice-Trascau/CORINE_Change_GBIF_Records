@@ -6,28 +6,6 @@
 # occurrences in a pixel
 ##----------------------------------------------------------------------------##
 
-# Define function
-install_load_package <- function(x) {
-  if (!require(x, character.only = TRUE)) {
-    install.packages(x, repos = "http://cran.us.r-project.org")
-  }
-  require(x, character.only = TRUE)
-}
-
-# Define list of packages
-package_vec <- c("here", "terra", "sf", "geodata", "mapview",
-                 "tidyverse", "dplyr", "ggplot2", "ggalluvial",
-                 "networkD3", "gt", "cowplot", "data.table",
-                 "tidyterra", "patchwork", "styler", "scales",
-                 "plotly", "lme4", "DHARMa", "glmmTMB", "mgcv",
-                 "tidyterra", "ggspatial", "htmlwidgets",
-                 "htmltools", "patchwork", "webshot2",
-                 "rgbif", "CoordinateCleaner", "DHARMa",
-                 "writexl", "bbmle", "kableExtra", "googledrive") # specify packages
-
-# Execute the function
-sapply(package_vec, install_load_package)
-
 # 1. LOAD AND PREPARE DATA -----------------------------------------------------
 
 # Load data
@@ -272,39 +250,6 @@ summary_table_complete_intens_extens <- bind_rows(all_periods_stats, period_2000
 print(summary_table_complete_intens_extens)
 
 ## 3.2. Summary statistics for text --------------------------------------------
-
-# Extract the statistics for "All Periods" from summary table
-all_periods_stats_only <- summary_table_complete_intens_extens |>
-  filter(`Time Period` == "All Periods")
-
-# Extract stats for pixels with Extensification
-extens_stats <- all_periods_stats_only |> filter(`Intens/Extens` == "Extensification")
-cat("Pixels with EXTENSIFICATION:\n")
-cat("- Total pixels:", format(extens_stats$Count, big.mark = ","), "\n")
-cat("- Total occurrences:", format(extens_stats$Count * extens_stats$Median, big.mark = ","), "* \n")
-cat("- Median:", extens_stats$Median, "\n")
-cat("- 75th percentile:", extens_stats$`75th Percentile`, "\n") 
-cat("- 90th percentile:", extens_stats$`90th Percentile`, "\n\n")
-
-# Extract stats for pixels with Intensification  
-intens_stats <- all_periods_stats_only |> filter(`Intens/Extens` == "Intensification")
-cat("Pixels with INTENSIFICATION:\n")
-cat("- Total pixels:", format(intens_stats$Count, big.mark = ","), "\n")
-cat("- Total occurrences:", format(intens_stats$Count * intens_stats$Median, big.mark = ","), "* \n")
-cat("- Median:", intens_stats$Median, "\n")
-cat("- 75th percentile:", intens_stats$`75th Percentile`, "\n")
-cat("- 90th percentile:", intens_stats$`90th Percentile`, "\n\n")
-
-# Extract stats for pixels with No Change
-no_change_stats <- all_periods_stats_only |> filter(`Intens/Extens` == "No_change")
-cat("Pixels with NO CHANGE:\n")
-cat("- Total pixels:", format(no_change_stats$Count, big.mark = ","), "\n")
-cat("- Total occurrences:", format(no_change_stats$Count * no_change_stats$Median, big.mark = ","), "* \n")
-cat("- Median:", no_change_stats$Median, "\n")
-cat("- 75th percentile:", no_change_stats$`75th Percentile`, "\n")
-cat("- 90th percentile:", no_change_stats$`90th Percentile`, "\n\n")
-
-cat("* Note: This is an approximation using median × count. For exact total occurrences, calculate sum directly.\n\n")
 
 # Calculate the exact number of occurrences:
 exact_totals <- modeling_data_wide |>
