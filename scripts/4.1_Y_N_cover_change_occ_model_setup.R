@@ -359,30 +359,6 @@ print(summary_table_complete)
 
 ## 4.2. Summary statistics for text --------------------------------------------
 
-# Extract the statistics for "All Periods" from summary table
-all_periods_stats_only <- summary_table_complete |>
-  filter(`Time Period` == "All Periods")
-
-# Extract stats for pixels WITH cover change (Y)
-change_stats <- all_periods_stats_only |> filter(`Cover Change` == "Y")
-cat("Pixels that CHANGED their cover:\n")
-cat("- Total pixels:", format(change_stats$Count, big.mark = ","), "\n")
-cat("- Total occurrences:", format(change_stats$Count * change_stats$Median, big.mark = ","), "* \n")
-cat("- Median:", change_stats$Median, "\n")
-cat("- 75th percentile:", change_stats$`75th Percentile`, "\n") 
-cat("- 90th percentile:", change_stats$`90th Percentile`, "\n\n")
-
-# Extract stats for pixels WITHOUT cover change (N)  
-no_change_stats <- all_periods_stats_only |> filter(`Cover Change` == "N")
-cat("Pixels that did NOT change their cover:\n")
-cat("- Total pixels:", format(no_change_stats$Count, big.mark = ","), "\n")
-cat("- Total occurrences:", format(no_change_stats$Count * no_change_stats$Median, big.mark = ","), "* \n")
-cat("- Median:", no_change_stats$Median, "\n")
-cat("- 75th percentile:", no_change_stats$`75th Percentile`, "\n")
-cat("- 90th percentile:", no_change_stats$`90th Percentile`, "\n\n")
-
-cat("* Note: This is an approximation using median × count. For exact total occurrences, calculate sum directly.\n\n")
-
 # Calculate the exact number of occurrences:
 exact_totals <- modeling_data_wide |>
   mutate(total_occurrences = occurrences_before + occurrences_after) |>
