@@ -563,9 +563,9 @@ all_classes_ribbons <- ggplot(alluvial_data_with_forest_corrected,
   coord_cartesian(clip = "off") +
   theme_minimal() +
   theme(axis.text.x = element_blank(),
-        axis.text.y = element_text(size = 14, color = "black"),
+        axis.text.y = element_text(size = 16, color = "black"),
         axis.title.x = element_blank(),
-        axis.title.y = element_text(size = 14, face = "bold", margin = margin(r = 10)),
+        axis.title.y = element_text(size = 16, face = "bold", margin = margin(r = 10)),
         legend.position = "none",
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
@@ -599,12 +599,12 @@ forestless_ribbons <- ggplot(alluvial_data_forestless_corrected,
   coord_cartesian(clip = "off") +
   theme_minimal() +
   theme(axis.text.x = element_blank(),
-        axis.text.y = element_text(size = 14, color = "black"),
+        axis.text.y = element_text(size = 16, color = "black"),
         axis.title.x = element_blank(),
-        axis.title.y = element_text(size = 14, face = "bold", margin = margin(r = 10)),
+        axis.title.y = element_text(size = 16, face = "bold", margin = margin(r = 10)),
         legend.position = "bottom",
-        legend.title = element_text(size = 14, face = "bold"),
-        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 16, face = "bold"),
+        legend.text = element_text(size = 14),
         legend.key.width = unit(1.2, "cm"),
         legend.key.height = unit(0.8, "cm"),
         panel.grid.major.x = element_blank(),
@@ -798,7 +798,7 @@ all_periods_changes <- plot_grid(map_2000_2006, map_2006_2012, map_2012_2018,
 ggsave(here("figures", "cover_change_all_periods_Figure1_aggregated50km.png"),
        all_periods_changes, width = 20, height = 10, dpi = 300)
 
-ggsave(here("figures", "cover_change_all_periods_Figure1_aggregated50km.svg"),
+ggsave(here("figures", "cover_change_all_periods_Figure1_aggregated50km.pdf"),
        all_periods_changes, width = 20, height = 10,dpi = 300)
 
 # END OF SCRIPT ----------------------------------------------------------------
