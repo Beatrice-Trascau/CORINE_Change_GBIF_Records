@@ -266,18 +266,18 @@ cover_points_plot_fixed <- ggplot() +
              size = 2,
              color = "black") +
   # add significance stars in bottom right corner
-  geom_text(data = cover_points_full_wrapped %>% filter(plot_type != "same"),
+  geom_text(data = cover_points_full_wrapped |> filter(plot_type != "same"),
             aes(x = 0.9, y = -Inf, label = Significance_Star),
             size = 4, fontface = "bold", color = "black", vjust = -0.2) +
   # add percentage change labels in top right corner
-  geom_text(data = cover_points_full_wrapped %>% filter(plot_type != "same"),
+  geom_text(data = cover_points_full_wrapped |> filter(plot_type != "same"),
             aes(x = 0.9, y = Inf, 
                 label = paste0(sprintf("%.0f", Percent_Change), "%")),
-            size = 3, fontface = "bold", color = "black", vjust = 1.2) +
+            size = 4, fontface = "bold", color = "black", vjust = 1.2) +
   # add y-axis labels back
-  geom_text(data = cover_points_full_wrapped %>% 
-              filter(plot_type != "same") %>%
-              distinct(intial_cover_wrapped, cover_change_wrapped) %>%
+  geom_text(data = cover_points_full_wrapped |> 
+              filter(plot_type != "same") |>
+              distinct(intial_cover_wrapped, cover_change_wrapped) |>
               crossing(y_breaks = pretty(c(y_min, y_max), n = 3)),
             aes(x = 0.05, y = y_breaks, label = y_breaks),
             hjust = 0,
@@ -296,17 +296,20 @@ cover_points_plot_fixed <- ggplot() +
   theme_bw() +
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
-        axis.title.x = element_text(size = 14, face = "bold"),
+        axis.title.x = element_text(size = 16, face = "bold"),
         panel.grid = element_blank(),
         # adjust strip text to accommodate wrapped labels
-        strip.text.x = element_text(angle = 0, hjust = 0.5, size = 11),
-        strip.text.y.left = element_text(size = 11, angle = 0, hjust = 1),
+        strip.text.x = element_text(angle = 0, hjust = 0.5, size = 16),
+        strip.text.y.left = element_text(size = 16, angle = 0, hjust = 1),
         strip.background = element_blank(),
         panel.border = element_rect(color = "black", fill = NA),
         axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
-        axis.title.y = element_text(size = 14, face = "bold"),
+        axis.title.y = element_text(size = 16, face = "bold"),
         axis.line = element_blank(),
+        # add legend settings
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 16, face = "bold"),
         # add some extra spacing for wrapped text
         strip.text = element_text(margin = margin(3, 3, 3, 3))) +
   labs(y = "Initial Cover",
@@ -392,12 +395,14 @@ time_updated <- ggplot(time_sig_wrapped,
                        labels = scales::label_number()) +
   scale_x_discrete(position = "top") +
   theme_classic() +
-  theme(axis.text.x = element_text(hjust = 0.5, size = 11),
-        axis.text.y = element_text(size = 11),
-        axis.title.x = element_text(size = 14, face = "bold"),
-        axis.title.y = element_text(size = 14, face = "bold"),
+  theme(axis.text.x = element_text(hjust = 0.5, size = 14),
+        axis.text.y = element_text(size = 14),
+        axis.title.x = element_text(size = 16, face = "bold"),
+        axis.title.y = element_text(size = 16, face = "bold"),
         axis.line = element_blank(),
         axis.ticks = element_blank(),
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 16, face = "bold"),
         axis.text = element_text(margin = margin(3, 3, 3, 3))) +
   labs(x = "Time Period", y = "Initial Cover")
 
@@ -411,8 +416,8 @@ ggsave(here("figures", "Figure3a_update_model_outputs.png"),
        plot = figure3a_models,
        width = 20, height = 13, dpi = 300)
 
-# Save to file as .svg
-ggsave(here("figures", "Figure3a_update_model_outputs.svg"),
+# Save to file as .pdf
+ggsave(here("figures", "Figure3a_update_model_outputs.pdf"),
        plot = figure3a_models,
        width = 20, height = 13)
 
@@ -422,12 +427,12 @@ figure3b_time <- plot_grid(time_updated, ncol = 1, labels = c("b)"))
 # Save to file as .png
 ggsave(here("figures", "Figure3b_update_model_outputs_time.png"),
        plot = figure3b_time,
-       width = 20, height = 13, dpi = 300)
+       width = 15, height = 13, dpi = 300)
 
-# Save to file as .svg
-ggsave(here("figures", "Figure3b_update_model_outputs_time.svg"),
+# Save to file as .pdf
+ggsave(here("figures", "Figure3b_update_model_outputs_time.pdf"),
        plot = figure3b_time,
-       width = 20, height = 13)
+       width = 15, height = 13)
 
 # Combine the two plots
 cover_time_combined_plot <- plot_grid(a, time_updated,
