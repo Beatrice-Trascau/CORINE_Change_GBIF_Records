@@ -8,7 +8,8 @@
 
 # Cleaned occurrence records
 load(here("data", "derived_data","clened_occurrences_redownloaded_August2025.rda"))
-occurrences_norway <- clean_occurrences
+occurrences_norway <- clean_occurrences |>
+  filter(occurrenceStatus == "PRESENT")
 
 # All the before periods (avoids overlap)
 occurrences_before <- occurrences_norway |>
