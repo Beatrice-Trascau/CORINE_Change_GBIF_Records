@@ -54,8 +54,27 @@ modeling_data_wide <- modeling_data_filtered |>
   mutate(cell_ID = as.factor(cell_ID),
          SSBID = as.factor(SSBID),
          cover_change = as.factor(cover_change),
-         intens_extens = as.factor(intens_extens),
          time_period = as.factor(time_period))
+
+# Check that there are no NA values for intens_extens
+unique(modeling_data_wide$intens_extens) # there are 6 rows with NA
+
+# Check which ones have NA
+a <- modeling_data_wide |>
+  filter(is.na(intens_extens))
+
+# Replace intense_extens with Intensification when land_cover_start_name == "woodland_shrub" and land_cover_end_name == "moors_heath_grass"
+modeling_data_wide <- modeling_data_wide |>
+  mutate(intens_extens = case_when(land_cover_start_name == "woodland_shrub" & 
+                                     land_cover_end_name == "moors_heath_grass" ~ "Intensification",
+                                   TRUE ~ intens_extens))
+
+# Convert intens_extens to factor for modeling
+modeling_data_wide <- modeling_data_wide |>
+  mutate(intens_extens = as.factor(intens_extens))
+
+# Check if there are any NAs anymore
+unique(modeling_data_wide $intens_extens)
 
 # 2. MODEL 1: OCC ~ COVER CHANGE + OFFSET --------------------------------------
 
@@ -139,8 +158,8 @@ save(IntensExtens_model4, file = here::here("data", "models",
 AICtab(IntensExtens_model3, IntensExtens_model4, base = TRUE) 
 # Model3 preffered dAIC = 154
 # AIC     dAIC    df
-# IntensExtens_model3 5649691       0 21
-# IntensExtens_model4 5649845     154 17
+# IntensExtens_model3 5637378.7       0 21
+# IntensExtens_model4 5637544.4     165.7 17
 
 ## 2.5. Logged occurrences after + interaction ---------------------------------
 
@@ -230,7 +249,7 @@ period_2012_2018_stats <- modeling_data_wide |>
   summarise(Count = n(),
             Zeros = sum(occurrences_after == 0),
             `% Zeros` = round((sum(occurrences_after == 0) / n()) * 100, 1),
-            `Total Occurrences` = sum(occurrences_after),
+            `Total Occurrences` = sum(occurrences_before + occurrences_after),
             Median = median(occurrences_after),
             `75th Percentile` = quantile(occurrences_after, 0.75),
             `90th Percentile` = quantile(occurrences_after, 0.90),
