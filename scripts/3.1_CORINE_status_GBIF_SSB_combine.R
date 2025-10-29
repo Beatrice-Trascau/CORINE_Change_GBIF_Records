@@ -17,12 +17,12 @@ drive_user() # this should show your google account info
 
 # CORINE Status Layers
 drive_download(as_id("1TEUH2UUEXsdT-4eeWGSVornzu1paQjZW"),
-               path = here("data", "derived_data", 
+               path = here("data", "derived_data",
                            "norway_corine_status_modified_stack.tif"))
 
 # SSB Grids (zipped)
 drive_download(as_id("1_AcppTeFEjQi1lX1-tn9GJONf4dxdxeo"),
-               path = here("data", "raw_data", 
+               path = here("data", "raw_data",
                            "SSB050KM.zip"))
 # Unzip SSB Grids
 unzip(here("data", "raw_data", "SSB050KM.zip"),
@@ -44,7 +44,8 @@ ssb_grids <- vect(here("data", "raw_data",
 
 # Cleaned occurrence records
 load(here("data", "derived_data","clened_occurrences_redownloaded_August2025.rda"))
-occurrences_norway <- clean_occurrences
+occurrences_norway <- clean_occurrences |>
+  filter(occurrenceStatus == "PRESENT")
 
 # 2. CREATE SPATIAL REFERENCE GRID ---------------------------------------------
 
