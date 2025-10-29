@@ -13,8 +13,8 @@ load(here("data", "models","complex_agri_model1_interaction.RData"))
 load(here("data", "models", "agri_sig_veg_model1_interaction.RData"))
 load(here("data", "models", "forests_model1_interaction.RData"))
 load(here("data", "models","moors_model2_no_interaction.RData"))
-load(here("data", "models","woodland_model2_no_interaction.RData"))
-load(here("data", "models","sparse_model2_no_interaction.RData"))
+load(here("data", "models","woodland_model1_interaction.RData"))
+load(here("data", "models","sparse_model1_interaction.RData"))
 
 # 2. EXTRACT MODEL OUTPUTS -----------------------------------------------------
 
@@ -24,8 +24,8 @@ model_list <- list(extract_summary_as_df(urban_temporal_model, "temporal"),
                    extract_summary_as_df(agri_sig_veg_model1_interaction, "transition"), 
                    extract_summary_as_df(forests_model1_interaction, "transition"),
                    extract_summary_as_df(moors_model2_no_interaction, "transition"),
-                   extract_summary_as_df(woodland_model2_no_interaction, "transition"),
-                   extract_summary_as_df(sparse_model2_no_interaction, "transition"))
+                   extract_summary_as_df(woodland_model1_interaction, "transition"),
+                   extract_summary_as_df(sparse_model1_interaction, "transition"))
 
 # Combine all extracted results in a single df
 combined_results <- bind_rows(model_list, .id = "model_id")
