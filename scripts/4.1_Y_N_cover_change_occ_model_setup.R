@@ -11,7 +11,6 @@
 load(here("data","derived_data", 
           "modeling_data_combined_corine_gbif_ssb_august2025.rda"))
 
-
 # Convert data from long to wide format for modeling
 modeling_data_wide <- modeling_data_filtered |>
   # select the variables we need for modeling
@@ -173,8 +172,8 @@ save(YN_ZINB_model4, file = here::here("data", "models",
 AICtab(YN_ZINB_model3, YN_ZINB_model4, base = TRUE)
 # Model3 preffered dAIC = 154
 #                 AIC       dAIC      df
-# YN_ZINB_model3 5649829.7       0.0 15
-# YN_ZINB_model4 5649879.8      50.1 13
+# YN_ZINB_model3 5637523.3       0.0 15
+# YN_ZINB_model4 5637580.0      56.7 13
 
 
 # Check model fit
@@ -353,6 +352,9 @@ summary_table_complete <- bind_rows(all_periods_stats, period_2000_2006_stats,
                                     period_2006_2012_stats, period_2012_2018_stats) |>
   arrange(factor(`Time Period`, levels = c("All Periods", "2000_2006", "2006_2012", "2012_2018")),
           `Cover Change`)
+
+# Save to file
+write_csv(summary_table_complete, here("data", "derived_data", "YN_model3_output.csv"))
 
 # Print the table
 print(summary_table_complete)
