@@ -153,8 +153,8 @@ AICtab(complex_agri_model1_interaction,
        complex_agri_model2_no_interaction, base = TRUE)
 
 # AIC      dAIC     df
-# complex_agri_model1_interaction    617198.0      0.0 16
-# complex_agri_model2_no_interaction 617204.5      6.5 9  - interaction model preferred
+# complex_agri_model1_interaction    616704.9      0.0 16
+# complex_agri_model2_no_interaction 616711.4      6.5 9  - interaction model preferred
 
 # Check model with DHARMa
 cac_simulation <- simulateResiduals(complex_agri_model2_no_interaction)
@@ -239,8 +239,8 @@ AICtab(agri_sig_veg_model1_interaction,
        agri_sig_veg_model2_no_interaction, base = TRUE)
 
 # AIC      dAIC     df
-# agri_sig_veg_model1_interaction    781995.2      0.0 14
-# agri_sig_veg_model2_no_interaction 782013.6     18.5 8 
+# agri_sig_veg_model1_interaction    781389.4      0.0 14
+# agri_sig_veg_model2_no_interaction 781407.8     18.5 8 
 
 # Check output
 summary(agri_sig_veg_model1_interaction)
@@ -326,8 +326,8 @@ AICtab(forests_model1_interaction,
        forests_model2_no_interaction, base = TRUE)
 
 # AIC      dAIC     df
-# forests_model1_interaction    2619915.5       0.0 20
-# forests_model2_no_interaction 2619939.3      23.7 10
+# forests_model1_interaction    2614390.0       0.0 20
+# forests_model2_no_interaction 2614414.3      24.3 10
 
 # Check output
 summary(forests_model1_interaction)
@@ -407,8 +407,8 @@ AICtab(moors_model1_interaction,
        moors_model2_no_interaction, base = TRUE)
 
 # AIC      dAIC     df
-# moors_model1_interaction    374322.4      0.0 21
-# moors_model2_no_interaction 374323.6      1.2 11
+# moors_model1_interaction    373791.1      0.0 21
+# moors_model2_no_interaction 373792.2      1.1 11
 
 # Check output
 summary(moors_model1_interaction) # major model failure
@@ -497,8 +497,8 @@ AICtab(woodland_model1_interaction,
        woodland_model2_no_interaction, base = TRUE)
 
 # AIC      dAIC     df
-# woodland_model2_no_interaction 127692.8      0.0 7 
-# woodland_model1_interaction    127762.6     69.8 19
+# woodland_model1_interaction     126352.4      0.0 11 
+# woodland_model2_no_interaction  126422.7     70.3 7
 
 # Check output
 summary(woodland_model2_no_interaction)
@@ -587,8 +587,8 @@ AICtab(sparse_model1_interaction,
        sparse_model2_no_interaction, base = TRUE)
 
 # AIC      dAIC     df
-#     335466.9      0.0 11
-# sparse_model2_no_interaction 335467.9      1.0 7
+# sparse_model1_interaction    334230.7      0.0 11
+# sparse_model2_no_interaction 334231.7      1.0 7 
 
 # Check output
 summary(sparse_model1_interaction)
