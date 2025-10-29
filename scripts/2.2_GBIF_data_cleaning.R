@@ -84,10 +84,16 @@ clean_occurrences5 <- clean_occurrences4 |>
 # Check how many records are left 
 nrow(clean_occurrences5) # 10 546 354
 
+## 2.6. Keep only occurrences with occurrenceStatus = PRESENT ------------------
+
+# Remove records with occurrenceStatus = ABSENT
+clean_occurrences6 <- clean_occurrences5 |>
+  filter(occurrenceStatus == "PRESENT")
+
 # 3. PREP DF FOR ANALYSIS ------------------------------------------------------
 
 # Remove unnecessary columns
-clean_occurrences <- clean_occurrences5 |>
+clean_occurrences <- clean_occurrences6 |>
   select(gbifID, identifiedBy, basisOfRecord, occurrenceStatus,
          eventDate, year, countryCode, stateProvince, county, municipality,
          locality, decimalLatitude, decimalLongitude, 
